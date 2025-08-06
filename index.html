@@ -454,6 +454,24 @@
             50% { transform: scale(1.2); box-shadow: 0 0 25px rgba(255, 71, 87, 0.8); }
         }
         
+        /* Hospital flashing animation */
+        .hospital-flash {
+            animation: hospitalFlash 1s ease-in-out infinite;
+        }
+        
+        @keyframes hospitalFlash {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+            }
+            50% { 
+                opacity: 0.3; 
+                transform: scale(1.3);
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.9);
+            }
+        }
+        
         .typing-indicator {
             display: none;
             padding: 10px 15px;
@@ -483,7 +501,7 @@
         <div class="chat-container">
             <div class="chat-header">
                 PropertyIntel Kigali 
-                <small>AI Real Estate Advisor with Health Proximity Analytics</small>
+                <small>AI Real Estate Advisor with Location Intelligence in your pocket</small>
             </div>
             
             <!-- Search and Filter Controls -->
@@ -561,7 +579,7 @@
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map, currentLocation, currentProperty, bufferLayers = [], facilities = [], hospitalMarkers = [];
+        let map, currentLocation, currentProperty, facilities = [], hospitalMarkers = [];
         let nearbyHospitals = [], currentLocationMarker = null, allPropertyMarkers = [], filteredProperties = [];
 
         // Extended property data with 20 properties across Kigali
@@ -700,35 +718,9 @@
         }
 
         function addHospitals() {
+            // Don't add hospital markers to map initially - they'll be shown only when within 5km of selected property
             hospitalMarkers = [];
-            facilities.forEach(facility => {
-                // Include hospitals, health centers, and district hospitals
-                const facilityType = facility.facility_type.toLowerCase();
-                if (facilityType.includes('hospital') || 
-                    facilityType.includes('health center') || 
-                    facilityType.includes('clinic')) {
-                    
-                    const marker = L.marker([facility.lat, facility.long], {
-                        icon: L.divIcon({
-                            className: 'hospital-marker',
-                            html: `<div style="width: 20px; height: 20px; background: linear-gradient(135deg, #00ff88, #00cc6a); border: 3px solid white; border-radius: 50%;"></div>`,
-                            iconSize: [20, 20],
-                            iconAnchor: [10, 10]
-                        })
-                    }).addTo(map);
-                    
-                    marker.bindTooltip(
-                        `<strong>${facility.facility_name}</strong><br>
-                        Type: ${facility.facility_type}<br>
-                        District: ${facility.district || 'N/A'}<br>
-                        Sector: ${facility.sector || 'N/A'}`, 
-                        { direction: 'top', offset: [0, -10] }
-                    );
-                    
-                    hospitalMarkers.push(marker);
-                }
-            });
-            console.log(`Added ${hospitalMarkers.length} health facility markers`);
+            console.log(`Loaded ${facilities.length} health facilities (markers will show when within 5km of properties)`);
         }
 
         function selectProperty(property) {
@@ -755,6 +747,10 @@
         function analyzeHospitalProximity(property) {
             nearbyHospitals = [];
             
+            // Clear any existing hospital markers from previous selections
+            hospitalMarkers.forEach(marker => map.removeLayer(marker));
+            hospitalMarkers = [];
+            
             facilities.forEach(facility => {
                 const facilityType = facility.facility_type.toLowerCase();
                 if (facilityType.includes('hospital') || 
@@ -770,17 +766,34 @@
                             distance: distance
                         });
                         
-                        // Add buffer circle
-                        const buffer = L.circle([facility.lat, facility.long], {
-                            radius: 5000,
-                            className: 'buffer-hospital',
-                            fillOpacity: 0.15,
-                            color: '#667eea',
-                            weight: 2,
-                            dashArray: '5,5'
+                        // Create hospital marker with flashing animation
+                        const marker = L.marker([facility.lat, facility.long], {
+                            icon: L.divIcon({
+                                className: 'hospital-marker hospital-flash',
+                                html: `<div style="width: 20px; height: 20px; background: linear-gradient(135deg, #00ff88, #00cc6a); border: 3px solid white; border-radius: 50%;"></div>`,
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
                         }).addTo(map);
                         
-                        bufferLayers.push(buffer);
+                        marker.bindTooltip(
+                            `<strong>${facility.facility_name}</strong><br>
+                            Type: ${facility.facility_type}<br>
+                            Distance: ${distance.toFixed(1)}km<br>
+                            District: ${facility.district || 'N/A'}<br>
+                            Sector: ${facility.sector || 'N/A'}`, 
+                            { direction: 'top', offset: [0, -10] }
+                        );
+                        
+                        hospitalMarkers.push(marker);
+                        
+                        // Stop flashing after 10 seconds
+                        setTimeout(() => {
+                            const markerElement = marker.getElement();
+                            if (markerElement) {
+                                markerElement.classList.remove('hospital-flash');
+                            }
+                        }, 10000);
                     }
                 }
             });
@@ -788,6 +801,7 @@
             // Sort by distance
             nearbyHospitals.sort((a, b) => a.distance - b.distance);
             
+            console.log(`Found ${nearbyHospitals.length} health facilities within 5km of ${property.name}`);
             displayProximityAnalysis(property);
         }
 
@@ -898,8 +912,9 @@
         }
 
         function clearBuffers() {
-            bufferLayers.forEach(layer => map.removeLayer(layer));
-            bufferLayers = [];
+            // Clear hospital markers
+            hospitalMarkers.forEach(marker => map.removeLayer(marker));
+            hospitalMarkers = [];
         }
 
         function handleMapClick(e) {
