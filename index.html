@@ -324,6 +324,136 @@
             background: rgba(255,255,255,0.05);
         }
         
+        /* Search and Filter Controls */
+        .search-controls {
+            background: rgba(15, 15, 25, 0.8);
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .search-container {
+            margin-bottom: 12px;
+        }
+        
+        .search-box {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            padding: 0;
+        }
+        
+        .main-search-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            color: #333;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .main-search-input::placeholder {
+            color: #666;
+        }
+        
+        .search-icon-btn {
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .search-icon-btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .search-options {
+            border-top: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+        
+        .location-option {
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: #1a73e8;
+            font-size: 14px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .location-option:hover {
+            background: #e8f0fe;
+        }
+        
+        .location-option i {
+            font-size: 16px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        .compact-filter {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .compact-filter:focus {
+            border-color: #667eea;
+        }
+        
+        .compact-filter option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+        
+        .filter-summary {
+            font-size: 0.75rem;
+            color: #999;
+            text-align: center;
+            padding: 5px;
+        }
+        
+        /* Current location marker */
+        .current-location-marker {
+            width: 16px;
+            height: 16px;
+            background: #ff4757;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
+            animation: locationPulse 2s infinite;
+        }
+        
+        @keyframes locationPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(255, 71, 87, 0.6); }
+            50% { transform: scale(1.2); box-shadow: 0 0 25px rgba(255, 71, 87, 0.8); }
+        }
+        
         .typing-indicator {
             display: none;
             padding: 10px 15px;
@@ -355,6 +485,55 @@
                 PropertyIntel Kigali 
                 <small>AI Real Estate Advisor with Health Proximity Analytics</small>
             </div>
+            
+            <!-- Search and Filter Controls -->
+            <div class="search-controls">
+                <div class="search-container">
+                    <div class="search-box">
+                        <div class="search-input-wrapper">
+                            <input type="text" id="locationSearch" class="main-search-input" placeholder="Find address or place">
+                            <button id="searchBtn" class="search-icon-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="search-options">
+                            <button id="locationBtn" class="location-option">
+                                <i class="fas fa-crosshairs"></i>
+                                Use current location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-row">
+                    <select id="statusFilter" class="compact-filter">
+                        <option value="">All Status</option>
+                        <option value="sale">For Sale</option>
+                        <option value="rent">For Rent</option>
+                    </select>
+                    
+                    <select id="typeFilter" class="compact-filter">
+                        <option value="">All Types</option>
+                        <option value="villa">Villa</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="house">House</option>
+                        <option value="luxury">Luxury</option>
+                    </select>
+                    
+                    <select id="priceFilter" class="compact-filter">
+                        <option value="">Price Range</option>
+                        <option value="0-50">Under 50M</option>
+                        <option value="50-100">50M - 100M</option>
+                        <option value="100-200">100M - 200M</option>
+                        <option value="200+">Above 200M</option>
+                    </select>
+                </div>
+                
+                <div class="filter-summary" id="filterSummary">
+                    Showing all properties
+                </div>
+            </div>
+            
             <div class="chat-messages" id="chatMessages">
                 <div class="message ai">
                     <div class="message-content">
@@ -383,38 +562,47 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let map, currentLocation, currentProperty, bufferLayers = [], facilities = [], hospitalMarkers = [];
-        let nearbyHospitals = [];
+        let nearbyHospitals = [], currentLocationMarker = null, allPropertyMarkers = [], filteredProperties = [];
 
-        // Sample property data with more details
+        // Extended property data with 20 properties across Kigali
         const properties = [
-            { 
-                lat: -1.9286, lng: 30.1044, 
-                name: 'Sunset Villa', type: 'Villa', 
-                price: '120M RWF', status: 'sale',
-                bedrooms: 4, bathrooms: 3,
-                area: '350m²', yearBuilt: 2020
-            },
-            { 
-                lat: -1.9506, lng: 30.0939, 
-                name: 'City View Apartment', type: 'Apartment', 
-                price: '45M RWF', status: 'rent',
-                bedrooms: 2, bathrooms: 2,
-                area: '120m²', yearBuilt: 2018
-            },
-            { 
-                lat: -1.9634, lng: 30.1029, 
-                name: 'Green Hills House', type: 'House', 
-                price: '65M RWF', status: 'sale',
-                bedrooms: 3, bathrooms: 2,
-                area: '200m²', yearBuilt: 2019
-            },
-            { 
-                lat: -1.9456, lng: 30.0612, 
-                name: 'Golden Premium Villa', type: 'Luxury Villa', 
-                price: '250M RWF', status: 'sale',
-                bedrooms: 5, bathrooms: 4,
-                area: '500m²', yearBuilt: 2021
-            }
+            // Kigali City Center
+            { lat: -1.9441, lng: 30.0619, name: 'City Center Luxury Apartment', type: 'Luxury Apartment', price: '180M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '180m²', yearBuilt: 2022, district: 'Nyarugenge' },
+            { lat: -1.9506, lng: 30.0639, name: 'Business District Condo', type: 'Apartment', price: '65M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '110m²', yearBuilt: 2019, district: 'Nyarugenge' },
+            
+            // Kimihurura
+            { lat: -1.9286, lng: 30.1044, name: 'Kimihurura Sunset Villa', type: 'Villa', price: '320M RWF', status: 'sale', bedrooms: 5, bathrooms: 4, area: '450m²', yearBuilt: 2021, district: 'Gasabo' },
+            { lat: -1.9256, lng: 30.1074, name: 'Kimihurura Family House', type: 'House', price: '150M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '280m²', yearBuilt: 2018, district: 'Gasabo' },
+            { lat: -1.9316, lng: 30.1014, name: 'Kimihurura Modern Apartment', type: 'Apartment', price: '45M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '95m²', yearBuilt: 2020, district: 'Gasabo' },
+            
+            // Kacyiru
+            { lat: -1.9634, lng: 30.1029, name: 'Kacyiru Green Hills House', type: 'House', price: '95M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '220m²', yearBuilt: 2017, district: 'Gasabo' },
+            { lat: -1.9604, lng: 30.1059, name: 'Kacyiru Executive Villa', type: 'Villa', price: '280M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '380m²', yearBuilt: 2023, district: 'Gasabo' },
+            { lat: -1.9664, lng: 30.0999, name: 'Kacyiru Riverside Apartment', type: 'Apartment', price: '38M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '65m²', yearBuilt: 2019, district: 'Gasabo' },
+            
+            // Remera
+            { lat: -1.9456, lng: 30.1312, name: 'Remera Shopping District House', type: 'House', price: '120M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '200m²', yearBuilt: 2020, district: 'Gasabo' },
+            { lat: -1.9486, lng: 30.1342, name: 'Remera Premium Apartment', type: 'Apartment', price: '55M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '130m²', yearBuilt: 2021, district: 'Gasabo' },
+            
+            // Gikondo
+            { lat: -1.9756, lng: 30.0529, name: 'Gikondo Industrial Villa', type: 'Villa', price: '200M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '350m²', yearBuilt: 2019, district: 'Kicukiro' },
+            { lat: -1.9786, lng: 30.0559, name: 'Gikondo Worker Housing', type: 'House', price: '75M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '160m²', yearBuilt: 2016, district: 'Kicukiro' },
+            
+            // Nyamirambo
+            { lat: -1.9606, lng: 30.0429, name: 'Nyamirambo Cultural House', type: 'House', price: '85M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '190m²', yearBuilt: 2018, district: 'Nyarugenge' },
+            { lat: -1.9636, lng: 30.0399, name: 'Nyamirambo Traditional Villa', type: 'Villa', price: '140M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '260m²', yearBuilt: 2017, district: 'Nyarugenge' },
+            
+            // Kigali Heights
+            { lat: -1.9156, lng: 30.0819, name: 'Kigali Heights Luxury Villa', type: 'Luxury Villa', price: '450M RWF', status: 'sale', bedrooms: 6, bathrooms: 5, area: '600m²', yearBuilt: 2024, district: 'Gasabo' },
+            { lat: -1.9186, lng: 30.0789, name: 'Kigali Heights Executive House', type: 'House', price: '220M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '320m²', yearBuilt: 2022, district: 'Gasabo' },
+            
+            // Kibagabaga
+            { lat: -1.9706, lng: 30.1159, name: 'Kibagabaga Student Apartment', type: 'Apartment', price: '35M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '55m²', yearBuilt: 2018, district: 'Gasabo' },
+            { lat: -1.9736, lng: 30.1129, name: 'Kibagabaga Family House', type: 'House', price: '110M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '210m²', yearBuilt: 2019, district: 'Gasabo' },
+            
+            // Nyarutarama
+            { lat: -1.9356, lng: 30.1212, name: 'Nyarutarama Golf Course Villa', type: 'Luxury Villa', price: '520M RWF', status: 'sale', bedrooms: 7, bathrooms: 6, area: '700m²', yearBuilt: 2023, district: 'Gasabo' },
+            { lat: -1.9386, lng: 30.1182, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo' }
         ];
 
         async function loadFacilities() {
@@ -458,7 +646,10 @@
         }
 
         function addProperties() {
-            properties.forEach(prop => {
+            allPropertyMarkers = [];
+            filteredProperties = [...properties]; // Start with all properties
+            
+            properties.forEach((prop, index) => {
                 const isSpecial = prop.type.includes('Luxury') || prop.type.includes('Premium');
                 const marker = L.marker([prop.lat, prop.lng], {
                     icon: L.divIcon({
@@ -472,12 +663,22 @@
                 marker.bindTooltip(
                     `<strong>${prop.name}</strong><br>
                     ${prop.price}<br>
-                    ${prop.bedrooms}BR • ${prop.bathrooms}BA • ${prop.area}`, 
+                    ${prop.bedrooms}BR • ${prop.bathrooms}BA • ${prop.area}<br>
+                    ${prop.district} District`, 
                     { direction: 'top', offset: [0, -10] }
                 );
                 
                 marker.on('click', () => selectProperty(prop));
+                
+                // Store marker with property data
+                allPropertyMarkers.push({
+                    marker: marker,
+                    property: prop,
+                    visible: true
+                });
             });
+            
+            updateFilterSummary();
         }
 
         function addHospitals() {
@@ -690,7 +891,14 @@
         function setupEventListeners() {
             const chatInput = document.getElementById('chatInput');
             const sendBtn = document.getElementById('sendBtn');
+            const locationSearch = document.getElementById('locationSearch');
+            const searchBtn = document.getElementById('searchBtn');
+            const locationBtn = document.getElementById('locationBtn');
+            const statusFilter = document.getElementById('statusFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const priceFilter = document.getElementById('priceFilter');
             
+            // Chat functionality
             chatInput.addEventListener('input', function() {
                 this.style.height = 'auto';
                 this.style.height = Math.min(this.scrollHeight, 100) + 'px';
@@ -704,6 +912,179 @@
             });
             
             sendBtn.addEventListener('click', sendMessage);
+            
+            // Search functionality
+            locationSearch.addEventListener('keypress', e => {
+                if (e.key === 'Enter') performLocationSearch();
+            });
+            
+            searchBtn.addEventListener('click', performLocationSearch);
+            locationBtn.addEventListener('click', useCurrentLocation);
+            
+            // Filter functionality
+            statusFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+            priceFilter.addEventListener('change', applyFilters);
+        }
+
+        async function performLocationSearch() {
+            const locationSearch = document.getElementById('locationSearch');
+            const location = locationSearch.value.trim();
+            if (!location) return;
+            
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location + ', Kigali, Rwanda')}&limit=1`);
+                const results = await response.json();
+                
+                if (results.length > 0) {
+                    const { lat, lon } = results[0];
+                    map.setView([lat, lon], 16);
+                    
+                    // Add search location marker
+                    const searchMarker = L.marker([lat, lon], {
+                        icon: L.divIcon({
+                            className: 'search-location-marker',
+                            html: '<div style="width: 16px; height: 16px; background: #667eea; border: 3px solid white; border-radius: 50%;"></div>',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        })
+                    }).addTo(map);
+                    
+                    searchMarker.bindTooltip(`Search: ${location}`, { direction: 'top' });
+                    
+                    // Remove search marker after 5 seconds
+                    setTimeout(() => {
+                        map.removeLayer(searchMarker);
+                    }, 5000);
+                } else {
+                    alert('Location not found in Kigali');
+                }
+            } catch (error) {
+                console.error('Search failed:', error);
+                alert('Search failed. Please try again.');
+            }
+        }
+
+        function useCurrentLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by this browser');
+                return;
+            }
+            
+            const locationBtn = document.getElementById('locationBtn');
+            locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+            
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const { latitude: lat, longitude: lng } = position.coords;
+                    
+                    // Check if location is within reasonable bounds for Kigali
+                    if (lat < -2.2 || lat > -1.7 || lng < 29.8 || lng > 30.3) {
+                        alert('Your location appears to be outside Kigali area');
+                        locationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use current location';
+                        return;
+                    }
+                    
+                    // Remove existing current location marker
+                    if (currentLocationMarker) {
+                        map.removeLayer(currentLocationMarker);
+                    }
+                    
+                    // Add current location marker
+                    currentLocationMarker = L.marker([lat, lng], {
+                        icon: L.divIcon({
+                            className: 'current-location-marker',
+                            html: '<div style="width: 16px; height: 16px; background: #ff4757; border: 3px solid white; border-radius: 50%;"></div>',
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        })
+                    }).addTo(map);
+                    
+                    currentLocationMarker.bindTooltip('Your Location', { direction: 'top', permanent: true });
+                    
+                    // Center map on current location
+                    map.setView([lat, lng], 15);
+                    
+                    // Add message to chat
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML += `
+                        <div class="message ai">
+                            <div class="message-content">
+                                Found your current location! The red pulsing marker shows where you are. Now click on nearby properties to see proximity analysis.
+                            </div>
+                        </div>`;
+                    scrollToBottom();
+                    
+                    locationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use current location';
+                },
+                error => {
+                    console.error('Geolocation error:', error);
+                    alert('Unable to get your location. Please check your browser settings.');
+                    locationBtn.innerHTML = '<i class="fas fa-crosshairs"></i> Use current location';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const priceFilter = document.getElementById('priceFilter').value;
+            
+            filteredProperties = properties.filter(property => {
+                // Status filter
+                if (statusFilter && property.status !== statusFilter) return false;
+                
+                // Type filter
+                if (typeFilter) {
+                    const propType = property.type.toLowerCase();
+                    if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
+                    if (typeFilter === 'villa' && !propType.includes('villa')) return false;
+                    if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
+                    if (typeFilter === 'house' && !propType.includes('house')) return false;
+                }
+                
+                // Price filter
+                if (priceFilter) {
+                    const price = parseInt(property.price.replace(/[^0-9]/g, ''));
+                    if (priceFilter === '0-50' && price >= 50) return false;
+                    if (priceFilter === '50-100' && (price < 50 || price >= 100)) return false;
+                    if (priceFilter === '100-200' && (price < 100 || price >= 200)) return false;
+                    if (priceFilter === '200+' && price < 200) return false;
+                }
+                
+                return true;
+            });
+            
+            // Update marker visibility
+            allPropertyMarkers.forEach(markerObj => {
+                const isVisible = filteredProperties.includes(markerObj.property);
+                if (isVisible && !markerObj.visible) {
+                    map.addLayer(markerObj.marker);
+                    markerObj.visible = true;
+                } else if (!isVisible && markerObj.visible) {
+                    map.removeLayer(markerObj.marker);
+                    markerObj.visible = false;
+                }
+            });
+            
+            updateFilterSummary();
+        }
+
+        function updateFilterSummary() {
+            const filterSummary = document.getElementById('filterSummary');
+            const total = properties.length;
+            const shown = filteredProperties.length;
+            
+            if (shown === total) {
+                filterSummary.textContent = `Showing all ${total} properties`;
+            } else {
+                filterSummary.textContent = `Showing ${shown} of ${total} properties`;
+            }
         }
 
         function sendMessage() {
