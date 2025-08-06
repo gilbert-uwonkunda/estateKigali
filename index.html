@@ -135,6 +135,13 @@
             border-radius: 50%;
             cursor: pointer;
         }
+        .nearest-hospital-marker {
+            width: 15px;
+            height: 15px;
+            background: #ff00ff;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
         .location-info {
             background: rgba(255,255,255,0.1);
             border-radius: 6px;
@@ -190,7 +197,7 @@
     </div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map, currentLocation, bufferLayers = [], facilities = [], selectedFacility = null;
+        let map, currentLocation, bufferLayers = [], facilities = [], hospitalMarkers = [], nearestHospitalMarkers = [];
 
         async function loadFacilities() {
             try {
@@ -243,6 +250,8 @@
         }
 
         function addFacilities() {
+            hospitalMarkers.forEach(marker => map.removeLayer(marker));
+            hospitalMarkers = [];
             facilities.filter(f => f.facility_type.toLowerCase() === 'hospital').forEach(facility => {
                 const marker = L.marker([facility.lat, facility.long], {
                     icon: L.divIcon({
@@ -253,8 +262,33 @@
                     })
                 }).addTo(map);
                 marker.bindTooltip(`${facility.facility_name}<br>Type: ${facility.facility_type}`, { direction: 'top' });
-                marker.on('click', () => selectFacility(facility));
+                hospitalMarkers.push(marker);
             });
+        }
+
+        function highlightNearestHospitals(lat, lng, count = 2) {
+            nearestHospitalMarkers.forEach(marker => map.removeLayer(marker));
+            nearestHospitalMarkers = [];
+            const hospitals = facilities.filter(f => f.facility_type.toLowerCase() === 'hospital');
+            hospitals.sort((a, b) => {
+                const distA = L.latLng(lat, lng).distanceTo([a.lat, a.long]) / 1000;
+                const distB = L.latLng(lat, lng).distanceTo([b.lat, b.long]) / 1000;
+                return distA - distB;
+            });
+            const nearest = hospitals.slice(0, count);
+            nearest.forEach(facility => {
+                const marker = L.marker([facility.lat, facility.long], {
+                    icon: L.divIcon({
+                        className: 'nearest-hospital-marker',
+                        html: `<div style="width: 15px; height: 15px; background: #ff00ff; border: 2px solid white; border-radius: 50%;"></div>`,
+                        iconSize: [15, 15],
+                        iconAnchor: [7.5, 7.5]
+                    })
+                }).addTo(map);
+                marker.bindTooltip(`${facility.facility_name}<br>Type: ${facility.facility_type}`, { direction: 'top' });
+                nearestHospitalMarkers.push(marker);
+            });
+            return nearest;
         }
 
         function addHospitalBuffers(lat, lng, facility) {
@@ -272,13 +306,14 @@
             }
         }
 
-        function getHospitalProximityAnalysis(lat, lng, facility) {
-            const currentDateTime = '09:38 PM CAT, Wednesday, August 06, 2025';
-            const distance = L.latLng(lat, lng).distanceTo([facility.lat, facility.long]) / 1000;
-            return `**Hospital Proximity Analysis (as of ${currentDateTime})**
-- Facility: ${facility.facility_name} (${facility.facility_type})
-- Distance: ${(distance).toFixed(1)} km
-${distance <= 5 ? 'Within 5 km walking distance.' : 'Beyond 5 km walking distance.'}`;
+        function getHospitalProximityAnalysis(lat, lng, nearestHospitals) {
+            const currentDateTime = '09:52 PM CAT, Wednesday, August 06, 2025';
+            return `**Nearest Hospital Analysis (as of ${currentDateTime})**
+${nearestHospitals.map((hosp, index) => {
+    const distance = L.latLng(lat, lng).distanceTo([hosp.lat, hosp.long]) / 1000;
+    return `- ${index + 1}. ${hosp.facility_name} (${hosp.facility_type}): ${(distance).toFixed(1)} km
+  ${distance <= 5 ? 'Within 5 km walking distance.' : 'Beyond 5 km walking distance.'}`;
+}).join('\n')}`;
         }
 
         async function handleMapClick(latlng, propertyData = null) {
@@ -288,20 +323,8 @@ ${distance <= 5 ? 'Within 5 km walking distance.' : 'Beyond 5 km walking distanc
             const messagesContainer = document.getElementById('chatMessages');
             messagesContainer.innerHTML = '';
             addLocationMessage(propertyData);
-            if (selectedFacility && selectedFacility.facility_type.toLowerCase() === 'hospital') {
-                addHospitalBuffers(latlng.lat, latlng.lng, selectedFacility);
-                messagesContainer.innerHTML += `<div class="message ai"><div class="message-content">${getHospitalProximityAnalysis(latlng.lat, latlng.lng, selectedFacility)}</div></div>`;
-            }
-            scrollToBottom();
-        }
-
-        function selectFacility(facility) {
-            selectedFacility = facility;
-            if (currentLocation) {
-                handleMapClick(currentLocation);
-            }
-            const messagesContainer = document.getElementById('chatMessages');
-            messagesContainer.innerHTML = `<div class="message ai"><div class="message-content">Selected facility: ${facility.facility_name} (${facility.facility_type}). Click a property to see proximity.</div></div>`;
+            const nearestHospitals = highlightNearestHospitals(latlng.lat, latlng.lng);
+            messagesContainer.innerHTML += `<div class="message ai"><div class="message-content">${getHospitalProximityAnalysis(latlng.lat, latlng.lng, nearestHospitals)}</div></div>`;
             scrollToBottom();
         }
 
@@ -352,7 +375,7 @@ ${distance <= 5 ? 'Within 5 km walking distance.' : 'Beyond 5 km walking distanc
             messagesContainer.innerHTML += `<div class="message user"><div class="message-content">${message}</div></div>`;
             chatInput.value = '';
             chatInput.style.height = 'auto';
-            messagesContainer.innerHTML += `<div class="message ai"><div class="message-content">Please select a hospital and click a property for proximity analysis.</div></div>`;
+            messagesContainer.innerHTML += `<div class="message ai"><div class="message-content">Click a property to see the nearest hospitals.</div></div>`;
             scrollToBottom();
         }
 
