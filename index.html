@@ -609,18 +609,36 @@
             try {
                 const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json');
                 const data = await response.json();
-                facilities = data.facilities || [];
-                console.log('Loaded facilities:', facilities.length);
+                
+                // Parse ESRI JSON structure
+                if (data.features && Array.isArray(data.features)) {
+                    facilities = data.features.map(feature => ({
+                        facility_name: feature.attributes.facility_name,
+                        facility_type: feature.attributes.facility_type,
+                        lat: feature.attributes.lat,
+                        long: feature.attributes.long,
+                        district: feature.attributes.district,
+                        sector: feature.attributes.sector,
+                        ownership: feature.attributes.ownership,
+                        opening_date: feature.attributes.opening_date
+                    }));
+                    console.log('Loaded facilities from JSON:', facilities.length);
+                } else {
+                    throw new Error('Invalid JSON structure');
+                }
             } catch (error) {
                 console.error('Failed to load facilities:', error);
-                // Fallback data
+                // Fallback data using some from your actual JSON
                 facilities = [
-                    { facility_name: "King Faisal Hospital", facility_type: "Hospital", lat: -1.9300, long: 30.1200 },
-                    { facility_name: "CHUK Hospital", facility_type: "Referral Hospital", lat: -1.9600, long: 30.0800 },
-                    { facility_name: "Kigali General Hospital", facility_type: "Hospital", lat: -1.9400, long: 30.1000 },
-                    { facility_name: "Rwanda Military Hospital", facility_type: "Military Hospital", lat: -1.9350, long: 30.1100 },
-                    { facility_name: "Polyclinic du Plateau", facility_type: "Clinic", lat: -1.9450, long: 30.0950 }
+                    { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, long: 30.0951, district: "Gasabo", sector: "Kacyiru" },
+                    { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, long: 30.0604, district: "Nyarugenge", sector: "Nyarugenge" },
+                    { facility_name: "Kacyiru DH", facility_type: "District Hospital", lat: -1.932984, long: 30.075489, district: "Gasabo", sector: "Kacyiru" },
+                    { facility_name: "Kibagabaga Hospital", facility_type: "District Hospital", lat: -1.9308, long: 30.112, district: "Gasabo", sector: "Kimironko" },
+                    { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro", sector: "Nyarugunga" },
+                    { facility_name: "Muhima DH", facility_type: "District Hospital", lat: -1.9367, long: 30.0585, district: "Nyarugenge", sector: "Muhima" },
+                    { facility_name: "Masaka District Hospital", facility_type: "District Hospital", lat: -1.99563, long: 30.1913, district: "Kicukiro", sector: "Masaka" }
                 ];
+                console.log('Using fallback facility data');
             }
         }
 
@@ -684,8 +702,12 @@
         function addHospitals() {
             hospitalMarkers = [];
             facilities.forEach(facility => {
-                if (facility.facility_type.toLowerCase().includes('hospital') || 
-                    facility.facility_type.toLowerCase().includes('clinic')) {
+                // Include hospitals, health centers, and district hospitals
+                const facilityType = facility.facility_type.toLowerCase();
+                if (facilityType.includes('hospital') || 
+                    facilityType.includes('health center') || 
+                    facilityType.includes('clinic')) {
+                    
                     const marker = L.marker([facility.lat, facility.long], {
                         icon: L.divIcon({
                             className: 'hospital-marker',
@@ -697,13 +719,16 @@
                     
                     marker.bindTooltip(
                         `<strong>${facility.facility_name}</strong><br>
-                        Type: ${facility.facility_type}`, 
+                        Type: ${facility.facility_type}<br>
+                        District: ${facility.district || 'N/A'}<br>
+                        Sector: ${facility.sector || 'N/A'}`, 
                         { direction: 'top', offset: [0, -10] }
                     );
                     
                     hospitalMarkers.push(marker);
                 }
             });
+            console.log(`Added ${hospitalMarkers.length} health facility markers`);
         }
 
         function selectProperty(property) {
@@ -731,8 +756,11 @@
             nearbyHospitals = [];
             
             facilities.forEach(facility => {
-                if (facility.facility_type.toLowerCase().includes('hospital') || 
-                    facility.facility_type.toLowerCase().includes('clinic')) {
+                const facilityType = facility.facility_type.toLowerCase();
+                if (facilityType.includes('hospital') || 
+                    facilityType.includes('health center') || 
+                    facilityType.includes('clinic')) {
+                    
                     const distance = L.latLng(property.lat, property.lng)
                         .distanceTo([facility.lat, facility.long]) / 1000;
                     
