@@ -1,4 +1,35 @@
-<!DOCTYPE html>
+/* Property price labels */
+        .property-price-label {
+            background: linear-gradient(135deg, rgba(15, 15, 25, 0.95), rgba(25, 25, 40, 0.95));
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        
+        .property-price-label.sale {
+            border-color: rgba(255, 107, 107, 0.4);
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.9), rgba(238, 90, 82, 0.9));
+        }
+        
+        .property-price-label.rent {
+            border-color: rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+        }
+        
+        .property-price-label.special {
+            border-color: rgba(255, 215, 0, 0.4);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 237, 78, 0.9));
+            color: #333;
+            text-shadow: none;
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -507,6 +538,86 @@
             }
         }
         
+        /* Flashing circle around hospitals */
+        .hospital-circle-flash {
+            fill: transparent;
+            stroke: #00ff88;
+            stroke-width: 3;
+            opacity: 0.8;
+            animation: circleFlash 1.5s ease-in-out infinite;
+        }
+        
+        /* Custom Leaflet Tooltip Styling */
+        .leaflet-tooltip {
+            background: linear-gradient(135deg, rgba(15, 15, 25, 0.95), rgba(25, 25, 40, 0.95)) !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        .leaflet-tooltip::before {
+            border-top-color: rgba(15, 15, 25, 0.95) !important;
+            border-bottom-color: rgba(15, 15, 25, 0.95) !important;
+        }
+        
+        /* Property tooltip styling */
+        .property-tooltip {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 10px !important;
+            color: #ffffff !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            padding: 10px 14px !important;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+            backdrop-filter: blur(15px) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Hospital tooltip styling */
+        .hospital-tooltip {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.9), rgba(0, 200, 100, 0.9)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 10px !important;
+            color: #ffffff !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            padding: 10px 14px !important;
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4) !important;
+            backdrop-filter: blur(15px) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Search location tooltip */
+        .search-tooltip {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+        }
+        
+        /* Current location tooltip */
+        .location-tooltip {
+            background: linear-gradient(135deg, rgba(255, 71, 87, 0.9), rgba(255, 50, 70, 0.9)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4) !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        }
+        
         .typing-indicator {
             display: none;
             padding: 10px 15px;
@@ -614,7 +725,7 @@
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map, currentLocation, currentProperty, facilities = [], hospitalMarkers = [];
+        let map, currentLocation, currentProperty, facilities = [], hospitalMarkers = [], hospitalCircles = [];
         let nearbyHospitals = [], currentLocationMarker = null, allPropertyMarkers = [], filteredProperties = [];
 
         // Extended property data with 20 properties across Kigali
@@ -732,11 +843,26 @@
                 }).addTo(map);
                 
                 marker.bindTooltip(
-                    `<strong>${prop.name}</strong><br>
-                    ${prop.price}<br>
-                    ${prop.bedrooms}BR • ${prop.bathrooms}BA • ${prop.area}<br>
-                    ${prop.district} District`, 
-                    { direction: 'top', offset: [0, -10] }
+                    `<div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;">${prop.name}</div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="opacity: 0.9;">Price:</span>
+                        <span style="font-weight: 600; color: #fff;">${prop.price}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="opacity: 0.9;">Size:</span>
+                        <span>${prop.bedrooms}BR • ${prop.bathrooms}BA • ${prop.area}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="opacity: 0.9;">District:</span>
+                        <span style="font-weight: 500;">${prop.district}</span>
+                    </div>`, 
+                    { 
+                        direction: 'top', 
+                        offset: [0, -15],
+                        className: 'property-tooltip',
+                        permanent: false,
+                        sticky: true
+                    }
                 );
                 
                 marker.on('click', () => selectProperty(prop));
@@ -782,9 +908,11 @@
         function analyzeHospitalProximity(property) {
             nearbyHospitals = [];
             
-            // Clear any existing hospital markers from previous selections
+            // Clear any existing hospital markers and circles from previous selections
             hospitalMarkers.forEach(marker => map.removeLayer(marker));
             hospitalMarkers = [];
+            hospitalCircles.forEach(circle => map.removeLayer(circle));
+            hospitalCircles = [];
             
             facilities.forEach(facility => {
                 const facilityType = facility.facility_type.toLowerCase();
@@ -801,6 +929,17 @@
                             distance: distance
                         });
                         
+                        // Create flashing circle around hospital
+                        const flashingCircle = L.circle([facility.lat, facility.long], {
+                            radius: 150, // 150 meter radius circle
+                            className: 'hospital-circle-flash',
+                            fillOpacity: 0,
+                            color: '#00ff88',
+                            weight: 3
+                        }).addTo(map);
+                        
+                        hospitalCircles.push(flashingCircle);
+                        
                         // Create hospital marker with flashing animation
                         const marker = L.marker([facility.lat, facility.long], {
                             icon: L.divIcon({
@@ -812,22 +951,52 @@
                         }).addTo(map);
                         
                         marker.bindTooltip(
-                            `<strong>${facility.facility_name}</strong><br>
-                            Type: ${facility.facility_type}<br>
-                            Distance: ${distance.toFixed(1)}km<br>
-                            District: ${facility.district || 'N/A'}<br>
-                            Sector: ${facility.sector || 'N/A'}`, 
-                            { direction: 'top', offset: [0, -10] }
+                            `<div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
+                                <i class="fas fa-hospital" style="margin-right: 6px; color: #00ff88;"></i>
+                                ${facility.facility_name}
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="opacity: 0.9;">Type:</span>
+                                <span style="font-weight: 500;">${facility.facility_type}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="opacity: 0.9;">Distance:</span>
+                                <span style="font-weight: 600; color: #00ff88;">${distance.toFixed(1)}km</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="opacity: 0.9;">District:</span>
+                                <span>${facility.district || 'N/A'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="opacity: 0.9;">Sector:</span>
+                                <span>${facility.sector || 'N/A'}</span>
+                            </div>`, 
+                            { 
+                                direction: 'top', 
+                                offset: [0, -15],
+                                className: 'hospital-tooltip',
+                                permanent: false,
+                                sticky: true
+                            }
                         );
                         
                         hospitalMarkers.push(marker);
                         
                         // Stop flashing after 10 seconds
                         setTimeout(() => {
+                            // Stop marker flashing
                             const markerElement = marker.getElement();
                             if (markerElement) {
                                 markerElement.classList.remove('hospital-flash');
                             }
+                            
+                            // Stop circle flashing and make it a subtle static circle
+                            flashingCircle.setStyle({
+                                className: '',
+                                color: '#00ff88',
+                                opacity: 0.3,
+                                weight: 2
+                            });
                         }, 10000);
                     }
                 }
@@ -950,6 +1119,10 @@
             // Clear hospital markers
             hospitalMarkers.forEach(marker => map.removeLayer(marker));
             hospitalMarkers = [];
+            
+            // Clear hospital circles
+            hospitalCircles.forEach(circle => map.removeLayer(circle));
+            hospitalCircles = [];
         }
 
         function handleMapClick(e) {
@@ -1022,13 +1195,24 @@
                     const searchMarker = L.marker([lat, lon], {
                         icon: L.divIcon({
                             className: 'search-location-marker',
-                            html: '<div style="width: 16px; height: 16px; background: #667eea; border: 3px solid white; border-radius: 50%;"></div>',
+                            html: '<div style="width: 16px; height: 16px; background: #667eea; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);"></div>',
                             iconSize: [16, 16],
                             iconAnchor: [8, 8]
                         })
                     }).addTo(map);
                     
-                    searchMarker.bindTooltip(`Search: ${location}`, { direction: 'top' });
+                    searchMarker.bindTooltip(
+                        `<div style="font-weight: 600; color: #fff;">
+                            <i class="fas fa-search" style="margin-right: 6px; color: #667eea;"></i>
+                            Search Result
+                        </div>
+                        <div style="margin-top: 4px; opacity: 0.9;">${location}</div>`, 
+                        { 
+                            direction: 'top',
+                            className: 'search-tooltip',
+                            permanent: false
+                        }
+                    );
                     
                     // Remove search marker after 5 seconds
                     setTimeout(() => {
@@ -1078,7 +1262,20 @@
                         })
                     }).addTo(map);
                     
-                    currentLocationMarker.bindTooltip('Your Location', { direction: 'top', permanent: true });
+                    currentLocationMarker.bindTooltip(
+                        `<div style="font-weight: 600; color: #fff;">
+                            <i class="fas fa-crosshairs" style="margin-right: 6px; color: #ff4757;"></i>
+                            Your Location
+                        </div>
+                        <div style="margin-top: 4px; opacity: 0.9; font-size: 11px;">
+                            Click nearby properties for analysis
+                        </div>`, 
+                        { 
+                            direction: 'top', 
+                            permanent: true,
+                            className: 'location-tooltip'
+                        }
+                    );
                     
                     // Center map on current location
                     map.setView([lat, lng], 15);
