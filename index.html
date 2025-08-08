@@ -442,6 +442,7 @@
             this.schoolMarkers = [];
             this.filteredProperties = [];
             this.markerCluster = null;
+            this.initialLoadLimit = 100;
             this.init();
         }
         async init() {
@@ -449,9 +450,12 @@
             this.initializeMap();
             this.setupEventListeners();
             setTimeout(() => {
-                document.getElementById('loadingOverlay').classList.add('hidden');
-                this.map.invalidateSize();
-            }, 1000);
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (this.properties.length === 0) {
+                    loadingOverlay.querySelector('.loading-text').textContent = 'No valid properties found. Using sample data.';
+                }
+                setTimeout(() => loadingOverlay.classList.add('hidden'), 500);
+            }, 10000);
         }
         async loadData() {
             const cacheKey = 'propertyIntelData';
@@ -475,11 +479,14 @@
                 }
             }
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
                 const [propRes, hospRes, schoolRes] = await Promise.all([
-                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_RealEstate_Properties.json'),
-                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json'),
-                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json')
+                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_RealEstate_Properties.json', { signal: controller.signal }),
+                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json', { signal: controller.signal }),
+                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json', { signal: controller.signal })
                 ]);
+                clearTimeout(timeoutId);
                 if (!propRes.ok) throw new Error(`Properties fetch failed: ${propRes.status}`);
                 if (!hospRes.ok) throw new Error(`Hospitals fetch failed: ${hospRes.status}`);
                 if (!schoolRes.ok) throw new Error(`Schools fetch failed: ${schoolRes.status}`);
@@ -499,6 +506,7 @@
                 console.log('Loaded from server:', this.properties.length, 'properties');
             } catch (error) {
                 console.error('Data load failed:', error.message);
+                document.getElementById('loadingOverlay').querySelector('.loading-text').textContent = 'Loading failed. Using sample data...';
                 this.properties = [
                     {
                         id: 1,
@@ -530,7 +538,6 @@
                 this.schools = [
                     { school_name: 'Green Hills Academy', lat: -1.9556, lng: 30.1044 }
                 ];
-                alert('Failed to load data. Using sample data. Check console for details.');
             }
         }
         validateData(data) {
@@ -546,34 +553,59 @@
                 console.error('Invalid properties JSON structure. Expected "features" array.');
                 return [];
             }
+            const invalidFeatures = [];
             const properties = data.features
-                .filter(f => f.geometry && f.geometry.x && f.geometry.y && f.attributes)
-                .map(f => ({
-                    id: f.attributes.PropertyID || `prop_${Math.random().toString(36).slice(2)}`,
-                    lat: parseFloat(f.geometry.y),
-                    lng: parseFloat(f.geometry.x),
-                    name: f.attributes.Name || 'Unnamed Property',
-                    type: f.attributes.PropertyType || 'Unknown',
-                    price: f.attributes.Price || 'N/A',
-                    status: f.attributes.Status?.toLowerCase() || 'unknown',
-                    bedrooms: f.attributes.Bedrooms || 0,
-                    bathrooms: f.attributes.Bathrooms || 0,
-                    area: f.attributes.Area || 'N/A',
-                    district: f.attributes.District || 'Unknown',
-                    category: f.attributes.Category || 'Unknown',
-                    sector: f.attributes.Sector || 'Unknown',
-                    zoning: f.attributes.Zoning || 'Unknown',
-                    amenities: f.attributes.Amenities || 'None',
-                    pricePerSqm: f.attributes.PricePerSqm || '0',
-                    yearBuilt: f.attributes.YearBuilt || 'Unknown',
-                    source: f.attributes.Source || 'Unknown',
-                    contactInfo: f.attributes.ContactInfo || 'N/A',
-                    description: f.attributes.Description || 'No description',
-                    lastUpdated: f.attributes.LastUpdated || 'Unknown'
-                }))
-                .filter(p => !isNaN(p.lat) && !isNaN(p.lng));
+                .map((f, index) => {
+                    if (!f.geometry || typeof f.geometry.x !== 'number' || typeof f.geometry.y !== 'number') {
+                        invalidFeatures.push({ index, reason: 'Missing or invalid geometry' });
+                        return null;
+                    }
+                    if (!f.attributes) {
+                        invalidFeatures.push({ index, reason: 'Missing attributes' });
+                        return null;
+                    }
+                    const lat = parseFloat(f.geometry.y);
+                    const lng = parseFloat(f.geometry.x);
+                    if (isNaN(lat) || isNaN(lng)) {
+                        invalidFeatures.push({ index, reason: `Invalid coordinates (lat: ${f.geometry.y}, lng: ${f.geometry.x})` });
+                        return null;
+                    }
+                    // Validate coordinate range for Kigali (approx. -2.1 to -1.8 lat, 29.9 to 30.3 lng)
+                    if (lat < -2.1 || lat > -1.8 || lng < 29.9 || lng > 30.3) {
+                        invalidFeatures.push({ index, reason: `Coordinates out of range (lat: ${lat}, lng: ${lng})` });
+                        return null;
+                    }
+                    return {
+                        id: f.attributes.PropertyID || `prop_${Math.random().toString(36).slice(2)}`,
+                        lat,
+                        lng,
+                        name: f.attributes.Name || 'Unnamed Property',
+                        type: f.attributes.PropertyType || 'Unknown',
+                        price: f.attributes.Price || 'N/A',
+                        status: f.attributes.Status?.toLowerCase() || 'unknown',
+                        bedrooms: f.attributes.Bedrooms || 0,
+                        bathrooms: f.attributes.Bathrooms || 0,
+                        area: f.attributes.Area || 'N/A',
+                        district: f.attributes.District || 'Unknown',
+                        category: f.attributes.Category || 'Unknown',
+                        sector: f.attributes.Sector || 'Unknown',
+                        zoning: f.attributes.Zoning || 'Unknown',
+                        amenities: f.attributes.Amenities || 'None',
+                        pricePerSqm: f.attributes.PricePerSqm || '0',
+                        yearBuilt: f.attributes.YearBuilt || 'Unknown',
+                        source: f.attributes.Source || 'Unknown',
+                        contactInfo: f.attributes.ContactInfo || 'N/A',
+                        description: f.attributes.Description || 'No description',
+                        lastUpdated: f.attributes.LastUpdated || 'Unknown'
+                    };
+                })
+                .filter(p => p !== null);
+            if (invalidFeatures.length > 0) {
+                console.warn(`Skipped ${invalidFeatures.length} invalid features:`, invalidFeatures);
+            }
             if (properties.length === 0) {
-                console.warn('No valid properties found in JSON data.');
+                console.error('No valid properties found in JSON data. Check geometry.x and geometry.y fields.');
+                document.getElementById('loadingOverlay').querySelector('.loading-text').textContent = 'No valid properties found. Check data source.';
             }
             return properties;
         }
@@ -614,6 +646,7 @@
             }).addTo(this.map);
             this.addProperties();
             this.map.on('click', () => this.clearSelection());
+            this.map.on('moveend zoomend', () => this.updateVisibleMarkers());
             new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
         }
         addProperties() {
@@ -622,7 +655,7 @@
                 document.getElementById('chatMessages').innerHTML = `
                     <div class="message ai">
                         <div class="message-content">
-                            No properties loaded. Please check the data source or try again later.
+                            No properties loaded. Please check the data source (geometry.x and geometry.y fields).
                         </div>
                     </div>`;
                 return;
@@ -633,34 +666,45 @@
                     html: `<div style="background: var(--primary); color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${cluster.getChildCount()}</div>`,
                     className: 'marker-cluster',
                     iconSize: [36, 36]
-                })
+                }),
+                maxClusterRadius: 80
             });
-            this.filteredProperties.forEach(prop => {
-                if (!prop.lat || !prop.lng) {
-                    console.warn(`Invalid coordinates for property: ${prop.name}`);
-                    return;
-                }
-                const marker = L.marker([prop.lat, prop.lng], {
-                    icon: L.divIcon({
-                        className: `property-marker ${prop.status}`,
-                        html: `<div style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                });
-                marker.bindTooltip(`
-                    <strong>${this.sanitizeHTML(prop.name)}</strong><br>
-                    Type: ${this.sanitizeHTML(prop.type)}<br>
-                    Price: ${this.sanitizeHTML(prop.price)}<br>
-                    ${prop.bedrooms ? `${prop.bedrooms}BR • ${prop.bathrooms}BA` : ''}<br>
-                    District: ${this.sanitizeHTML(prop.district)}
-                `, { direction: 'top', offset: [0, -10] });
-                marker.on('click', () => this.selectProperty(prop, marker));
-                this.markerCluster.addLayer(marker);
-            });
+            this.updateVisibleMarkers();
             this.map.addLayer(this.markerCluster);
             this.updateFilterSummary();
-            this.map.invalidateSize();
+        }
+        updateVisibleMarkers() {
+            const bounds = this.map.getBounds();
+            const visibleProperties = this.filteredProperties
+                .slice(0, this.initialLoadLimit)
+                .filter(p => bounds.contains([p.lat, p.lng]));
+            this.markerCluster.clearLayers();
+            requestAnimationFrame(() => {
+                visibleProperties.forEach(prop => {
+                    if (!prop.lat || !prop.lng) {
+                        console.warn(`Invalid coordinates for property: ${prop.name}`);
+                        return;
+                    }
+                    const marker = L.marker([prop.lat, prop.lng], {
+                        icon: L.divIcon({
+                            className: `property-marker ${prop.status}`,
+                            html: `<div style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    });
+                    marker.bindTooltip(`
+                        <strong>${this.sanitizeHTML(prop.name)}</strong><br>
+                        Type: ${this.sanitizeHTML(prop.type)}<br>
+                        Price: ${this.sanitizeHTML(prop.price)}<br>
+                        ${prop.bedrooms ? `${prop.bedrooms}BR • ${prop.bathrooms}BA` : ''}<br>
+                        District: ${this.sanitizeHTML(prop.district)}
+                    `, { direction: 'top', offset: [0, -10] });
+                    marker.on('click', () => this.selectProperty(prop, marker));
+                    this.markerCluster.addLayer(marker);
+                });
+                this.map.invalidateSize();
+            });
         }
         selectProperty(property, marker) {
             if (this.selectedMarker) {
@@ -670,7 +714,7 @@
             this.selectedMarker = marker;
             marker.getElement()?.classList.add('selected');
             this.analyzeProximity(property);
-            this.map.setView([prop.lat, prop.lng], 15);
+            this.map.setView([property.lat, property.lng], 15);
         }
         clearSelection() {
             if (this.selectedMarker) {
@@ -777,7 +821,7 @@
                             <div class="facility-name">${this.sanitizeHTML(h.facility_name)}</div>
                             <div class="facility-distance">${h.distance.toFixed(1)}km</div>
                         </div>`;
-                    });
+                });
                 hospitalHtml += `</div></div>`;
                 messagesContainer.innerHTML += hospitalHtml;
             } else {
@@ -818,33 +862,8 @@
                 }
                 return true;
             });
-            this.markerCluster.clearLayers();
-            this.filteredProperties.forEach(p => {
-                if (!p.lat || !p.lng) {
-                    console.warn(`Invalid coordinates for filtered property: ${p.name}`);
-                    return;
-                }
-                const marker = L.marker([p.lat, p.lng], {
-                    icon: L.divIcon({
-                        className: `property-marker ${p.status}`,
-                        html: `<div style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
-                        iconSize: [20, 20],
-                        iconAnchor: [10, 10]
-                    })
-                });
-                marker.bindTooltip(`
-                    <strong>${this.sanitizeHTML(p.name)}</strong><br>
-                    Type: ${this.sanitizeHTML(p.type)}<br>
-                    Price: ${this.sanitizeHTML(p.price)}<br>
-                    ${p.bedrooms ? `${p.bedrooms}BR • ${p.bathrooms}BA` : ''}<br>
-                    District: ${this.sanitizeHTML(p.district)}
-                `, { direction: 'top', offset: [0, -10] });
-                marker.on('click', () => this.selectProperty(p, marker));
-                this.markerCluster.addLayer(marker);
-            });
-            this.map.addLayer(this.markerCluster);
+            this.updateVisibleMarkers();
             this.updateFilterSummary();
-            this.map.invalidateSize();
         }
         updateFilterSummary() {
             const filterSummary = document.getElementById('filterSummary');
