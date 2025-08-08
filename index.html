@@ -1,4 +1,435 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropertyIntel Kigali</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --primary: #667eea;
+            --success: #00ff88;
+            --education: #4CAF50;
+            --dark: #0a0a0f;
+            --glass: rgba(15, 15, 25, 0.95);
+            --glass-light: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 15, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        .chat-container {
+            width: 350px;
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            border-right: 1px solid var(--glass-light);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .chat-container.collapsed {
+            width: 50px;
+            overflow: hidden;
+        }
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .chat-container {
+                width: 100%;
+                height: 40vh;
+                min-height: 300px;
+                border-right: none;
+                border-top: 1px solid var(--glass-light);
+                order: 2;
+            }
+            .chat-container.collapsed {
+                height: 50px;
+            }
+            .map-container {
+                height: 60vh;
+                order: 1;
+            }
+            .map-container.fullscreen {
+                height: 100vh !important;
+                z-index: 1000;
+            }
+            .search-controls {
+                padding: 10px;
+            }
+            .filter-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .compact-filter {
+                width: 100%;
+                padding: 10px;
+            }
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+        }
+        .chat-header {
+            padding: 15px;
+            background: var(--primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--glass-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header small {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            display: block;
+            margin-top: 5px;
+        }
+        .toggle-chat-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #fff;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .toggle-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            scroll-behavior: smooth;
+            background: rgba(10, 10, 15, 0.3);
+        }
+        .message {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .message.ai .message-content {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .location-info, .proximity-analysis, .school-proximity {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .facility-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .hospital-item {
+            border-left: 3px solid var(--success);
+        }
+        .school-item {
+            border-left: 3px solid var(--education);
+        }
+        .facility-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .facility-name {
+            font-weight: 600;
+        }
+        .facility-distance {
+            color: #ccc;
+            font-size: 0.8rem;
+        }
+        .search-controls {
+            padding: 10px;
+            background: rgba(10, 10, 15, 0.8);
+            border-bottom: 1px solid var(--glass-light);
+        }
+        .search-box {
+            background: #fff;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+        }
+        .main-search-input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #333;
+            font-size: 1rem;
+        }
+        .search-icon-btn {
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+        }
+        .search-icon-btn:hover {
+            background: #f5f5f5;
+        }
+        .filter-row {
+            display: flex;
+            gap: 8px;
+        }
+        .compact-filter {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .compact-filter:focus {
+            border-color: var(--primary);
+        }
+        .filter-summary {
+            font-size: 0.8rem;
+            color: #999;
+            text-align: center;
+            padding: 5px;
+        }
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(10, 10, 15, 0.5);
+            border-top: 1px solid var(--glass-light);
+        }
+        .quick-action-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            color: var(--primary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: center;
+        }
+        .quick-action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        .property-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+        .property-marker.sale {
+            background: #ff6b6b;
+        }
+        .property-marker.rent {
+            background: var(--primary);
+        }
+        .property-marker.selected {
+            transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        .hospital-marker {
+            width: 16px;
+            height: 16px;
+            background: var(--success);
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+        .school-marker {
+            width: 16px;
+            height: 16px;
+            background: var(--education);
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+        .leaflet-tooltip {
+            background: rgba(15, 15, 25, 0.9) !important;
+            border: 1px solid var(--primary) !important;
+            border-radius: 6px !important;
+            color: #fff !important;
+            font-size: 0.9rem !important;
+            padding: 6px !important;
+        }
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+        }
+        .map-control-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-light);
+            color: #fff;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .map-control-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Properties...</div>
+    </div>
+    <div class="main-container">
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-header">
+                <div>
+                    PropertyIntel Kigali
+                    <small>Explore Properties & Amenities</small>
+                </div>
+                <button class="toggle-chat-btn" onclick="toggleChat()" aria-label="Toggle chat panel">
+                    <i class="fas fa-chevron-left" id="toggleIcon"></i>
+                </button>
+            </div>
+            <div class="search-controls">
+                <div class="search-box">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="locationSearch" class="main-search-input" 
+                               placeholder="Search address in Kigali" aria-label="Search location">
+                        <button id="searchBtn" class="search-icon-btn" aria-label="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <select id="statusFilter" class="compact-filter" aria-label="Filter by status">
+                        <option value="">All Status</option>
+                        <option value="sale">For Sale</option>
+                        <option value="rent">For Rent</option>
+                    </select>
+                    <select id="priceFilter" class="compact-filter" aria-label="Filter by price range">
+                        <option value="">All Prices</option>
+                        <option value="0-50">Under 50M</option>
+                        <option value="50-100">50M-100M</option>
+                        <option value="100+">Above 100M</option>
+                    </select>
+                </div>
+                <div class="filter-summary" id="filterSummary">
+                    Showing all properties
+                </div>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-action-btn" onclick="analyzeEducation()" aria-label="Analyze education access">
+                    <i class="fas fa-graduation-cap"></i> Schools
+                </button>
+                <button class="quick-action-btn" onclick="analyzeHealthcare()" aria-label="Analyze healthcare access">
+                    <i class="fas fa-hospital"></i> Healthcare
+                </button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">
+                    <div class="message-content">
+                        Welcome to PropertyIntel Kigali! 🏠<br><br>
+                        Click a property on the map to see details and nearby schools or healthcare facilities.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="map-container">
+            <div class="map-controls">
+                <button class="map-control-btn" onclick="toggleFullscreen()" aria-label="Toggle fullscreen">
+                    <i class="fas fa-expand" id="fullscreenIcon"></i>
+                </button>
+                <button class="map-control-btn" onclick="locateMe()" aria-label="Find my location">
+                    <i class="fas fa-location-arrow"></i>
+                </button>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script>
+        class SpatialIntelligenceSystem {
+          <script>
     class SpatialIntelligenceSystem {
         constructor() {
             this.map = null;
@@ -21,7 +452,7 @@
             this.setupEventListeners();
             setTimeout(() => {
                 document.getElementById('loadingOverlay').classList.add('hidden');
-                this.map.invalidateSize(); // Ensure map refreshes after loading
+                this.map.invalidateSize();
             }, 1000);
         }
         async loadData() {
@@ -59,11 +490,9 @@
                     hospRes.json(),
                     schoolRes.json()
                 ]);
-                // Validate and parse properties
                 this.properties = this.parseProperties(propData);
                 this.hospitals = this.parseHospitals(hospData);
                 this.schools = this.parseSchools(schoolData);
-                // Cache validated data
                 localStorage.setItem(cacheKey, JSON.stringify({
                     properties: this.properties,
                     hospitals: this.hospitals,
@@ -72,9 +501,30 @@
                 console.log('Loaded from server:', this.properties.length, 'properties');
             } catch (error) {
                 console.error('Data load failed:', error.message);
-                // Fallback to sample data
                 this.properties = [
-                    { id: 1, lat: -1.9441, lng: 30.0619, name: 'City Center Apartment', type: 'Apartment', price: '80M RWF', status: 'sale', bedrooms: 2, bathrooms: 2, area: '100m²', district: 'Nyarugenge' }
+                    {
+                        id: 1,
+                        lat: -1.9441,
+                        lng: 30.0619,
+                        name: 'City Center Apartment',
+                        type: 'Apartment',
+                        price: '80M RWF',
+                        status: 'sale',
+                        bedrooms: 2,
+                        bathrooms: 2,
+                        area: '100m²',
+                        district: 'Nyarugenge',
+                        category: 'Residential',
+                        sector: 'Unknown',
+                        zoning: 'Unknown',
+                        amenities: 'None',
+                        pricePerSqm: '0',
+                        yearBuilt: 'Unknown',
+                        source: 'Sample',
+                        contactInfo: 'N/A',
+                        description: 'Sample property',
+                        lastUpdated: '2025-08-08'
+                    }
                 ];
                 this.hospitals = [
                     { facility_name: 'King Faisal Hospital', facility_type: 'Hospital', lat: -1.9439, long: 30.0951 }
@@ -99,11 +549,11 @@
                 return [];
             }
             const properties = data.features
-                .filter(f => f.attributes && f.attributes.lat && f.attributes.lng)
+                .filter(f => f.geometry && f.geometry.x && f.geometry.y && f.attributes)
                 .map(f => ({
                     id: f.attributes.PropertyID || `prop_${Math.random().toString(36).slice(2)}`,
-                    lat: parseFloat(f.attributes.lat),
-                    lng: parseFloat(f.attributes.lng),
+                    lat: parseFloat(f.geometry.y),
+                    lng: parseFloat(f.geometry.x),
                     name: f.attributes.Name || 'Unnamed Property',
                     type: f.attributes.PropertyType || 'Unknown',
                     price: f.attributes.Price || 'N/A',
@@ -111,7 +561,17 @@
                     bedrooms: f.attributes.Bedrooms || 0,
                     bathrooms: f.attributes.Bathrooms || 0,
                     area: f.attributes.Area || 'N/A',
-                    district: f.attributes.District || 'Unknown'
+                    district: f.attributes.District || 'Unknown',
+                    category: f.attributes.Category || 'Unknown',
+                    sector: f.attributes.Sector || 'Unknown',
+                    zoning: f.attributes.Zoning || 'Unknown',
+                    amenities: f.attributes.Amenities || 'None',
+                    pricePerSqm: f.attributes.PricePerSqm || '0',
+                    yearBuilt: f.attributes.YearBuilt || 'Unknown',
+                    source: f.attributes.Source || 'Unknown',
+                    contactInfo: f.attributes.ContactInfo || 'N/A',
+                    description: f.attributes.Description || 'No description',
+                    lastUpdated: f.attributes.LastUpdated || 'Unknown'
                 }))
                 .filter(p => !isNaN(p.lat) && !isNaN(p.lng));
             if (properties.length === 0) {
@@ -194,16 +654,16 @@
                     <strong>${this.sanitizeHTML(prop.name)}</strong><br>
                     Type: ${this.sanitizeHTML(prop.type)}<br>
                     Price: ${this.sanitizeHTML(prop.price)}<br>
-                    ${prop.bedrooms ? `${prop.bedrooms}BR • ${prop.bathrooms}BA` : ''}
+                    ${prop.bedrooms ? `${prop.bedrooms}BR • ${prop.bathrooms}BA` : ''}<br>
+                    District: ${this.sanitizeHTML(prop.district)}
                 `, { direction: 'top', offset: [0, -10] });
                 marker.on('click', () => this.selectProperty(prop, marker));
                 this.markerCluster.addLayer(marker);
             });
             this.map.addLayer(this.markerCluster);
             this.updateFilterSummary();
-            this.map.invalidateSize(); // Ensure map renders markers
+            this.map.invalidateSize();
         }
-        // ... (rest of the class methods remain unchanged)
         selectProperty(property, marker) {
             if (this.selectedMarker) {
                 this.selectedMarker.getElement()?.classList.remove('selected');
@@ -212,7 +672,7 @@
             this.selectedMarker = marker;
             marker.getElement()?.classList.add('selected');
             this.analyzeProximity(property);
-            this.map.setView([property.lat, property.lng], 15);
+            this.map.setView([prop.lat, prop.lng], 15);
         }
         clearSelection() {
             if (this.selectedMarker) {
@@ -280,7 +740,10 @@
                     Type: ${this.sanitizeHTML(property.type)}<br>
                     Price: ${this.sanitizeHTML(property.price)}<br>
                     ${property.bedrooms ? `Details: ${property.bedrooms}BR • ${property.bathrooms}BA • ${this.sanitizeHTML(property.area)}<br>` : `Area: ${this.sanitizeHTML(property.area)}<br>`}
-                    District: ${this.sanitizeHTML(property.district)}
+                    District: ${this.sanitizeHTML(property.district)}<br>
+                    Sector: ${this.sanitizeHTML(property.sector)}<br>
+                    Category: ${this.sanitizeHTML(property.category)}<br>
+                    Amenities: ${this.sanitizeHTML(property.amenities)}
                 </div>`;
             if (this.nearbySchools.length > 0) {
                 let schoolHtml = `
@@ -316,7 +779,7 @@
                             <div class="facility-name">${this.sanitizeHTML(h.facility_name)}</div>
                             <div class="facility-distance">${h.distance.toFixed(1)}km</div>
                         </div>`;
-                });
+                    });
                 hospitalHtml += `</div></div>`;
                 messagesContainer.innerHTML += hospitalHtml;
             } else {
@@ -375,7 +838,8 @@
                     <strong>${this.sanitizeHTML(p.name)}</strong><br>
                     Type: ${this.sanitizeHTML(p.type)}<br>
                     Price: ${this.sanitizeHTML(p.price)}<br>
-                    ${p.bedrooms ? `${p.bedrooms}BR • ${p.bathrooms}BA` : ''}
+                    ${p.bedrooms ? `${p.bedrooms}BR • ${p.bathrooms}BA` : ''}<br>
+                    District: ${this.sanitizeHTML(p.district)}
                 `, { direction: 'top', offset: [0, -10] });
                 marker.on('click', () => this.selectProperty(p, marker));
                 this.markerCluster.addLayer(marker);
@@ -493,4 +957,6 @@
     window.addEventListener('DOMContentLoaded', () => {
         spatialSystem = new SpatialIntelligenceSystem();
     });
-</script>
+    </script>
+</body>
+</html>
