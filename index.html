@@ -3,1254 +3,573 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropertyIntel Kigali - Schools & Spatial Intelligence</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>PropertyIntel Kigali - Find Your Perfect Home Near Schools</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        :root {
-            --primary: #667eea;
-            --primary-dark: #764ba2;
-            --success: #00ff88;
-            --success-dark: #00cc6a;
-            --danger: #ff4757;
-            --warning: #ffd700;
-            --education: #4CAF50;
-            --education-dark: #2E7D32;
-            --dark: #0a0a0f;
-            --dark-light: #16213e;
-            --glass: rgba(15, 15, 25, 0.95);
-            --glass-light: rgba(255, 255, 255, 0.1);
-        }
-        
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
-            color: #ffffff;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        .main-container {
             display: flex;
             height: 100vh;
-            position: relative;
-        }
-        
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(10, 10, 15, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
-        
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(102, 126, 234, 0.2);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
-            color: var(--primary);
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        /* Desktop Layout */
-        .chat-container {
-            width: 420px;
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid var(--glass-light);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 30px rgba(102, 126, 234, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .chat-container.collapsed {
-            width: 60px;
             overflow: hidden;
-        }
-        
-        .map-container {
-            flex: 1;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        
-        /* Mobile Layout */
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-            }
-            .chat-container {
-                width: 100%;
-                height: 45vh;
-                min-height: 350px;
-                border-right: none;
-                border-top: 1px solid var(--glass-light);
-                order: 2;
-            }
-            .chat-container.collapsed {
-                height: 60px;
-            }
-            .map-container {
-                height: 55vh;
-                order: 1;
-            }
-            .map-container.fullscreen {
-                height: 100vh !important;
-                z-index: 1000;
-            }
-            .search-controls {
-                padding: 12px;
-            }
-            .filter-row {
-                flex-direction: column;
-                gap: 8px;
-            }
-            .compact-filter {
-                width: 100%;
-                min-width: unset;
-                padding: 12px 16px;
-                font-size: 1rem;
-            }
-        }
-        
-        #map {
-            width: 100%;
-            height: 100%;
             background: #1a1a2e;
+            color: #fff;
         }
-        
-        .chat-header {
-            padding: 20px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            font-size: 1.3rem;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            border-bottom: 1px solid var(--glass-light);
+
+        #map {
+            flex: 3;
+            height: 100%;
+            background: #162447;
+            transition: all 0.3s ease;
+        }
+
+        #map.fullscreen {
+            flex: 1 !important;
+            width: 100% !important;
+        }
+
+        #chatPanel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            max-width: 400px;
+        }
+
+        #chatPanel.collapsed {
+            max-width: 50px;
+            min-width: 50px;
+        }
+
+        #chatPanel.collapsed #chatContent {
+            display: none;
+        }
+
+        #chatHeader {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
-        .chat-header-content {
+
+        #chatMessages {
             flex: 1;
-        }
-        
-        .chat-header small {
-            font-size: 0.85rem;
-            opacity: 0.9;
-            font-weight: 400;
-            display: block;
-            margin-top: 4px;
-        }
-        
-        .toggle-chat-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .toggle-chat-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        .chat-messages {
-            flex: 1;
+            padding: 20px;
             overflow-y: auto;
-            padding: 15px;
-            scroll-behavior: smooth;
-            background: rgba(10, 10, 15, 0.3);
-            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
-        
-        /* Message Styles */
+
         .message {
-            margin-bottom: 15px;
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(10px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
-        }
-        
-        .message.ai .message-content {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 15px 15px 15px 4px;
-            padding: 12px 15px;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        
-        .message.user .message-content {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 200, 100, 0.15) 100%);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            border-radius: 15px 15px 4px 15px;
-            padding: 12px 15px;
-            font-size: 0.9rem;
-            margin-left: auto;
             max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.5;
         }
-        
-        /* Chat Input */
-        .chat-input-container {
+
+        .message.user {
+            background: #667eea;
+            align-self: flex-end;
+        }
+
+        .message.ai {
+            background: rgba(255, 255, 255, 0.15);
+            align-self: flex-start;
+        }
+
+        .message-content {
+            word-wrap: break-word;
+        }
+
+        #chatInputContainer {
             padding: 15px;
-            background: rgba(10, 10, 15, 0.8);
-            border-top: 1px solid var(--glass-light);
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
-        
-        .chat-input {
+
+        #chatInput {
             width: 100%;
-            padding: 12px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 25px;
-            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
-            font-size: 0.9rem;
             resize: none;
+            font-size: 14px;
+        }
+
+        #chatInput:focus {
             outline: none;
-            transition: all 0.3s ease;
-            max-height: 100px;
+            background: rgba(255, 255, 255, 0.2);
         }
-        
-        .chat-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .send-btn {
+
+        #sendButton {
             margin-top: 10px;
-            padding: 12px 24px;
-            border-radius: 25px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 10px;
+            width: 100%;
+            background: #667eea;
             color: #fff;
             border: none;
+            border-radius: 5px;
             cursor: pointer;
-            width: 100%;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
+            font-size: 14px;
+            transition: background 0.3s;
         }
-        
-        .send-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .send-btn:disabled {
-            opacity: 0.5;
+
+        #sendButton:disabled {
+            background: #4b5a8a;
             cursor: not-allowed;
         }
-        
-        /* Property Markers */
-        .property-marker {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 3px solid white;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            position: relative;
+
+        #sendButton:hover:not(:disabled) {
+            background: #5468d6;
         }
-        
-        .property-marker:hover {
-            transform: scale(1.4);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
-            animation: glow 1.5s ease-in-out infinite;
+
+        #typingIndicator {
+            display: none;
+            font-style: italic;
+            color: #aaa;
+            margin-left: 15px;
         }
-        
-        .property-marker.sale {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-        }
-        
-        .property-marker.rent {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        }
-        
-        .property-marker.special {
-            background: linear-gradient(135deg, var(--warning), #ffed4e);
-            animation: pulse 2s infinite;
-        }
-        
-        .property-marker.selected {
-            transform: scale(1.5);
-            box-shadow: 0 0 30px rgba(102, 126, 234, 0.8);
-        }
-        
-        .property-marker.selected::after {
-            content: '';
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border: 2px solid var(--primary);
-            border-radius: 50%;
-            top: -8px;
-            left: -8px;
-            animation: ripple 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
-            50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.9); }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        @keyframes ripple {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
-        }
-        
-        /* Hospital Markers */
-        .hospital-marker {
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, var(--success), var(--success-dark));
-            border: 3px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-        }
-        
-        .hospital-marker:hover {
-            transform: scale(1.5);
-            box-shadow: 0 0 25px rgba(0, 255, 136, 0.8);
-        }
-        
-        /* School Markers */
-        .school-marker {
-            width: 22px;
-            height: 22px;
-            background: linear-gradient(135deg, var(--education), var(--education-dark));
-            border: 3px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .school-marker:hover {
-            transform: scale(1.5);
-            box-shadow: 0 0 25px rgba(76, 175, 80, 0.8);
-        }
-        
-        .school-marker::before {
-            content: '🎓';
-            position: absolute;
-            top: -2px;
-            left: 1px;
-            font-size: 12px;
-        }
-        
-        .school-flash {
-            animation: schoolFlash 1s ease-in-out infinite;
-        }
-        
-        @keyframes schoolFlash {
-            0%, 100% { 
-                opacity: 1; 
-                transform: scale(1);
-                box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
-            }
-            50% { 
-                opacity: 0.3; 
-                transform: scale(1.3);
-                box-shadow: 0 0 20px rgba(76, 175, 80, 0.9);
-            }
-        }
-        
-        /* Info Panels */
-        .location-info {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            font-size: 0.85rem;
-            border: 1px solid var(--glass-light);
-            backdrop-filter: blur(5px);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .location-info::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
-        }
-        
-        .location-info .status-sale { color: #ff6b6b; font-weight: bold; }
-        .location-info .status-rent { color: var(--primary); font-weight: bold; }
-        .location-info .status-special { color: var(--warning); font-weight: bold; }
-        
-        .proximity-analysis {
-            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 200, 100, 0.1));
-            border: 1px solid rgba(0, 255, 136, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin: 10px 0;
-            font-size: 0.85rem;
-        }
-        
-        .school-proximity {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(46, 125, 50, 0.1));
-            border: 1px solid rgba(76, 175, 80, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin: 10px 0;
-            font-size: 0.85rem;
-        }
-        
-        .facility-list {
-            margin-top: 10px;
-        }
-        
-        .facility-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            margin: 5px 0;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .hospital-item {
-            border-left: 3px solid var(--success);
-        }
-        
-        .school-item {
-            border-left: 3px solid var(--education);
-        }
-        
-        .facility-item:hover {
-            background: rgba(255,255,255,0.1);
-            transform: translateX(5px);
-        }
-        
-        .facility-name {
-            font-weight: 600;
-        }
-        
-        .hospital-name {
-            color: var(--success);
-        }
-        
-        .school-name {
-            color: var(--education);
-        }
-        
-        .facility-distance {
-            color: #ccc;
-            font-size: 0.8rem;
-        }
-        
-        .ai-insights {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-            border: 1px solid rgba(102, 126, 234, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin: 10px 0;
-            font-size: 0.85rem;
-        }
-        
-        .insight-tag {
-            display: inline-block;
-            background: rgba(102, 126, 234, 0.2);
-            color: var(--primary);
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            margin: 2px;
-            font-weight: 600;
-        }
-        
-        .education-tag {
-            background: rgba(76, 175, 80, 0.2);
-            color: var(--education);
-        }
-        
-        /* Search Controls */
-        .search-controls {
-            background: rgba(15, 15, 25, 0.8);
-            padding: 15px;
-            border-bottom: 1px solid var(--glass-light);
-        }
-        
-        .search-box {
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            overflow: hidden;
-            margin-bottom: 12px;
-        }
-        
-        .search-input-wrapper {
-            display: flex;
-            align-items: center;
-        }
-        
-        .main-search-input {
-            flex: 1;
-            padding: 14px 16px;
-            border: none;
-            background: transparent;
-            color: #333;
-            font-size: 16px;
-            outline: none;
-        }
-        
-        .search-icon-btn {
-            padding: 14px 16px;
-            border: none;
-            background: transparent;
-            color: #666;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s ease;
-        }
-        
-        .search-icon-btn:hover {
-            background: #f5f5f5;
-        }
-        
-        .search-options {
-            border-top: 1px solid #e0e0e0;
-            background: #f8f9fa;
-        }
-        
-        .location-option {
-            width: 100%;
-            padding: 12px 16px;
-            border: none;
-            background: transparent;
-            color: #1a73e8;
-            font-size: 14px;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: background 0.3s ease;
-        }
-        
-        .location-option:hover {
-            background: #e8f0fe;
-        }
-        
-        /* Layer Controls */
-        .layer-controls {
-            padding: 10px 15px;
-            background: rgba(10, 10, 15, 0.5);
-            border-bottom: 1px solid var(--glass-light);
-        }
-        
-        .layer-toggle {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .layer-btn {
-            padding: 6px 12px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 15px;
-            color: #fff;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .layer-btn.active {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .layer-btn:hover {
-            background: rgba(102, 126, 234, 0.3);
-        }
-        
-        /* Filter Controls */
-        .filter-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-        
-        .compact-filter {
-            flex: 1;
-            min-width: 100px;
-            padding: 8px 12px;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            background: rgba(255,255,255,0.05);
-            color: #fff;
-            font-size: 0.8rem;
-            outline: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .compact-filter:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
-        }
-        
-        .compact-filter option {
-            background: #1a1a2e;
-            color: #fff;
-        }
-        
-        .filter-summary {
-            font-size: 0.75rem;
-            color: #999;
-            text-align: center;
-            padding: 5px;
-        }
-        
-        /* Stats Panel */
-        .stats-panel {
+
+        #controlPanel {
             position: absolute;
             top: 10px;
             left: 10px;
-            background: var(--glass);
-            border: 1px solid var(--glass-light);
-            border-radius: 12px;
-            padding: 15px;
-            z-index: 1000;
-            min-width: 220px;
+            background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-width: 300px;
+            width: 100%;
         }
-        
-        .stats-panel h3 {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: var(--primary);
+
+        .control-group {
+            margin-bottom: 15px;
         }
-        
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            font-size: 0.85rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .stat-value {
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
             font-weight: 600;
-            color: var(--primary);
         }
-        
-        /* Map Controls */
-        .map-controls {
+
+        .control-group select,
+        .control-group input[type="range"],
+        .control-group input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group input[type="range"] {
+            padding: 0;
+        }
+
+        #priceRangeValue {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #ccc;
+        }
+
+        .map-control-btn {
             position: absolute;
             top: 10px;
             right: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            color: #fff;
+            cursor: pointer;
+            z-index: 1000;
+            transition: background 0.3s;
+        }
+
+        .map-control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .layer-control {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 10px;
             z-index: 1000;
         }
-        
-        .map-control-btn {
-            background: var(--glass);
-            border: 1px solid var(--glass-light);
-            color: #fff;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 40px;
-            height: 40px;
+
+        .layer-control label {
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #fff;
         }
-        
-        .map-control-btn:hover {
-            background: rgba(102, 126, 234, 0.2);
-            transform: scale(1.1);
+
+        .layer-control input[type="checkbox"] {
+            margin-right: 8px;
         }
-        
-        .map-control-btn.active {
-            background: var(--primary);
+
+        .stats-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 1000;
+            max-width: 300px;
         }
-        
-        /* Quick Actions */
-        .quick-actions {
-            display: flex;
-            gap: 8px;
-            padding: 10px 15px;
-            background: rgba(10, 10, 15, 0.5);
-            border-top: 1px solid var(--glass-light);
+
+        .stats-panel p {
+            margin: 5px 0;
+            font-size: 14px;
         }
-        
-        .quick-action-btn {
-            flex: 1;
-            padding: 8px;
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 8px;
-            color: var(--primary);
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        
-        .quick-action-btn:hover {
-            background: rgba(102, 126, 234, 0.2);
-            transform: translateY(-2px);
-        }
-        
-        /* Typing Indicator */
-        .typing-indicator {
-            display: none;
-            padding: 10px 15px;
-            color: var(--primary);
-            font-style: italic;
-        }
-        
-        .typing-indicator.show {
-            display: block;
-        }
-        
-        .typing-indicator::before {
-            content: 'AI is analyzing';
-            animation: dots 1.5s infinite;
-        }
-        
-        @keyframes dots {
-            0%, 20% { content: 'AI is analyzing'; }
-            40% { content: 'AI is analyzing.'; }
-            60% { content: 'AI is analyzing..'; }
-            80%, 100% { content: 'AI is analyzing...'; }
-        }
-        
-        /* Custom Scrollbar */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 3px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-        }
-        
-        /* Tooltips */
-        .leaflet-tooltip {
-            background: linear-gradient(135deg, rgba(15, 15, 25, 0.95), rgba(25, 25, 40, 0.95)) !important;
-            border: 1px solid rgba(102, 126, 234, 0.3) !important;
-            border-radius: 8px !important;
-            color: #ffffff !important;
-            font-size: 12px !important;
-            font-weight: 500 !important;
-            padding: 8px 12px !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(10px) !important;
-            animation: tooltipPop 0.3s ease-out;
-        }
-        
-        @keyframes tooltipPop {
-            0% { 
-                opacity: 0; 
-                transform: scale(0.8) translateY(10px); 
-            }
-            100% { 
-                opacity: 1; 
-                transform: scale(1) translateY(0); 
-            }
-        }
-        
-        .school-tooltip {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.9), rgba(46, 125, 50, 0.9)) !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            border-radius: 10px !important;
-            color: #ffffff !important;
-            font-size: 12px !important;
-            font-weight: 500 !important;
-            padding: 10px 14px !important;
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
-            backdrop-filter: blur(15px) !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-            animation: tooltipPop 0.3s ease-out;
-        }
-        
-        /* Responsive Design */
+
         @media (max-width: 768px) {
-            .stats-panel {
-                display: none;
+            body {
+                flex-direction: column;
             }
-            
-            .chat-container {
-                width: 100%;
+
+            #map {
+                flex: 1;
+                height: 60%;
+            }
+
+            #chatPanel {
+                flex: none;
+                height: 40%;
+                max-width: 100%;
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            #controlPanel {
+                max-width: 100%;
+                left: 0;
+                top: 0;
+                border-radius: 0 0 10px 10px;
+            }
+
+            .stats-panel {
+                bottom: 50px;
+                left: 0;
+                max-width: 100%;
+                border-radius: 10px 10px 0 0;
+            }
+        }
+
+        .property-tooltip {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 12px;
+            max-width: 200px;
+        }
+
+        .hospital-tooltip {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 12px;
+            max-width: 200px;
+        }
+
+        .school-tooltip {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 12px;
+            max-width: 200px;
+        }
+
+        .property-marker.sale {
+            animation: glowSale 2s infinite;
+        }
+
+        .property-marker.rent {
+            animation: glowRent 2s infinite;
+        }
+
+        .property-marker.luxury {
+            animation: glowLuxury 2s infinite;
+        }
+
+        @keyframes glowSale {
+            0% {
+                box-shadow: 0 0 5px #667eea;
+            }
+            50% {
+                box-shadow: 0 0 15px #667eea;
+            }
+            100% {
+                box-shadow: 0 0 5px #667eea;
+            }
+        }
+
+        @keyframes glowRent {
+            0% {
+                box-shadow: 0 0 5px #00ff88;
+            }
+            50% {
+                box-shadow: 0 0 15px #00ff88;
+            }
+            100% {
+                box-shadow: 0 0 5px #00ff88;
+            }
+        }
+
+        @keyframes glowLuxury {
+            0% {
+                box-shadow: 0 0 5px #ff6b6b;
+            }
+            50% {
+                box-shadow: 0 0 15px #ff6b6b;
+            }
+            100% {
+                box-shadow: 0 0 5px #ff6b6b;
+            }
+        }
+
+        .school-marker {
+            animation: flashSchool 3s ease-in-out;
+        }
+
+        @keyframes flashSchool {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 1;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Loading Spatial Intelligence...</div>
+    <div id="map"></div>
+    <button class="map-control-btn" onclick="toggleFullscreen()" aria-label="Toggle fullscreen">
+        <i class="fas fa-expand" id="fullscreenIcon"></i>
+    </button>
+    <button class="map-control-btn" style="top: 60px;" onclick="switchMapStyle()" aria-label="Switch map style">
+        <i class="fas fa-layer-group" id="mapStyleIcon"></i>
+    </button>
+    <button class="map-control-btn" style="top: 110px;" onclick="getUserLocation()" aria-label="Get my location">
+        <i class="fas fa-map-marker-alt"></i>
+    </button>
+    <div class="layer-control">
+        <label><input type="checkbox" id="hospitalsLayer" checked onchange="spatialSystem.toggleLayer('hospitals')"> Hospitals</label>
+        <label><input type="checkbox" id="schoolsLayer" checked onchange="spatialSystem.toggleLayer('schools')"> Schools</label>
+        <label><input type="checkbox" id="heatmapLayer" onchange="spatialSystem.toggleLayer('heatmap')"> Heatmap</label>
+        <label><input type="checkbox" id="transportLayer" onchange="spatialSystem.toggleLayer('transport')"> Transport</label>
     </div>
-    
-    <div class="main-container">
-        <!-- Enhanced Chat Container -->
-        <div class="chat-container" id="chatContainer">
-            <div class="chat-header">
-                <div class="chat-header-content">
-                    PropertyIntel Kigali
-                    <small>Schools, Healthcare & Spatial Intelligence</small>
-                </div>
-                <button class="toggle-chat-btn" onclick="toggleChat()" aria-label="Toggle chat">
-                    <i class="fas fa-chevron-left" id="toggleIcon"></i>
-                </button>
-            </div>
-            
-            <!-- Search Controls -->
-            <div class="search-controls">
-                <div class="search-box">
-                    <div class="search-input-wrapper">
-                        <input type="text" id="locationSearch" class="main-search-input" 
-                               placeholder="Search address or place in Kigali" aria-label="Search location">
-                        <button id="searchBtn" class="search-icon-btn" aria-label="Search">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                    <div class="search-options">
-                        <button id="locationBtn" class="location-option" aria-label="Use current location">
-                            <i class="fas fa-crosshairs"></i>
-                            Use current location
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Filters -->
-                <div class="filter-row">
-                    <select id="statusFilter" class="compact-filter" aria-label="Filter by status">
-                        <option value="">All Status</option>
-                        <option value="sale">For Sale</option>
-                        <option value="rent">For Rent</option>
-                    </select>
-                    
-                    <select id="typeFilter" class="compact-filter" aria-label="Filter by property type">
-                        <option value="">All Types</option>
-                        <option value="villa">Villa</option>
-                        <option value="apartment">Apartment</option>
-                        <option value="house">House</option>
-                        <option value="luxury">Luxury</option>
-                    </select>
-                    
-                    <select id="priceFilter" class="compact-filter" aria-label="Filter by price range">
-                        <option value="">Price Range</option>
-                        <option value="0-50">Under 50M</option>
-                        <option value="50-100">50M - 100M</option>
-                        <option value="100-200">100M - 200M</option>
-                        <option value="200+">Above 200M</option>
-                    </select>
-                </div>
-                
-                <div class="filter-summary" id="filterSummary">
-                    Showing all properties
-                </div>
-            </div>
-            
-            <!-- Layer Controls -->
-            <div class="layer-controls">
-                <div class="layer-toggle">
-                    <button class="layer-btn active" id="hospitalLayer" onclick="toggleLayer('hospitals')">
-                        🏥 Hospitals
-                    </button>
-                    <button class="layer-btn active" id="schoolLayer" onclick="toggleLayer('schools')">
-                        🎓 Schools
-                    </button>
-                    <button class="layer-btn" id="heatmapLayer" onclick="toggleLayer('heatmap')">
-                        🔥 Heat Map
-                    </button>
-                    <button class="layer-btn" id="transportLayer" onclick="toggleLayer('transport')">
-                        🚌 Transport
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <button class="quick-action-btn" onclick="analyzeEducation()">
-                    <i class="fas fa-graduation-cap"></i><br>Education
-                </button>
-                <button class="quick-action-btn" onclick="analyzeHealthcare()">
-                    <i class="fas fa-hospital"></i><br>Healthcare
-                </button>
-                <button class="quick-action-btn" onclick="analyzeWalkability()">
-                    <i class="fas fa-walking"></i><br>Walkability
-                </button>
-                <button class="quick-action-btn" onclick="compareAreas()">
-                    <i class="fas fa-chart-bar"></i><br>Compare
-                </button>
-            </div>
-            
-            <!-- Chat Messages -->
-            <div class="chat-messages" id="chatMessages">
+    <div id="controlPanel">
+        <div class="control-group">
+            <label for="propertyStatus">Property Status</label>
+            <select id="propertyStatus" onchange="spatialSystem.filterProperties()">
+                <option value="all">All</option>
+                <option value="sale">For Sale</option>
+                <option value="rent">For Rent</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="propertyType">Property Type</label>
+            <select id="propertyType" onchange="spatialSystem.filterProperties()">
+                <option value="all">All</option>
+                <option value="villa">Villa</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="luxury">Luxury</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="priceRange">Price Range (RWF)</label>
+            <input type="range" id="priceRange" min="500000" max="50000000" value="50000000" step="500000" oninput="spatialSystem.updatePriceRange()">
+            <div id="priceRangeValue">Up to 50M RWF</div>
+        </div>
+        <div class="control-group">
+            <label for="locationSearch">Search Location</label>
+            <input type="text" id="locationSearch" placeholder="Enter a landmark or address" oninput="spatialSystem.debounceSearchLocation()">
+        </div>
+    </div>
+    <div class="stats-panel">
+        <p><i class="fas fa-home"></i> Properties: <span id="propertyCount">0</span></p>
+        <p><i class="fas fa-hospital"></i> Hospitals: <span id="hospitalCount">0</span></p>
+        <p><i class="fas fa-graduation-cap"></i> Schools: <span id="schoolCount">0</span></p>
+        <p><i class="fas fa-money-bill-wave"></i> Avg Price: <span id="avgPrice">0</span> RWF</p>
+    </div>
+    <div id="chatPanel">
+        <div id="chatHeader">
+            <span>PropertyIntel AI</span>
+            <button onclick="toggleChatPanel()" aria-label="Toggle chat panel">
+                <i class="fas fa-chevron-right" id="chatToggleIcon"></i>
+            </button>
+        </div>
+        <div id="chatContent">
+            <div id="chatMessages">
                 <div class="message ai">
                     <div class="message-content">
-                        Welcome to PropertyIntel Kigali! 🏠<br><br>
-                        I now analyze <strong>schools</strong> and <strong>healthcare</strong> together for comprehensive property insights:<br><br>
-                        🎓 <strong>Education Access</strong> - Pre-primary schools within walking distance<br>
-                        🏥 <strong>Healthcare Proximity</strong> - Hospitals and clinics within 2km<br>
-                        📊 <strong>Walkability Score</strong> - 15-minute neighborhood analysis<br>
-                        🏘️ <strong>Family Suitability</strong> - Combined education & health scoring<br>
-                        💰 <strong>Investment Analysis</strong> - Value based on all amenities<br><br>
-                        <strong>Click on any property to see complete spatial analysis!</strong>
+                        Welcome to PropertyIntel Kigali! 🏙️<br><br>
+                        I’m here to help you find the perfect property in Kigali, with insights on proximity to schools, healthcare, and more. Click on a property marker to analyze it or ask me about schools, family suitability, or investment potential!
                     </div>
                 </div>
             </div>
-            <div class="typing-indicator" id="typingIndicator"></div>
-            
-            <!-- Chat Input -->
-            <div class="chat-input-container">
-                <textarea class="chat-input" id="chatInput" 
-                          placeholder="Ask about schools, hospitals, or property insights..." 
-                          rows="1" disabled aria-label="Ask about property"></textarea>
-                <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
-                    <i class="fas fa-paper-plane"></i> Send Message
-                </button>
+            <div id="chatInputContainer">
+                <textarea id="chatInput" rows="1" placeholder="Ask about the selected property..." disabled></textarea>
+                <button id="sendButton" onclick="spatialSystem.sendMessage()" disabled>Send</button>
+                <div id="typingIndicator">AI is typing...</div>
             </div>
-        </div>
-        
-        <!-- Map Container -->
-        <div class="map-container">
-            <!-- Stats Panel -->
-            <div class="stats-panel" id="statsPanel">
-                <h3>Area Intelligence</h3>
-                <div class="stat-item">
-                    <span>Properties</span>
-                    <span class="stat-value" id="totalProperties">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>Hospitals</span>
-                    <span class="stat-value" id="hospitalCount">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>Schools</span>
-                    <span class="stat-value" id="schoolCount">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>For Sale</span>
-                    <span class="stat-value" id="forSale">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>For Rent</span>
-                    <span class="stat-value" id="forRent">0</span>
-                </div>
-                <div class="stat-item">
-                    <span>Avg Price</span>
-                    <span class="stat-value" id="avgPrice">0</span>
-                </div>
-            </div>
-            
-            <!-- Map Controls -->
-            <div class="map-controls">
-                <button class="map-control-btn" onclick="toggleFullscreen()" aria-label="Toggle fullscreen">
-                    <i class="fas fa-expand" id="fullscreenIcon"></i>
-                </button>
-                <button class="map-control-btn" onclick="resetMapView()" aria-label="Reset view">
-                    <i class="fas fa-home"></i>
-                </button>
-                <button class="map-control-btn" onclick="toggleSatellite()" aria-label="Toggle satellite">
-                    <i class="fas fa-satellite"></i>
-                </button>
-                <button class="map-control-btn" onclick="locateMe()" aria-label="Find my location">
-                    <i class="fas fa-location-arrow"></i>
-                </button>
-            </div>
-            
-            <div id="map"></div>
         </div>
     </div>
-    
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script>
-        // Enhanced Spatial Intelligence System
         class SpatialIntelligenceSystem {
             constructor() {
                 this.map = null;
-                this.currentLocation = null;
-                this.currentProperty = null;
-                this.selectedMarker = null;
-                this.facilities = [];
-                this.schools = [];
-                this.hospitalMarkers = [];
-                this.schoolMarkers = [];
-                this.hospitalCircles = [];
-                this.schoolCircles = [];
-                this.nearbyHospitals = [];
-                this.nearbySchools = [];
-                this.currentLocationMarker = null;
-                this.allPropertyMarkers = [];
-                this.filteredProperties = [];
-                this.isSending = false;
-                this.satelliteLayer = null;
-                this.streetLayer = null;
                 this.markerCluster = null;
+                this.properties = [
+                    { id: 1, lat: -1.9441, lng: 30.0619, type: 'villa', status: 'sale', price: '25M RWF', district: 'Gasabo', bedrooms: 4, bathrooms: 3 },
+                    { id: 2, lat: -1.935, lng: 30.08, type: 'apartment', status: 'rent', price: '800K RWF/month', district: 'Nyarugenge', bedrooms: 2, bathrooms: 1 },
+                    { id: 3, lat: -1.95, lng: 30.1, type: 'house', status: 'sale', price: '18M RWF', district: 'Kicukiro', bedrooms: 3, bathrooms: 2 },
+                    { id: 4, lat: -1.93, lng: 30.05, type: 'luxury', status: 'sale', price: '45M RWF', district: 'Gasabo', bedrooms: 5, bathrooms: 4 },
+                ];
+                this.facilities = [
+                    { facility_name: 'King Faisal Hospital', facility_type: 'Hospital', lat: -1.9366, long: 30.0597 },
+                    { facility_name: 'CHUK', facility_type: 'Hospital', lat: -1.9556, long: 30.0602 },
+                    { facility_name: 'Kibagabaga Hospital', facility_type: 'Hospital', lat: -1.9361, long: 30.0914 }
+                ];
+                this.schools = [];
+                this.currentProperty = null;
+                this.isSending = false;
+                this.isMapFullscreen = false;
+                this.isChatCollapsed = false;
+                this.currentMapStyle = 'street';
                 this.layerVisibility = {
                     hospitals: true,
                     schools: true,
                     heatmap: false,
                     transport: false
                 };
-                
-                this.properties = [
-                    { id: 1, lat: -1.9441, lng: 30.0619, name: 'City Center Luxury Apartment', type: 'Luxury Apartment', price: '180M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '180m²', yearBuilt: 2022, district: 'Nyarugenge', amenities: ['Pool', 'Gym', 'Security', 'Parking'] },
-                    { id: 2, lat: -1.9506, lng: 30.0639, name: 'Business District Condo', type: 'Apartment', price: '65M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '110m²', yearBuilt: 2019, district: 'Nyarugenge', amenities: ['Security', 'Parking'] },
-                    { id: 3, lat: -1.9286, lng: 30.1044, name: 'Kimihurura Sunset Villa', type: 'Villa', price: '320M RWF', status: 'sale', bedrooms: 5, bathrooms: 4, area: '450m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Garden', 'Pool', 'Security', 'Garage'] },
-                    { id: 4, lat: -1.9256, lng: 30.1074, name: 'Kimihurura Family House', type: 'House', price: '150M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '280m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
-                    { id: 5, lat: -1.9316, lng: 30.1014, name: 'Kimihurura Modern Apartment', type: 'Apartment', price: '45M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '95m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Security', 'Balcony'] },
-                    { id: 6, lat: -1.9634, lng: 30.1029, name: 'Kacyiru Green Hills House', type: 'House', price: '95M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '220m²', yearBuilt: 2017, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
-                    { id: 7, lat: -1.9604, lng: 30.1059, name: 'Kacyiru Executive Villa', type: 'Villa', price: '280M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '380m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Pool', 'Garden', 'Security', 'Smart Home'] },
-                    { id: 8, lat: -1.9664, lng: 30.0999, name: 'Kacyiru Riverside Apartment', type: 'Apartment', price: '38M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '65m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['River View', 'Security'] },
-                    { id: 9, lat: -1.9456, lng: 30.1312, name: 'Remera Shopping District House', type: 'House', price: '120M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '200m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Parking', 'Security'] },
-                    { id: 10, lat: -1.9486, lng: 30.1342, name: 'Remera Premium Apartment', type: 'Apartment', price: '55M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '130m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Gym', 'Security', 'Parking'] },
-                    { id: 11, lat: -1.9756, lng: 30.0529, name: 'Gikondo Industrial Villa', type: 'Villa', price: '200M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '350m²', yearBuilt: 2019, district: 'Kicukiro', amenities: ['Garden', 'Security', 'Workshop'] },
-                    { id: 12, lat: -1.9786, lng: 30.0559, name: 'Gikondo Worker Housing', type: 'House', price: '75M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '160m²', yearBuilt: 2016, district: 'Kicukiro', amenities: ['Parking'] },
-                    { id: 13, lat: -1.9606, lng: 30.0429, name: 'Nyamirambo Cultural House', type: 'House', price: '85M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '190m²', yearBuilt: 2018, district: 'Nyarugenge', amenities: ['Garden', 'Traditional Design'] },
-                    { id: 14, lat: -1.9636, lng: 30.0399, name: 'Nyamirambo Traditional Villa', type: 'Villa', price: '140M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '260m²', yearBuilt: 2017, district: 'Nyarugenge', amenities: ['Garden', 'Cultural Features'] },
-                    { id: 15, lat: -1.9156, lng: 30.0819, name: 'Kigali Heights Luxury Villa', type: 'Luxury Villa', price: '450M RWF', status: 'sale', bedrooms: 6, bathrooms: 5, area: '600m²', yearBuilt: 2024, district: 'Gasabo', amenities: ['Pool', 'Gym', 'Cinema', 'Smart Home', 'Wine Cellar'] },
-                    { id: 16, lat: -1.9186, lng: 30.0789, name: 'Kigali Heights Executive House', type: 'House', price: '220M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '320m²', yearBuilt: 2022, district: 'Gasabo', amenities: ['View', 'Security', 'Garden'] },
-                    { id: 17, lat: -1.9706, lng: 30.1159, name: 'Kibagabaga Student Apartment', type: 'Apartment', price: '35M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '55m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Study Area', 'Internet'] },
-                    { id: 18, lat: -1.9736, lng: 30.1129, name: 'Kibagabaga Family House', type: 'House', price: '110M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '210m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
-                    { id: 19, lat: -1.9356, lng: 30.1212, name: 'Nyarutarama Golf Course Villa', type: 'Luxury Villa', price: '520M RWF', status: 'sale', bedrooms: 7, bathrooms: 6, area: '700m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Golf Access', 'Pool', 'Tennis Court', 'Spa'] },
-                    { id: 20, lat: -1.9386, lng: 30.1182, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Golf View', 'Security', 'Gym'] }
-                ];
-                
-                this.init();
+                this.hospitalMarkers = [];
+                this.schoolMarkers = [];
+                this.routeLayers = {
+                    driving: null,
+                    walking: null
+                };
+                this.orsApiKey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM1OGE4ZTYyMWRjMzQ4OWJhNTAxZTUxMTZjNWQzZDdkIiwiaCI6Im11cm11cjY0In0=';
+                this.searchTimeout = null;
+                this.destinationCoords = null;
             }
-            
+
             async init() {
+                this.map = L.map('map').setView([-1.9441, 30.0619], 13);
+                this.markerCluster = L.markerClusterGroup();
+                this.addMapLayer();
+                this.addProperties();
                 await this.loadFacilities();
                 await this.loadSchools();
-                this.initializeMap();
-                this.setupEventListeners();
-                this.updateStats();
-                
-                // Hide loading overlay
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }, 1500);
-            }
-            
-            async loadFacilities() {
-                try {
-                    const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json');
-                    const data = await response.json();
-                    
-                    if (data.features && Array.isArray(data.features)) {
-                        this.facilities = data.features.filter(feature => 
-                            feature.attributes && 
-                            feature.attributes.lat && 
-                            feature.attributes.long
-                        ).map(feature => ({
-                            facility_name: feature.attributes.facility_name || 'Unknown',
-                            facility_type: feature.attributes.facility_type || 'Unknown',
-                            lat: feature.attributes.lat,
-                            long: feature.attributes.long,
-                            district: feature.attributes.district || 'N/A',
-                            sector: feature.attributes.sector || 'N/A',
-                            ownership: feature.attributes.ownership || 'N/A'
-                        }));
-                        console.log('Loaded health facilities:', this.facilities.length);
-                    }
-                } catch (error) {
-                    console.error('Failed to load facilities:', error);
-                    // Fallback data
-                    this.facilities = [
-                        { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, long: 30.0951, district: "Gasabo" },
-                        { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, long: 30.0604, district: "Nyarugenge" },
-                        { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
-                    ];
-                }
-                
-                document.getElementById('hospitalCount').textContent = this.facilities.length;
-            }
-            
-            async loadSchools() {
-                try {
-                    const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json');
-                    const data = await response.json();
-                    
-                    if (data.features && Array.isArray(data.features)) {
-                        this.schools = data.features.filter(feature => 
-                            feature.attributes && 
-                            feature.attributes.latitude && 
-                            feature.attributes.longitude
-                        ).map(feature => ({
-                            school_name: feature.attributes.school_nam || 'Unknown School',
-                            school_type: feature.attributes.school_typ || 'Unknown',
-                            school_category: feature.attributes.school_cat || 'PRE_PRIMARY',
-                            school_status: feature.attributes.school_sta || 'Unknown',
-                            curriculum: feature.attributes.curriculum || 'National',
-                            lat: feature.attributes.latitude,
-                            lng: feature.attributes.longitude,
-                            established: feature.attributes.establishm || 'N/A'
-                        }));
-                        console.log('Loaded schools:', this.schools.length);
-                    }
-                } catch (error) {
-                    console.error('Failed to load schools:', error);
-                    // Sample fallback data based on your structure
-                    this.schools = [
-                        { school_name: "ITETERO NURSERY SCHOOL", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9489, lng: 30.0000, established: 2009 },
-                        { school_name: "Green Hills Academy", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "INTERNATIONAL", lat: -1.9556, lng: 30.1044, established: 2006 },
-                        { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
-                    ];
-                }
-                
-                document.getElementById('schoolCount').textContent = this.schools.length;
-            }
-            
-            initializeMap() {
-                this.map = L.map('map').setView([-1.9441, 30.0619], 12);
-                
-                this.streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors',
-                    maxZoom: 19
-                });
-                
-                this.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: '© Esri',
-                    maxZoom: 19
-                });
-                
-                this.streetLayer.addTo(this.map);
-                
-                setTimeout(() => {
-                    this.map.invalidateSize();
-                }, 100);
-                
-                this.addProperties();
                 this.addHospitals();
                 this.addSchools();
-                
-                this.map.on('click', this.handleMapClick.bind(this));
-                
-                new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
+                this.updateStats();
+                this.map.addLayer(this.markerCluster);
+                this.setupEventListeners();
             }
-            
-            addProperties() {
-                this.allPropertyMarkers = [];
-                this.filteredProperties = [...this.properties];
-                
-                this.markerCluster = L.markerClusterGroup({
-                    iconCreateFunction: function(cluster) {
-                        return L.divIcon({
-                            html: `<div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 3px 10px rgba(0,0,0,0.3);">${cluster.getChildCount()}</div>`,
-                            className: 'marker-cluster',
-                            iconSize: [40, 40]
-                        });
+
+            addMapLayer() {
+                const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                });
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
+                });
+                if (this.currentMapStyle === 'street') {
+                    streetLayer.addTo(this.map);
+                } else {
+                    satelliteLayer.addTo(this.map);
+                }
+            }
+
+            switchMapStyle() {
+                this.currentMapStyle = this.currentMapStyle === 'street' ? 'satellite' : 'street';
+                this.map.eachLayer(layer => {
+                    if (layer instanceof L.TileLayer) {
+                        this.map.removeLayer(layer);
                     }
                 });
-                
-                this.properties.forEach((prop) => {
-                    const isSpecial = prop.type.includes('Luxury');
-                    const markerClass = isSpecial ? 'special' : prop.status;
-                    
-                    const marker = L.marker([prop.lat, prop.lng], {
+                this.addMapLayer();
+                document.getElementById('mapStyleIcon').className = this.currentMapStyle === 'street' ? 'fas fa-layer-group' : 'fas fa-satellite';
+            }
+
+            addProperties() {
+                this.properties.forEach(property => {
+                    const marker = L.marker([property.lat, property.lng], {
                         icon: L.divIcon({
-                            className: `property-marker ${markerClass}`,
-                            html: `<div style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid white;"></div>`,
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
+                            className: `property-marker ${property.status}`,
+                            html: `<div style="width: 20px; height: 20px; background: ${property.status === 'sale' ? '#667eea' : property.status === 'rent' ? '#00ff88' : '#ff6b6b'}; border: 3px solid white; border-radius: 50%;"></div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
                         })
                     });
-                    
                     const tooltipContent = `
-                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;">${prop.name}</div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <span style="opacity: 0.9;">Price:</span>
-                            <span style="font-weight: 600; color: #fff;">${prop.price}</span>
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
+                            ${property.type.charAt(0).toUpperCase() + property.type.slice(1)} ${property.status === 'sale' ? 'for Sale' : 'for Rent'}
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <span style="opacity: 0.9;">Size:</span>
-                            <span>${prop.bedrooms}BR • ${prop.bathrooms}BA • ${prop.area}</span>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="opacity: 0.9;">Price:</span>
+                            <span style="font-weight: 500;">${property.price}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="opacity: 0.9;">District:</span>
+                            <span>${property.district}</span>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="opacity: 0.9;">District:</span>
-                            <span style="font-weight: 500;">${prop.district}</span>
+                            <span style="opacity: 0.9;">Bedrooms:</span>
+                            <span>${property.bedrooms}</span>
                         </div>
                     `;
-                    
                     marker.bindTooltip(tooltipContent, { 
                         direction: 'top', 
                         offset: [0, -15],
@@ -1258,1070 +577,576 @@
                         permanent: false,
                         sticky: true
                     });
-                    
-                    marker.on('click', () => this.selectProperty(prop, marker));
+                    marker.on('click', () => this.analyzeProperty(property));
                     this.markerCluster.addLayer(marker);
-                    
-                    this.allPropertyMarkers.push({
-                        marker: marker,
-                        property: prop,
-                        visible: true
-                    });
                 });
-                
-                this.map.addLayer(this.markerCluster);
-                this.updateFilterSummary();
             }
-            
-            addHospitals() {
-                this.hospitalMarkers = [];
-                console.log(`Loaded ${this.facilities.length} health facilities`);
+
+            async loadFacilities() {
+                try {
+                    const response = await fetch('https://raw.githubusercontent.com/codeforrwanda/health-facilities/main/health_facilities.json');
+                    this.facilities = await response.json();
+                } catch (error) {
+                    console.error('Failed to load facilities:', error);
+                }
+                console.log(`Loaded ${this.facilities.length} facilities`);
             }
-            
-            addSchools() {
-                this.schoolMarkers = [];
+
+            async loadSchools() {
+                try {
+                    const response = await fetch('https://raw.githubusercontent.com/codeforrwanda/school-mapping/main/Pre_Primary.json');
+                    this.schools = await response.json();
+                } catch (error) {
+                    console.error('Failed to load schools:', error);
+                }
                 console.log(`Loaded ${this.schools.length} schools`);
             }
-            
-            selectProperty(property, marker) {
-                // Remove previous selection
-                if (this.selectedMarker) {
-                    const prevElement = this.selectedMarker.getElement();
-                    if (prevElement) {
-                        prevElement.classList.remove('selected');
-                    }
-                }
-                
-                this.currentProperty = property;
-                this.currentLocation = L.latLng(property.lat, property.lng);
-                this.selectedMarker = marker;
-                
-                // Add selection class
-                const markerElement = marker.getElement();
-                if (markerElement) {
-                    markerElement.classList.add('selected');
-                }
-                
-                document.getElementById('chatInput').disabled = false;
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
-                
-                this.clearBuffers();
-                this.analyzeProximity(property);
-                this.generatePropertyInsights(property);
-                this.map.setView([property.lat, property.lng], 15);
-            }
-            
-            analyzeProximity(property) {
-                // Analyze both hospitals and schools
-                this.analyzeHospitalProximity(property);
-                this.analyzeSchoolProximity(property);
-                this.displayComprehensiveAnalysis(property);
-            }
-            
-            analyzeHospitalProximity(property) {
-                this.nearbyHospitals = [];
-                this.hospitalMarkers.forEach(marker => this.map.removeLayer(marker));
+
+            addHospitals() {
                 this.hospitalMarkers = [];
-                this.hospitalCircles.forEach(circle => this.map.removeLayer(circle));
-                this.hospitalCircles = [];
-                
-                if (!this.layerVisibility.hospitals) return;
-                
                 this.facilities.forEach(facility => {
-                    const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([facility.lat, facility.long]) / 1000;
-                    
-                    if (distance <= 2) {
-                        this.nearbyHospitals.push({
-                            ...facility,
-                            distance: distance
-                        });
-                        
-                        const marker = L.marker([facility.lat, facility.long], {
+                    const marker = L.marker([facility.lat, facility.long], {
+                        icon: L.divIcon({
+                            className: 'hospital-marker',
+                            html: `<div style="width: 20px; height: 20px; background: linear-gradient(135deg, #00ff88, #00cc6a); border: 3px solid white; border-radius: 50%;"></div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    });
+                    const tooltipContent = `
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
+                            <i class="fas fa-hospital" style="margin-right: 6px; color: #00ff88;"></i>
+                            ${facility.facility_name}
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="opacity: 0.9;">Type:</span>
+                            <span style="font-weight: 500;">${facility.facility_type}</span>
+                        </div>
+                    `;
+                    marker.bindTooltip(tooltipContent, { 
+                        direction: 'top', 
+                        offset: [0, -15],
+                        className: 'hospital-tooltip',
+                        permanent: false,
+                        sticky: true
+                    });
+                    if (this.layerVisibility.hospitals) {
+                        marker.addTo(this.map);
+                    }
+                    this.hospitalMarkers.push(marker);
+                });
+                console.log(`Added ${this.hospitalMarkers.length} hospital markers`);
+            }
+
+            addSchools() {
+                this.schoolMarkers = [];
+                this.schools.forEach(school => {
+                    const marker = L.marker([school.lat, school.lng], {
+                        icon: L.divIcon({
+                            className: 'school-marker',
+                            html: `<div style="width: 22px; height: 22px; background: linear-gradient(135deg, #4CAF50, #2E7D32); border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px;">🎓</div>`,
+                            iconSize: [22, 22],
+                            iconAnchor: [11, 11]
+                        })
+                    });
+                    const tooltipContent = `
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
+                            <i class="fas fa-graduation-cap" style="margin-right: 6px; color: #4CAF50;"></i>
+                            ${school.school_name}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="opacity: 0.9;">Type:</span>
+                            <span style="font-weight: 500;">${school.school_type}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="opacity: 0.9;">Status:</span>
+                            <span>${school.school_status}</span>
+                        </div>
+                    `;
+                    marker.bindTooltip(tooltipContent, { 
+                        direction: 'top', 
+                        offset: [0, -15],
+                        className: 'school-tooltip',
+                        permanent: false,
+                        sticky: true
+                    });
+                    if (this.layerVisibility.schools) {
+                        marker.addTo(this.map);
+                    }
+                    this.schoolMarkers.push(marker);
+                });
+                console.log(`Added ${this.schoolMarkers.length} school markers`);
+            }
+
+            toggleLayer(layer) {
+                this.layerVisibility[layer] = !this.layerVisibility[layer];
+                if (layer === 'hospitals') {
+                    this.hospitalMarkers.forEach(marker => {
+                        if (this.layerVisibility.hospitals) {
+                            marker.addTo(this.map);
+                        } else {
+                            this.map.removeLayer(marker);
+                        }
+                    });
+                } else if (layer === 'schools') {
+                    this.schoolMarkers.forEach(marker => {
+                        if (this.layerVisibility.schools) {
+                            marker.addTo(this.map);
+                        } else {
+                            this.map.removeLayer(marker);
+                        }
+                    });
+                } else if (layer === 'heatmap') {
+                    alert('Heatmap layer is not implemented yet.');
+                } else if (layer === 'transport') {
+                    alert('Transport layer is not implemented yet.');
+                }
+            }
+
+            filterProperties() {
+                const status = document.getElementById('propertyStatus').value;
+                const type = document.getElementById('propertyType').value;
+                const maxPrice = parseInt(document.getElementById('priceRange').value);
+                this.markerCluster.clearLayers();
+                this.properties.forEach(property => {
+                    const priceValue = parseInt(property.price.replace(/[^0-9]/g, '')) * (property.price.includes('month') ? 1000 : 1000000);
+                    if ((status === 'all' || property.status === status) &&
+                        (type === 'all' || property.type === type) &&
+                        priceValue <= maxPrice) {
+                        const marker = L.marker([property.lat, property.lng], {
                             icon: L.divIcon({
-                                className: 'hospital-marker',
-                                html: `<div style="width: 20px; height: 20px; background: linear-gradient(135deg, #00ff88, #00cc6a); border: 3px solid white; border-radius: 50%;"></div>`,
+                                className: `property-marker ${property.status}`,
+                                html: `<div style="width: 20px; height: 20px; background: ${property.status === 'sale' ? '#667eea' : property.status === 'rent' ? '#00ff88' : '#ff6b6b'}; border: 3px solid white; border-radius: 50%;"></div>`,
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 10]
+                            })
+                        });
+                        const tooltipContent = `
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
+                                ${property.type.charAt(0).toUpperCase() + property.type.slice(1)} ${property.status === 'sale' ? 'for Sale' : 'for Rent'}
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="opacity: 0.9;">Price:</span>
+                                <span style="font-weight: 500;">${property.price}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="opacity: 0.9;">District:</span>
+                                <span>${property.district}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="opacity: 0.9;">Bedrooms:</span>
+                                <span>${property.bedrooms}</span>
+                            </div>
+                        `;
+                        marker.bindTooltip(tooltipContent, { 
+                            direction: 'top', 
+                            offset: [0, -15],
+                            className: 'property-tooltip',
+                            permanent: false,
+                            sticky: true
+                        });
+                        marker.on('click', () => this.analyzeProperty(property));
+                        this.markerCluster.addLayer(marker);
+                    }
+                });
+                this.updateStats();
+            }
+
+            updatePriceRange() {
+                const priceRange = document.getElementById('priceRange').value;
+                document.getElementById('priceRangeValue').textContent = `Up to ${Math.round(priceRange / 1000000)}M RWF`;
+                this.filterProperties();
+            }
+
+            updateStats() {
+                const status = document.getElementById('propertyStatus').value;
+                const type = document.getElementById('propertyType').value;
+                const maxPrice = parseInt(document.getElementById('priceRange').value);
+                const filteredProperties = this.properties.filter(property => {
+                    const priceValue = parseInt(property.price.replace(/[^0-9]/g, '')) * (property.price.includes('month') ? 1000 : 1000000);
+                    return (status === 'all' || property.status === status) &&
+                           (type === 'all' || property.type === type) &&
+                           priceValue <= maxPrice;
+                });
+                document.getElementById('propertyCount').textContent = filteredProperties.length;
+                document.getElementById('hospitalCount').textContent = this.facilities.length;
+                document.getElementById('schoolCount').textContent = this.schools.length;
+                const avgPrice = filteredProperties.length
+                    ? filteredProperties.reduce((sum, p) => sum + parseInt(p.price.replace(/[^0-9]/g, '')) * (p.price.includes('month') ? 1000 : 1000000), 0) / filteredProperties.length
+                    : 0;
+                document.getElementById('avgPrice').textContent = Math.round(avgPrice / 1000000) + 'M';
+            }
+
+            analyzeProperty(property) {
+                this.currentProperty = property;
+                document.getElementById('chatInput').disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML += `
+                    <div class="message ai">
+                        <div class="message-content">
+                            Analyzing property at ${property.district}...<br><br>
+                            <strong>${property.type.charAt(0).toUpperCase() + property.type.slice(1)} ${property.status === 'sale' ? 'for Sale' : 'for Rent'}</strong><br>
+                            Price: ${property.price}<br>
+                            District: ${property.district}<br>
+                            Bedrooms: ${property.bedrooms}<br>
+                            Bathrooms: ${property.bathrooms}<br><br>
+                            ${this.analyzeSchoolProximity(property)}<br>
+                            ${this.analyzeHospitalProximity(property)}<br>
+                            ${this.analyzeFamilySuitability(property)}<br>
+                            ${this.analyzeWalkability(property)}<br>
+                            ${this.analyzeInvestmentPotential(property)}<br><br>
+                            Ask me for more details about this property, schools, or anything else!
+                        </div>
+                    </div>`;
+                this.scrollToBottom();
+                if (this.destinationCoords) {
+                    this.calculateRoutes(property);
+                }
+            }
+
+            analyzeSchoolProximity(property) {
+                const nearbySchools = this.schools.filter(school => {
+                    const distance = this.calculateDistance(property.lat, property.lng, school.lat, school.lng);
+                    return distance <= 1.5;
+                });
+                nearbySchools.forEach(school => {
+                    const marker = L.marker([school.lat, school.lng], {
+                        icon: L.divIcon({
+                            className: 'school-marker',
+                            html: `<div style="width: 22px; height: 22px; background: linear-gradient(135deg, #4CAF50, #2E7D32); border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px;">🎓</div>`,
+                            iconSize: [22, 22],
+                            iconAnchor: [11, 11]
+                        })
+                    });
+                    marker.addTo(this.map);
+                    setTimeout(() => {
+                        this.map.removeLayer(marker);
+                    }, 3000);
+                });
+                return `<strong>School Proximity:</strong> ${nearbySchools.length} school${nearbySchools.length !== 1 ? 's' : ''} within 1.5km.`;
+            }
+
+            analyzeHospitalProximity(property) {
+                const nearbyHospitals = this.facilities.filter(facility => {
+                    const distance = this.calculateDistance(property.lat, property.lng, facility.lat, facility.long);
+                    return distance <= 2;
+                });
+                nearbyHospitals.forEach(facility => {
+                    const marker = L.marker([facility.lat, facility.long], {
+                        icon: L.divIcon({
+                            className: 'hospital-marker',
+                            html: `<div style="width: 20px; height: 20px; background: linear-gradient(135deg, #00ff88, #00cc6a); border: 3px solid white; border-radius: 50%;"></div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    });
+                    marker.addTo(this.map);
+                    setTimeout(() => {
+                        this.map.removeLayer(marker);
+                    }, 3000);
+                });
+                return `<strong>Healthcare Proximity:</strong> ${nearbyHospitals.length} hospital${nearbyHospitals.length !== 1 ? 's' : ''} within 2km.`;
+            }
+
+            analyzeFamilySuitability(property) {
+                const schoolScore = this.schools.filter(school => 
+                    this.calculateDistance(property.lat, property.lng, school.lat, school.lng) <= 1.5
+                ).length * 20;
+                const hospitalScore = this.facilities.filter(facility => 
+                    this.calculateDistance(property.lat, property.lng, facility.lat, facility.long) <= 2
+                ).length * 15;
+                const bedroomScore = property.bedrooms * 10;
+                const totalScore = Math.min(100, schoolScore + hospitalScore + bedroomScore);
+                return `<strong>Family Suitability:</strong> ${totalScore}/100 (based on schools, hospitals, and bedrooms).`;
+            }
+
+            analyzeWalkability(property) {
+                const nearbyPOIs = this.schools.length + this.facilities.length;
+                const walkabilityScore = Math.min(100, nearbyPOIs * 5);
+                return `<strong>Walkability:</strong> ${walkabilityScore}/100 (based on nearby amenities).`;
+            }
+
+            analyzeInvestmentPotential(property) {
+                const districtScores = { Gasabo: 90, Nyarugenge: 85, Kicukiro: 80 };
+                const baseScore = districtScores[property.district] || 70;
+                const priceValue = parseInt(property.price.replace(/[^0-9]/g, '')) * (property.price.includes('month') ? 1000 : 1000000);
+                const priceScore = priceValue < 20000000 ? 20 : priceValue < 40000000 ? 10 : 0;
+                const totalScore = Math.min(100, baseScore + priceScore);
+                return `<strong>Investment Potential:</strong> ${totalScore}/100 (based on district and price).`;
+            }
+
+            calculateDistance(lat1, lng1, lat2, lng2) {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return R * c;
+            }
+
+            debounceSearchLocation() {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => this.performLocationSearch(), 500);
+            }
+
+            async performLocationSearch() {
+                const query = document.getElementById('locationSearch').value.trim();
+                if (!query) return;
+                try {
+                    const response = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${this.orsApiKey}&text=${encodeURIComponent(query)}&boundary.country=RWA`);
+                    const data = await response.json();
+                    if (data.features && data.features.length > 0) {
+                        const { coordinates } = data.features[0].geometry;
+                        this.destinationCoords = [coordinates[1], coordinates[0]];
+                        this.map.setView(this.destinationCoords, 15);
+                        L.marker(this.destinationCoords, {
+                            icon: L.divIcon({
+                                className: 'destination-marker',
+                                html: `<div style="width: 20px; height: 20px; background: #ff5555; border: 3px solid white; border-radius: 50%;"></div>`,
                                 iconSize: [20, 20],
                                 iconAnchor: [10, 10]
                             })
                         }).addTo(this.map);
-                        
-                        const tooltipContent = `
-                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
-                                <i class="fas fa-hospital" style="margin-right: 6px; color: #00ff88;"></i>
-                                ${facility.facility_name}
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="opacity: 0.9;">Type:</span>
-                                <span style="font-weight: 500;">${facility.facility_type}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="opacity: 0.9;">Distance:</span>
-                                <span style="font-weight: 600; color: #00ff88;">${distance.toFixed(1)}km</span>
-                            </div>
-                        `;
-                        
-                        marker.bindTooltip(tooltipContent, { 
-                            direction: 'top', 
-                            offset: [0, -15],
-                            className: 'hospital-tooltip',
-                            permanent: false,
-                            sticky: true
-                        });
-                        
-                        this.hospitalMarkers.push(marker);
-                    }
-                });
-                
-                this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
-            }
-            
-            analyzeSchoolProximity(property) {
-                this.nearbySchools = [];
-                this.schoolMarkers.forEach(marker => this.map.removeLayer(marker));
-                this.schoolMarkers = [];
-                this.schoolCircles.forEach(circle => this.map.removeLayer(circle));
-                this.schoolCircles = [];
-                
-                if (!this.layerVisibility.schools) return;
-                
-                this.schools.forEach(school => {
-                    const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([school.lat, school.lng]) / 1000;
-                    
-                    if (distance <= 1.5) { // 1.5km for schools (walking distance for children)
-                        this.nearbySchools.push({
-                            ...school,
-                            distance: distance
-                        });
-                        
-                        const marker = L.marker([school.lat, school.lng], {
-                            icon: L.divIcon({
-                                className: 'school-marker school-flash',
-                                html: `<div style="width: 22px; height: 22px; background: linear-gradient(135deg, #4CAF50, #2E7D32); border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px;">🎓</div>`,
-                                iconSize: [22, 22],
-                                iconAnchor: [11, 11]
-                            })
-                        }).addTo(this.map);
-                        
-                        const tooltipContent = `
-                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; color: #fff;">
-                                <i class="fas fa-graduation-cap" style="margin-right: 6px; color: #4CAF50;"></i>
-                                ${school.school_name}
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="opacity: 0.9;">Type:</span>
-                                <span style="font-weight: 500;">${school.school_type}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="opacity: 0.9;">Status:</span>
-                                <span>${school.school_status}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span style="opacity: 0.9;">Curriculum:</span>
-                                <span>${school.curriculum}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="opacity: 0.9;">Distance:</span>
-                                <span style="font-weight: 600; color: #4CAF50;">${distance.toFixed(2)}km</span>
-                            </div>
-                        `;
-                        
-                        marker.bindTooltip(tooltipContent, { 
-                            direction: 'top', 
-                            offset: [0, -15],
-                            className: 'school-tooltip',
-                            permanent: false,
-                            sticky: true
-                        });
-                        
-                        this.schoolMarkers.push(marker);
-                        
-                        // Remove flash animation after a few seconds
-                        setTimeout(() => {
-                            const markerElement = marker.getElement();
-                            if (markerElement) {
-                                markerElement.classList.remove('school-flash');
-                            }
-                        }, 5000);
-                    }
-                });
-                
-                this.nearbySchools.sort((a, b) => a.distance - b.distance);
-            }
-            
-            displayComprehensiveAnalysis(property) {
-                const messagesContainer = document.getElementById('chatMessages');
-                messagesContainer.innerHTML = '';
-                
-                const statusClass = property.type.includes('Luxury') ? 'status-special' : 
-                                   property.status === 'sale' ? 'status-sale' : 'status-rent';
-                
-                // Property Info
-                let propertyInfo = `
-                    <div class="location-info">
-                        <strong>${property.name}</strong><br>
-                        <strong>Type:</strong> ${property.type}<br>
-                        <strong>Price:</strong> ${property.price}<br>
-                        <strong>Details:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}<br>
-                        <strong>Year Built:</strong> ${property.yearBuilt}<br>
-                        <strong>Amenities:</strong> ${property.amenities ? property.amenities.join(', ') : 'Standard'}<br>
-                        <span class="${statusClass}">Status: ${property.status.charAt(0).toUpperCase() + property.status.slice(1)}</span>
-                    </div>`;
-                
-                messagesContainer.innerHTML += propertyInfo;
-                
-                // School Analysis
-                if (this.nearbySchools.length > 0) {
-                    let schoolHtml = `
-                        <div class="school-proximity">
-                            <strong>🎓 Education Access Analysis</strong><br>
-                            <small>${this.nearbySchools.length} schools within 1.5km walking distance</small>
-                            <div class="facility-list">`;
-                    
-                    this.nearbySchools.slice(0, 5).forEach(school => {
-                        schoolHtml += `
-                            <div class="facility-item school-item" onclick="spatialSystem.focusLocation(${school.lat}, ${school.lng})">
-                                <div>
-                                    <div class="school-name">${school.school_name}</div>
-                                    <div style="font-size: 0.75rem; color: #999;">
-                                        ${school.school_status} • ${school.curriculum}
-                                    </div>
-                                </div>
-                                <div class="facility-distance">${(school.distance * 1000).toFixed(0)}m</div>
-                            </div>`;
-                    });
-                    
-                    schoolHtml += `</div></div>`;
-                    messagesContainer.innerHTML += schoolHtml;
-                } else {
-                    messagesContainer.innerHTML += `
-                        <div class="school-proximity">
-                            <strong>⚠️ Education Access Alert</strong><br>
-                            No schools within 1.5km walking distance.<br>
-                            <small>Consider transportation for school-age children.</small>
-                        </div>`;
-                }
-                
-                // Hospital Analysis
-                if (this.nearbyHospitals.length > 0) {
-                    let hospitalHtml = `
-                        <div class="proximity-analysis">
-                            <strong>🏥 Healthcare Proximity</strong><br>
-                            <small>${this.nearbyHospitals.length} health facilities within 2km</small>
-                            <div class="facility-list">`;
-                    
-                    this.nearbyHospitals.slice(0, 3).forEach(hospital => {
-                        hospitalHtml += `
-                            <div class="facility-item hospital-item" onclick="spatialSystem.focusLocation(${hospital.lat}, ${hospital.long})">
-                                <div>
-                                    <div class="hospital-name">${hospital.facility_name}</div>
-                                    <div style="font-size: 0.75rem; color: #999;">${hospital.facility_type}</div>
-                                </div>
-                                <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
-                            </div>`;
-                    });
-                    
-                    hospitalHtml += `</div></div>`;
-                    messagesContainer.innerHTML += hospitalHtml;
-                } else {
-                    messagesContainer.innerHTML += `
-                        <div class="proximity-analysis">
-                            <strong>⚠️ Healthcare Alert</strong><br>
-                            No hospitals within 2km radius.<br>
-                            <small>Emergency services may take longer to reach.</small>
-                        </div>`;
-                }
-                
-                this.scrollToBottom();
-            }
-            
-            generatePropertyInsights(property) {
-                const messagesContainer = document.getElementById('chatMessages');
-                this.showTyping();
-                
-                setTimeout(() => {
-                    this.hideTyping();
-                    
-                    let insights = `
-                        <div class="ai-insights">
-                            <strong>🤖 AI Spatial Intelligence Analysis</strong><br><br>`;
-                    
-                    // Family Suitability Score
-                    const familyScore = this.calculateFamilySuitability(property);
-                    insights += `<strong>Family Suitability Score: ${familyScore}/100</strong><br><br>`;
-                    
-                    // Education Analysis
-                    if (this.nearbySchools.length > 0) {
-                        insights += `<span class="insight-tag education-tag">✅ Good Education Access</span>`;
-                        const avgDistance = this.nearbySchools.reduce((sum, s) => sum + s.distance, 0) / this.nearbySchools.length;
-                        insights += `<br>${this.nearbySchools.length} schools • Avg ${(avgDistance * 1000).toFixed(0)}m away<br>`;
+                        if (this.currentProperty) {
+                            this.calculateRoutes(this.currentProperty);
+                        }
                     } else {
-                        insights += `<span class="insight-tag">⚠️ Limited School Access</span>`;
-                        insights += `<br>Transportation needed for education<br>`;
-                    }
-                    
-                    // Healthcare Analysis
-                    if (this.nearbyHospitals.length > 0) {
-                        insights += `<span class="insight-tag">✅ Healthcare Available</span>`;
-                        insights += `<br>${this.nearbyHospitals.length} health facilities nearby<br>`;
-                    } else {
-                        insights += `<span class="insight-tag">⚠️ Healthcare Distance</span>`;
-                        insights += `<br>Plan for medical emergencies<br>`;
-                    }
-                    
-                    // Walkability Score
-                    const walkabilityScore = this.calculateWalkability(property);
-                    insights += `<br><span class="insight-tag">🚶 Walkability: ${walkabilityScore}/10</span><br>`;
-                    
-                    // Investment Analysis
-                    const investmentScore = this.calculateInvestmentScore(property);
-                    insights += `<span class="insight-tag">💰 Investment Score: ${investmentScore}/100</span><br>`;
-                    
-                    // Property Classification
-                    if (familyScore >= 80) {
-                        insights += `<br>🏆 <strong>Excellent for families with children</strong>`;
-                    } else if (familyScore >= 60) {
-                        insights += `<br>👍 <strong>Good for small families</strong>`;
-                    } else if (familyScore >= 40) {
-                        insights += `<br>🏢 <strong>Better for professionals/couples</strong>`;
-                    } else {
-                        insights += `<br>💼 <strong>Ideal for single professionals</strong>`;
-                    }
-                    
-                    insights += `<br><br><strong>💬 Ask me about schools, transport, or neighborhood!</strong></div>`;
-                    
-                    messagesContainer.innerHTML += insights;
-                    this.scrollToBottom();
-                }, 2000);
-            }
-            
-            calculateFamilySuitability(property) {
-                let score = 40; // Base score
-                
-                // School proximity (30 points max)
-                if (this.nearbySchools.length >= 3) score += 30;
-                else if (this.nearbySchools.length >= 2) score += 20;
-                else if (this.nearbySchools.length >= 1) score += 10;
-                
-                // Healthcare proximity (20 points max)
-                if (this.nearbyHospitals.length >= 2) score += 20;
-                else if (this.nearbyHospitals.length >= 1) score += 10;
-                
-                // Property size (15 points max)
-                if (property.bedrooms >= 4) score += 15;
-                else if (property.bedrooms >= 3) score += 10;
-                else if (property.bedrooms >= 2) score += 5;
-                
-                // Amenities (10 points max)
-                if (property.amenities && property.amenities.includes('Garden')) score += 5;
-                if (property.amenities && property.amenities.includes('Security')) score += 5;
-                
-                return Math.min(score, 100);
-            }
-            
-            calculateWalkability(property) {
-                let score = 5; // Base score
-                
-                // Schools within walking distance
-                const walkableSchools = this.nearbySchools.filter(s => s.distance <= 0.8).length;
-                score += Math.min(walkableSchools, 3);
-                
-                // Hospitals within 1km
-                const walkableHospitals = this.nearbyHospitals.filter(h => h.distance <= 1).length;
-                score += Math.min(walkableHospitals * 0.5, 2);
-                
-                return Math.min(Math.round(score), 10);
-            }
-            
-            calculateInvestmentScore(property) {
-                let score = 50; // Base score
-                
-                // Location score
-                if (property.district === 'Gasabo') score += 10;
-                else if (property.district === 'Nyarugenge') score += 8;
-                else score += 5;
-                
-                // School proximity adds value
-                score += Math.min(this.nearbySchools.length * 3, 15);
-                
-                // Hospital proximity
-                score += Math.min(this.nearbyHospitals.length * 5, 10);
-                
-                // Property age
-                const age = 2025 - property.yearBuilt;
-                if (age <= 2) score += 15;
-                else if (age <= 5) score += 10;
-                else if (age <= 10) score += 5;
-                
-                return Math.min(score, 100);
-            }
-            
-            focusLocation(lat, lng) {
-                this.map.setView([lat, lng], 17);
-            }
-            
-            clearBuffers() {
-                this.hospitalMarkers.forEach(marker => this.map.removeLayer(marker));
-                this.hospitalMarkers = [];
-                this.hospitalCircles.forEach(circle => this.map.removeLayer(circle));
-                this.hospitalCircles = [];
-                this.schoolMarkers.forEach(marker => this.map.removeLayer(marker));
-                this.schoolMarkers = [];
-                this.schoolCircles.forEach(circle => this.map.removeLayer(circle));
-                this.schoolCircles = [];
-            }
-            
-            handleMapClick(e) {
-                this.clearBuffers();
-                if (!this.currentProperty) {
-                    const messagesContainer = document.getElementById('chatMessages');
-                    messagesContainer.innerHTML = `
-                        <div class="message ai">
-                            <div class="message-content">
-                                Click on a property marker to see comprehensive analysis including schools and hospitals! 🏠🎓🏥
-                            </div>
-                        </div>`;
-                    this.scrollToBottom();
-                }
-            }
-            
-            setupEventListeners() {
-                const chatInput = document.getElementById('chatInput');
-                const sendBtn = document.getElementById('sendBtn');
-                const locationSearch = document.getElementById('locationSearch');
-                const searchBtn = document.getElementById('searchBtn');
-                const locationBtn = document.getElementById('locationBtn');
-                const statusFilter = document.getElementById('statusFilter');
-                const typeFilter = document.getElementById('typeFilter');
-                const priceFilter = document.getElementById('priceFilter');
-                
-                // Chat input
-                chatInput.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-                });
-                
-                chatInput.addEventListener('keypress', e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-                
-                sendBtn.addEventListener('click', () => this.sendMessage());
-                
-                // Search
-                locationSearch.addEventListener('keypress', e => {
-                    if (e.key === 'Enter') this.performLocationSearch();
-                });
-                
-                searchBtn.addEventListener('click', () => this.performLocationSearch());
-                locationBtn.addEventListener('click', () => this.useCurrentLocation());
-                
-                // Filters
-                statusFilter.addEventListener('change', () => this.applyFilters());
-                typeFilter.addEventListener('change', () => this.applyFilters());
-                priceFilter.addEventListener('change', () => this.applyFilters());
-            }
-            
-            async performLocationSearch() {
-                const locationSearch = document.getElementById('locationSearch');
-                const location = locationSearch.value.trim();
-                if (!location) return;
-                
-                try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location + ', Kigali, Rwanda')}&limit=1`);
-                    const results = await response.json();
-                    
-                    if (results.length > 0) {
-                        const { lat, lon } = results[0];
-                        this.map.setView([lat, lon], 16);
-                    } else {
-                        alert('Location not found in Kigali');
+                        alert('Location not found in Kigali. Try another landmark or address.');
                     }
                 } catch (error) {
-                    console.error('Search failed:', error);
+                    console.error('Search error:', error);
+                    alert('Failed to search location. Please try again.');
                 }
             }
-            
-            useCurrentLocation() {
-                if (!navigator.geolocation) {
-                    alert('Geolocation not supported');
-                    return;
+
+            async calculateRoutes(property) {
+                if (!this.destinationCoords) return;
+                const coords = [[property.lng, property.lat], [this.destinationCoords[1], this.destinationCoords[0]]];
+                const profiles = ['driving-car', 'foot-walking'];
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML += `
+                    <div class="message ai">
+                        <div class="message-content">
+                            Calculating routes from ${property.district} to ${document.getElementById('locationSearch').value}...<br><br>
+                        </div>
+                    </div>`;
+                this.scrollToBottom();
+
+                // Remove existing route layers
+                if (this.routeLayers.driving) this.map.removeLayer(this.routeLayers.driving);
+                if (this.routeLayers.walking) this.map.removeLayer(this.routeLayers.walking);
+
+                for (const profile of profiles) {
+                    try {
+                        const response = await fetch('https://api.openrouteservice.org/v2/directions/' + profile + '/geojson', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': this.orsApiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                coordinates: coords,
+                                units: 'km',
+                                geometry: true
+                            })
+                        });
+                        const data = await response.json();
+                        if (data.features && data.features.length > 0) {
+                            const route = data.features[0];
+                            const distance = route.properties.summary.distance;
+                            const duration = route.properties.summary.duration / 60; // Convert to minutes
+                            const polyline = L.geoJSON(route.geometry, {
+                                style: {
+                                    color: profile === 'driving-car' ? '#667eea' : '#00ff88',
+                                    weight: 5,
+                                    opacity: 0.7
+                                }
+                            }).addTo(this.map);
+                            this.routeLayers[profile === 'driving-car' ? 'driving' : 'walking'] = polyline;
+                            messagesContainer.innerHTML += `
+                                <div class="message ai">
+                                    <div class="message-content">
+                                        <strong>${profile === 'driving-car' ? 'Driving' : 'Walking'} Route:</strong><br>
+                                        Distance: ${distance.toFixed(1)} km<br>
+                                        Time: ${duration.toFixed(1)} minutes
+                                    </div>
+                                </div>`;
+                            this.scrollToBottom();
+                        }
+                    } catch (error) {
+                        console.error(`Failed to calculate ${profile} route:`, error);
+                        messagesContainer.innerHTML += `
+                            <div class="message ai">
+                                <div class="message-content">
+                                    Failed to calculate ${profile === 'driving-car' ? 'driving' : 'walking'} route. Please try again.
+                                </div>
+                            </div>`;
+                        this.scrollToBottom();
+                    }
                 }
-                
-                navigator.geolocation.getCurrentPosition(
-                    position => {
-                        const { latitude: lat, longitude: lng } = position.coords;
-                        this.map.setView([lat, lng], 15);
-                    },
-                    error => {
-                        alert('Unable to get location');
-                    }
-                );
             }
-            
-            applyFilters() {
-                const statusFilter = document.getElementById('statusFilter').value;
-                const typeFilter = document.getElementById('typeFilter').value;
-                const priceFilter = document.getElementById('priceFilter').value;
-                
-                this.filteredProperties = this.properties.filter(property => {
-                    if (statusFilter && property.status !== statusFilter) return false;
-                    
-                    if (typeFilter) {
-                        const propType = property.type.toLowerCase();
-                        if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
-                        if (typeFilter === 'villa' && !propType.includes('villa')) return false;
-                        if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
-                        if (typeFilter === 'house' && !propType.includes('house')) return false;
-                    }
-                    
-                    if (priceFilter) {
-                        const price = parseInt(property.price.replace(/[^0-9]/g, ''));
-                        if (priceFilter === '0-50' && price >= 50) return false;
-                        if (priceFilter === '50-100' && (price < 50 || price >= 100)) return false;
-                        if (priceFilter === '100-200' && (price < 100 || price >= 200)) return false;
-                        if (priceFilter === '200+' && price < 200) return false;
-                    }
-                    
-                    return true;
-                });
-                
-                this.updateFilterSummary();
-                this.updateStats();
+
+            getUserLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const { latitude, longitude } = position.coords;
+                            this.map.setView([latitude, longitude], 15);
+                            L.marker([latitude, longitude], {
+                                icon: L.divIcon({
+                                    className: 'user-location',
+                                    html: `<div style="width: 20px; height: 20px; background: #ff5555; border: 3px solid white; border-radius: 50%;"></div>`,
+                                    iconSize: [20, 20],
+                                    iconAnchor: [10, 10]
+                                })
+                            }).addTo(this.map);
+                        },
+                        error => {
+                            console.error('Geolocation error:', error);
+                            alert('Unable to retrieve your location.');
+                        }
+                    );
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
             }
-            
-            updateFilterSummary() {
-                const filterSummary = document.getElementById('filterSummary');
-                const total = this.properties.length;
-                const shown = this.filteredProperties.length;
-                
-                filterSummary.textContent = shown === total ? 
-                    `Showing all ${total} properties` : 
-                    `Showing ${shown} of ${total} properties`;
+
+            toggleFullscreen() {
+                this.isMapFullscreen = !this.isMapFullscreen;
+                const map = document.getElementById('map');
+                const fullscreenIcon = document.getElementById('fullscreenIcon');
+                map.classList.toggle('fullscreen', this.isMapFullscreen);
+                fullscreenIcon.className = this.isMapFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+                this.map.invalidateSize();
             }
-            
-            updateStats() {
-                const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
-                const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
-                const totalPrice = this.filteredProperties.reduce((sum, p) => {
-                    return sum + parseInt(p.price.replace(/[^0-9]/g, ''));
-                }, 0);
-                const avgPrice = this.filteredProperties.length > 0 ? 
-                    Math.round(totalPrice / this.filteredProperties.length) : 0;
-                
-                document.getElementById('totalProperties').textContent = this.filteredProperties.length;
-                document.getElementById('forSale').textContent = forSale;
-                document.getElementById('forRent').textContent = forRent;
-                document.getElementById('avgPrice').textContent = avgPrice + 'M';
+
+            toggleChatPanel() {
+                this.isChatCollapsed = !this.isChatCollapsed;
+                const chatPanel = document.getElementById('chatPanel');
+                const chatToggleIcon = document.getElementById('chatToggleIcon');
+                chatPanel.classList.toggle('collapsed', this.isChatCollapsed);
+                chatToggleIcon.className = this.isChatCollapsed ? 'fas fa-chevron-left' : 'fas fa-chevron-right';
+                this.map.invalidateSize();
             }
-            
+
             sendMessage() {
                 if (this.isSending) return;
                 this.isSending = true;
-                
                 const chatInput = document.getElementById('chatInput');
                 const message = chatInput.value.trim();
-                if (!message || !this.currentProperty) {
+                if (!message) {
                     this.isSending = false;
                     return;
                 }
-                
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.innerHTML += `
                     <div class="message user">
                         <div class="message-content">${this.sanitizeHTML(message)}</div>
                     </div>`;
-                
                 chatInput.value = '';
                 chatInput.style.height = 'auto';
-                
                 this.showTyping();
                 setTimeout(() => {
                     this.hideTyping();
                     this.generateAIResponse(message, this.currentProperty);
                     this.isSending = false;
                 }, 1500);
-                
                 this.scrollToBottom();
             }
-            
-            generateAIResponse(question, property) {
-                const messagesContainer = document.getElementById('chatMessages');
-                let response = '';
-                
-                const lowerQuestion = question.toLowerCase();
-                
-                if (lowerQuestion.includes('school') || lowerQuestion.includes('education') || lowerQuestion.includes('nursery')) {
-                    response = this.generateSchoolResponse(property);
-                } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
-                    response = this.generateHealthResponse(property);
-                } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children') || lowerQuestion.includes('kids')) {
-                    response = this.generateFamilyResponse(property);
-                } else if (lowerQuestion.includes('walk') || lowerQuestion.includes('transport') || lowerQuestion.includes('commute')) {
-                    response = this.generateTransportResponse(property);
-                } else if (lowerQuestion.includes('investment') || lowerQuestion.includes('roi') || lowerQuestion.includes('value')) {
-                    response = this.generateInvestmentResponse(property);
-                } else {
-                    response = this.generateGeneralResponse(property);
-                }
-                
-                messagesContainer.innerHTML += `
-                    <div class="message ai">
-                        <div class="message-content">${response}</div>
-                    </div>`;
-                
-                this.scrollToBottom();
-            }
-            
-            generateSchoolResponse(property) {
-                let response = `Education Analysis for ${property.name} 🎓<br><br>`;
-                
-                if (this.nearbySchools.length > 0) {
-                    response += `<strong>Excellent news for families!</strong><br>`;
-                    response += `Found ${this.nearbySchools.length} schools within 1.5km walking distance:<br><br>`;
-                    
-                    this.nearbySchools.slice(0, 5).forEach(school => {
-                        const walkTime = Math.round(school.distance * 12); // Approximate walking time
-                        response += `📚 <strong>${school.school_name}</strong><br>`;
-                        response += `   • Type: ${school.school_type} (${school.school_status})<br>`;
-                        response += `   • Curriculum: ${school.curriculum}<br>`;
-                        response += `   • Distance: ${(school.distance * 1000).toFixed(0)}m (${walkTime} min walk)<br><br>`;
-                    });
-                    
-                    response += `<span class="insight-tag education-tag">Family-Friendly Location</span><br>`;
-                    response += `This property is ideal for families with young children!`;
-                } else {
-                    response += `<strong>Limited school access</strong><br><br>`;
-                    response += `No schools found within 1.5km walking distance.<br><br>`;
-                    response += `Consider:<br>`;
-                    response += `• School transport services<br>`;
-                    response += `• Private vehicle for school runs<br>`;
-                    response += `• Online/homeschooling options<br><br>`;
-                    response += `This may affect property value for families.`;
-                }
-                
-                return response;
-            }
-            
-            generateHealthResponse(property) {
-                let response = `Healthcare Accessibility Analysis 🏥<br><br>`;
-                
-                if (this.nearbyHospitals.length > 0) {
-                    response += `<strong>Good healthcare coverage!</strong><br>`;
-                    response += `${this.nearbyHospitals.length} health facilities within 2km:<br><br>`;
-                    
-                    this.nearbyHospitals.forEach(hospital => {
-                        response += `🏥 <strong>${hospital.facility_name}</strong><br>`;
-                        response += `   • Type: ${hospital.facility_type}<br>`;
-                        response += `   • Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
-                    });
-                    
-                    response += `Emergency response time: ~5-10 minutes<br>`;
-                    response += `This adds 10-15% to property value!`;
-                } else {
-                    response += `<strong>Healthcare accessibility concern</strong><br><br>`;
-                    response += `No hospitals within 2km radius.<br><br>`;
-                    response += `Important considerations:<br>`;
-                    response += `• Emergency response may take 15+ minutes<br>`;
-                    response += `• Keep first aid supplies<br>`;
-                    response += `• Have transport ready for emergencies<br>`;
-                }
-                
-                return response;
-            }
-            
-            generateFamilyResponse(property) {
-                const familyScore = this.calculateFamilySuitability(property);
-                let response = `Family Suitability Analysis 👨‍👩‍👧‍👦<br><br>`;
-                
-                response += `<strong>Family Score: ${familyScore}/100</strong><br><br>`;
-                
-                response += `<strong>Education:</strong> `;
-                if (this.nearbySchools.length > 0) {
-                    response += `✅ ${this.nearbySchools.length} schools nearby<br>`;
-                } else {
-                    response += `❌ No schools within walking distance<br>`;
-                }
-                
-                response += `<strong>Healthcare:</strong> `;
-                if (this.nearbyHospitals.length > 0) {
-                    response += `✅ ${this.nearbyHospitals.length} health facilities<br>`;
-                } else {
-                    response += `❌ Limited healthcare access<br>`;
-                }
-                
-                response += `<strong>Space:</strong> ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
-                response += `<strong>Safety:</strong> ${property.amenities && property.amenities.includes('Security') ? '✅ Secured' : '⚠️ Check security'}<br><br>`;
-                
-                if (familyScore >= 80) {
-                    response += `<span class="insight-tag education-tag">Highly Recommended for Families</span><br>`;
-                    response += `Perfect for families with children of all ages!`;
-                } else if (familyScore >= 60) {
-                    response += `<span class="insight-tag">Good for Families</span><br>`;
-                    response += `Suitable for small families with some planning.`;
-                } else {
-                    response += `<span class="insight-tag">Better for Professionals</span><br>`;
-                    response += `More suitable for couples or single professionals.`;
-                }
-                
-                return response;
-            }
-            
-            generateTransportResponse(property) {
-                const walkability = this.calculateWalkability(property);
-                let response = `Transportation & Walkability Analysis 🚶🚗<br><br>`;
-                
-                response += `<strong>Walkability Score: ${walkability}/10</strong><br><br>`;
-                
-                response += `<strong>Walking Distance Amenities:</strong><br>`;
-                const walkableSchools = this.nearbySchools.filter(s => s.distance <= 0.8).length;
-                const walkableHospitals = this.nearbyHospitals.filter(h => h.distance <= 1).length;
-                
-                response += `• Schools within 800m: ${walkableSchools}<br>`;
-                response += `• Hospitals within 1km: ${walkableHospitals}<br><br>`;
-                
-                response += `<strong>District:</strong> ${property.district}<br>`;
-                response += `• Main roads accessible<br>`;
-                response += `• Public transport available<br>`;
-                response += `• Moto-taxi services nearby<br><br>`;
-                
-                if (walkability >= 7) {
-                    response += `<span class="insight-tag">Excellent Walkability</span><br>`;
-                    response += `Most daily needs within walking distance!`;
-                } else if (walkability >= 5) {
-                    response += `<span class="insight-tag">Moderate Walkability</span><br>`;
-                    response += `Some amenities walkable, transport helpful.`;
-                } else {
-                    response += `<span class="insight-tag">Car Dependent</span><br>`;
-                    response += `Private transport recommended for daily needs.`;
-                }
-                
-                return response;
-            }
-            
-            generateInvestmentResponse(property) {
-                const investmentScore = this.calculateInvestmentScore(property);
-                const familyScore = this.calculateFamilySuitability(property);
-                let response = `Investment Analysis 💰📈<br><br>`;
-                
-                response += `<strong>Investment Score: ${investmentScore}/100</strong><br>`;
-                response += `<strong>Family Appeal: ${familyScore}/100</strong><br><br>`;
-                
-                response += `<strong>Value Drivers:</strong><br>`;
-                response += `• ${this.nearbySchools.length} schools nearby (+${this.nearbySchools.length * 3}% value)<br>`;
-                response += `• ${this.nearbyHospitals.length} health facilities (+${this.nearbyHospitals.length * 5}% value)<br>`;
-                response += `• ${property.district} district location<br>`;
-                response += `• Built in ${property.yearBuilt} (${2025 - property.yearBuilt} years old)<br><br>`;
-                
-                const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
-                if (property.status === 'sale') {
-                    const estimatedRent = Math.round(priceValue * 0.004);
-                    const annualRent = estimatedRent * 12;
-                    const roi = ((annualRent / (priceValue * 1000000)) * 100).toFixed(2);
-                    
-                    response += `<strong>Rental Potential:</strong><br>`;
-                    response += `• Estimated rent: ${estimatedRent}M RWF/month<br>`;
-                    response += `• Annual income: ${annualRent}M RWF<br>`;
-                    response += `• ROI: ${roi}%<br><br>`;
-                }
-                
-                if (investmentScore >= 80) {
-                    response += `<span class="insight-tag">Premium Investment</span><br>`;
-                    response += `Excellent growth potential with strong fundamentals!`;
-                } else if (investmentScore >= 60) {
-                    response += `<span class="insight-tag">Good Investment</span><br>`;
-                    response += `Solid choice with steady appreciation expected.`;
-                } else {
-                    response += `<span class="insight-tag">Value Investment</span><br>`;
-                    response += `Consider negotiating for better pricing.`;
-                }
-                
-                return response;
-            }
-            
-            generateGeneralResponse(property) {
-                let response = `I can provide comprehensive analysis for ${property.name}! 🏠<br><br>`;
-                response += `Here are key insights I can help with:<br><br>`;
-                response += `🎓 <strong>Schools:</strong> ${this.nearbySchools.length} within walking distance<br>`;
-                response += `🏥 <strong>Healthcare:</strong> ${this.nearbyHospitals.length} facilities nearby<br>`;
-                response += `👨‍👩‍👧 <strong>Family Score:</strong> ${this.calculateFamilySuitability(property)}/100<br>`;
-                response += `🚶 <strong>Walkability:</strong> ${this.calculateWalkability(property)}/10<br>`;
-                response += `💰 <strong>Investment Score:</strong> ${this.calculateInvestmentScore(property)}/100<br><br>`;
-                response += `What specific aspect would you like to explore?<br>`;
-                response += `• Education facilities<br>`;
-                response += `• Healthcare access<br>`;
-                response += `• Family suitability<br>`;
-                response += `• Transportation<br>`;
-                response += `• Investment potential`;
-                
-                return response;
-            }
-            
+
             showTyping() {
-                document.getElementById('typingIndicator').classList.add('show');
+                document.getElementById('typingIndicator').style.display = 'block';
+                this.scrollToBottom();
             }
-            
+
             hideTyping() {
-                document.getElementById('typingIndicator').classList.remove('show');
+                document.getElementById('typingIndicator').style.display = 'none';
             }
-            
+
             scrollToBottom() {
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
-            
+
+            generateAIResponse(message, property) {
+                const messagesContainer = document.getElementById('chatMessages');
+                let response = '';
+                if (!property) {
+                    response = 'Please select a property to analyze.';
+                } else {
+                    const lowerMessage = message.toLowerCase();
+                    if (lowerMessage.includes('school')) {
+                        response = this.analyzeSchoolProximity(property);
+                    } else if (lowerMessage.includes('health') || lowerMessage.includes('hospital')) {
+                        response = this.analyzeHospitalProximity(property);
+                    } else if (lowerMessage.includes('family')) {
+                        response = this.analyzeFamilySuitability(property);
+                    } else if (lowerMessage.includes('walk')) {
+                        response = this.analyzeWalkability(property);
+                    } else if (lowerMessage.includes('investment')) {
+                        response = this.analyzeInvestmentPotential(property);
+                    } else if (lowerMessage.includes('route') || lowerMessage.includes('driving') || lowerMessage.includes('walking')) {
+                        if (this.destinationCoords) {
+                            response = `Calculating routes to ${document.getElementById('locationSearch').value}. Please wait...`;
+                            this.calculateRoutes(property);
+                        } else {
+                            response = 'Please search for a destination first to calculate routes.';
+                        }
+                    } else {
+                        response = `
+                            I can provide insights on:<br>
+                            - Schools nearby<br>
+                            - Healthcare proximity<br>
+                            - Family suitability<br>
+                            - Walkability<br>
+                            - Investment potential<br>
+                            - Driving or walking routes to a destination<br>
+                            Please ask about one of these topics for the selected property in ${property.district}.
+                        `;
+                    }
+                }
+                messagesContainer.innerHTML += `
+                    <div class="message ai">
+                        <div class="message-content">${response}</div>
+                    </div>`;
+                this.scrollToBottom();
+            }
+
             sanitizeHTML(str) {
                 const div = document.createElement('div');
                 div.textContent = str;
                 return div.innerHTML;
             }
-        }
-        
-        // Global functions for button handlers
-        let spatialSystem = null;
-        
-        function toggleChat() {
-            const chatContainer = document.getElementById('chatContainer');
-            const toggleIcon = document.getElementById('toggleIcon');
-            chatContainer.classList.toggle('collapsed');
-            
-            if (chatContainer.classList.contains('collapsed')) {
-                toggleIcon.className = 'fas fa-chevron-right';
-            } else {
-                toggleIcon.className = 'fas fa-chevron-left';
+
+            setupEventListeners() {
+                document.getElementById('chatInput').addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = `${this.scrollHeight}px`;
+                });
             }
-            
-            if (spatialSystem) spatialSystem.map.invalidateSize();
         }
-        
+
+        const spatialSystem = new SpatialIntelligenceSystem();
+        spatialSystem.init();
+
         function toggleFullscreen() {
-            const mapContainer = document.querySelector('.map-container');
-            const icon = document.getElementById('fullscreenIcon');
-            mapContainer.classList.toggle('fullscreen');
-            
-            if (mapContainer.classList.contains('fullscreen')) {
-                icon.className = 'fas fa-compress';
-            } else {
-                icon.className = 'fas fa-expand';
-            }
-            
-            if (spatialSystem) spatialSystem.map.invalidateSize();
+            spatialSystem.toggleFullscreen();
         }
-        
-        function resetMapView() {
-            if (spatialSystem) {
-                spatialSystem.map.setView([-1.9441, 30.0619], 12);
-            }
+
+        function switchMapStyle() {
+            spatialSystem.switchMapStyle();
         }
-        
-        function toggleSatellite() {
-            if (spatialSystem) {
-                if (spatialSystem.map.hasLayer(spatialSystem.streetLayer)) {
-                    spatialSystem.map.removeLayer(spatialSystem.streetLayer);
-                    spatialSystem.map.addLayer(spatialSystem.satelliteLayer);
-                } else {
-                    spatialSystem.map.removeLayer(spatialSystem.satelliteLayer);
-                    spatialSystem.map.addLayer(spatialSystem.streetLayer);
-                }
-            }
+
+        function getUserLocation() {
+            spatialSystem.getUserLocation();
         }
-        
-        function locateMe() {
-            if (spatialSystem) {
-                spatialSystem.useCurrentLocation();
-            }
+
+        function toggleChatPanel() {
+            spatialSystem.toggleChatPanel();
         }
-        
-        function toggleLayer(layerName) {
-            if (!spatialSystem) return;
-            
-            const btn = document.getElementById(layerName + 'Layer');
-            spatialSystem.layerVisibility[layerName] = !spatialSystem.layerVisibility[layerName];
-            
-            if (btn) {
-                btn.classList.toggle('active');
-            }
-            
-            // Reanalyze current property if selected
-            if (spatialSystem.currentProperty) {
-                spatialSystem.clearBuffers();
-                spatialSystem.analyzeProximity(spatialSystem.currentProperty);
-            }
-            
-            if (layerName === 'heatmap') {
-                alert('Heat map visualization coming soon!');
-            } else if (layerName === 'transport') {
-                alert('Transport routes layer coming soon!');
-            }
-        }
-        
-        function analyzeEducation() {
-            if (!spatialSystem || !spatialSystem.currentProperty) {
-                alert('Please select a property first');
-                return;
-            }
-            
-            const property = spatialSystem.currentProperty;
-            const messagesContainer = document.getElementById('chatMessages');
-            
-            let analysis = `<div class="message ai"><div class="message-content">`;
-            analysis += `<strong>🎓 Comprehensive Education Analysis</strong><br><br>`;
-            
-            if (spatialSystem.nearbySchools.length > 0) {
-                analysis += `Found ${spatialSystem.nearbySchools.length} educational facilities:<br><br>`;
-                
-                // Categorize schools
-                const privateSchools = spatialSystem.nearbySchools.filter(s => s.school_status === 'PRIVATE');
-                const publicSchools = spatialSystem.nearbySchools.filter(s => s.school_status === 'PUBLIC');
-                const internationalCurriculum = spatialSystem.nearbySchools.filter(s => s.curriculum === 'INTERNATIONAL');
-                
-                analysis += `• Private schools: ${privateSchools.length}<br>`;
-                analysis += `• Public schools: ${publicSchools.length}<br>`;
-                analysis += `• International curriculum: ${internationalCurriculum.length}<br><br>`;
-                
-                analysis += `<strong>Closest school:</strong> ${spatialSystem.nearbySchools[0].school_name} (${(spatialSystem.nearbySchools[0].distance * 1000).toFixed(0)}m)<br><br>`;
-                analysis += `This is an excellent location for families with young children!`;
-            } else {
-                analysis += `No schools within 1.5km walking distance.<br>`;
-                analysis += `School transport will be necessary for this location.`;
-            }
-            
-            analysis += `</div></div>`;
-            messagesContainer.innerHTML += analysis;
-            spatialSystem.scrollToBottom();
-        }
-        
-        function analyzeHealthcare() {
-            if (!spatialSystem || !spatialSystem.currentProperty) {
-                alert('Please select a property first');
-                return;
-            }
-            
-            const messagesContainer = document.getElementById('chatMessages');
-            
-            let analysis = `<div class="message ai"><div class="message-content">`;
-            analysis += `<strong>🏥 Healthcare Accessibility Report</strong><br><br>`;
-            
-            if (spatialSystem.nearbyHospitals.length > 0) {
-                analysis += `${spatialSystem.nearbyHospitals.length} health facilities within 2km:<br><br>`;
-                
-                const hospitals = spatialSystem.nearbyHospitals.filter(h => h.facility_type.includes('Hospital'));
-                const clinics = spatialSystem.nearbyHospitals.filter(h => h.facility_type.includes('Clinic') || h.facility_type.includes('Health'));
-                
-                analysis += `• Hospitals: ${hospitals.length}<br>`;
-                analysis += `• Clinics/Health Centers: ${clinics.length}<br><br>`;
-                
-                analysis += `<strong>Emergency response time:</strong> ~5-10 minutes<br>`;
-                analysis += `<strong>Nearest facility:</strong> ${spatialSystem.nearbyHospitals[0].facility_name} (${spatialSystem.nearbyHospitals[0].distance.toFixed(1)}km)<br><br>`;
-                analysis += `Good healthcare coverage for medical emergencies!`;
-            } else {
-                analysis += `No healthcare facilities within 2km.<br>`;
-                analysis += `Emergency response may take 15+ minutes.<br>`;
-                analysis += `Consider having emergency transport ready.`;
-            }
-            
-            analysis += `</div></div>`;
-            messagesContainer.innerHTML += analysis;
-            spatialSystem.scrollToBottom();
-        }
-        
-        function analyzeWalkability() {
-            if (!spatialSystem || !spatialSystem.currentProperty) {
-                alert('Please select a property first');
-                return;
-            }
-            
-            const property = spatialSystem.currentProperty;
-            const walkability = spatialSystem.calculateWalkability(property);
-            const messagesContainer = document.getElementById('chatMessages');
-            
-            let analysis = `<div class="message ai"><div class="message-content">`;
-            analysis += `<strong>🚶 15-Minute Neighborhood Analysis</strong><br><br>`;
-            analysis += `<strong>Walkability Score: ${walkability}/10</strong><br><br>`;
-            
-            // Within 800m (10 min walk)
-            const walkableSchools = spatialSystem.nearbySchools.filter(s => s.distance <= 0.8);
-            const walkableHospitals = spatialSystem.nearbyHospitals.filter(h => h.distance <= 1);
-            
-            analysis += `<strong>Within 10-minute walk:</strong><br>`;
-            analysis += `• Schools: ${walkableSchools.length}<br>`;
-            analysis += `• Healthcare: ${walkableHospitals.length}<br><br>`;
-            
-            analysis += `<strong>Within 15-minute walk (1.2km):</strong><br>`;
-            const schools15min = spatialSystem.nearbySchools.filter(s => s.distance <= 1.2);
-            const hospitals15min = spatialSystem.nearbyHospitals.filter(h => h.distance <= 1.5);
-            
-            analysis += `• Schools: ${schools15min.length}<br>`;
-            analysis += `• Healthcare: ${hospitals15min.length}<br><br>`;
-            
-            if (walkability >= 7) {
-                analysis += `<span class="insight-tag">Highly Walkable</span><br>`;
-                analysis += `Most daily needs accessible on foot!`;
-            } else if (walkability >= 5) {
-                analysis += `<span class="insight-tag">Somewhat Walkable</span><br>`;
-                analysis += `Some errands can be accomplished on foot.`;
-            } else {
-                analysis += `<span class="insight-tag">Car-Dependent</span><br>`;
-                analysis += `Most errands require a car or transport.`;
-            }
-            
-            analysis += `</div></div>`;
-            messagesContainer.innerHTML += analysis;
-            spatialSystem.scrollToBottom();
-        }
-        
-        function compareAreas() {
-            if (!spatialSystem) return;
-            
-            const messagesContainer = document.getElementById('chatMessages');
-            
-            // Analyze all districts
-            const districtStats = {};
-            
-            ['Gasabo', 'Nyarugenge', 'Kicukiro'].forEach(district => {
-                const districtProperties = spatialSystem.properties.filter(p => p.district === district);
-                const avgPrice = districtProperties.reduce((sum, p) => 
-                    sum + parseInt(p.price.replace(/[^0-9]/g, '')), 0) / districtProperties.length;
-                
-                districtStats[district] = {
-                    properties: districtProperties.length,
-                    avgPrice: Math.round(avgPrice),
-                    forSale: districtProperties.filter(p => p.status === 'sale').length,
-                    forRent: districtProperties.filter(p => p.status === 'rent').length
-                };
-            });
-            
-            let analysis = `<div class="message ai"><div class="message-content">`;
-            analysis += `<strong>📊 District Comparison Analysis</strong><br><br>`;
-            
-            Object.keys(districtStats).forEach(district => {
-                const stats = districtStats[district];
-                analysis += `<strong>${district} District:</strong><br>`;
-                analysis += `• Properties: ${stats.properties}<br>`;
-                analysis += `• Avg Price: ${stats.avgPrice}M RWF<br>`;
-                analysis += `• For Sale: ${stats.forSale} | For Rent: ${stats.forRent}<br><br>`;
-            });
-            
-            // Find best value district
-            const bestValue = Object.keys(districtStats).reduce((a, b) => 
-                districtStats[a].avgPrice < districtStats[b].avgPrice ? a : b);
-            
-            analysis += `<span class="insight-tag">Best Value: ${bestValue}</span><br>`;
-            analysis += `Lowest average prices with good amenities!`;
-            
-            analysis += `</div></div>`;
-            messagesContainer.innerHTML += analysis;
-            spatialSystem.scrollToBottom();
-        }
-        
-        // Initialize the system when page loads
-        window.addEventListener('DOMContentLoaded', () => {
-            spatialSystem = new SpatialIntelligenceSystem();
-        });
     </script>
 </body>
 </html>
