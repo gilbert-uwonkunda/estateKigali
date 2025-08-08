@@ -428,6 +428,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script>
+    <script>
     class SpatialIntelligenceSystem {
         constructor() {
             this.map = null;
@@ -442,7 +443,6 @@
             this.schoolMarkers = [];
             this.filteredProperties = [];
             this.markerCluster = null;
-            this.initialLoadLimit = 100;
             this.init();
         }
         async init() {
@@ -452,48 +452,36 @@
             setTimeout(() => {
                 const loadingOverlay = document.getElementById('loadingOverlay');
                 if (this.properties.length === 0) {
-                    loadingOverlay.querySelector('.loading-text').textContent = 'No valid properties found. Using sample data.';
+                    loadingOverlay.querySelector('.loading-text').textContent = 'No properties loaded. Using sample data.';
                 }
-                setTimeout(() => loadingOverlay.classList.add('hidden'), 500);
-            }, 10000);
+                loadingOverlay.classList.add('hidden');
+                this.map.invalidateSize();
+            }, 8000);
+        }
+        async fetchWithRetry(url, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    console.warn(`Fetch attempt ${i + 1} failed for ${url}: ${error.message}. Retrying...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
         }
         async loadData() {
             const cacheKey = 'propertyIntelData';
-            const cachedData = localStorage.getItem(cacheKey);
-            if (cachedData) {
-                try {
-                    const data = JSON.parse(cachedData);
-                    if (this.validateData(data)) {
-                        this.properties = data.properties || [];
-                        this.hospitals = data.hospitals || [];
-                        this.schools = data.schools || [];
-                        console.log('Loaded from cache:', this.properties.length, 'properties');
-                        return;
-                    } else {
-                        console.warn('Invalid cached data. Clearing cache.');
-                        localStorage.removeItem(cacheKey);
-                    }
-                } catch (error) {
-                    console.error('Failed to parse cached data:', error);
-                    localStorage.removeItem(cacheKey);
-                }
-            }
+            localStorage.removeItem(cacheKey); // Clear cache to avoid stale data
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
-                const [propRes, hospRes, schoolRes] = await Promise.all([
-                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_RealEstate_Properties.json', { signal: controller.signal }),
-                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json', { signal: controller.signal }),
-                    fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json', { signal: controller.signal })
-                ]);
-                clearTimeout(timeoutId);
-                if (!propRes.ok) throw new Error(`Properties fetch failed: ${propRes.status}`);
-                if (!hospRes.ok) throw new Error(`Hospitals fetch failed: ${hospRes.status}`);
-                if (!schoolRes.ok) throw new Error(`Schools fetch failed: ${schoolRes.status}`);
                 const [propData, hospData, schoolData] = await Promise.all([
-                    propRes.json(),
-                    hospRes.json(),
-                    schoolRes.json()
+                    this.fetchWithRetry('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_RealEstate_Properties.json'),
+                    this.fetchWithRetry('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json'),
+                    this.fetchWithRetry('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json')
                 ]);
                 this.properties = this.parseProperties(propData);
                 this.hospitals = this.parseHospitals(hospData);
@@ -506,31 +494,12 @@
                 console.log('Loaded from server:', this.properties.length, 'properties');
             } catch (error) {
                 console.error('Data load failed:', error.message);
-                document.getElementById('loadingOverlay').querySelector('.loading-text').textContent = 'Loading failed. Using sample data...';
+                document.getElementById('loadingOverlay').querySelector('.loading-text').textContent = 'Failed to load data. Using sample data...';
                 this.properties = [
-                    {
-                        id: 1,
-                        lat: -1.9441,
-                        lng: 30.0619,
-                        name: 'City Center Apartment',
-                        type: 'Apartment',
-                        price: '80M RWF',
-                        status: 'sale',
-                        bedrooms: 2,
-                        bathrooms: 2,
-                        area: '100m²',
-                        district: 'Nyarugenge',
-                        category: 'Residential',
-                        sector: 'Unknown',
-                        zoning: 'Unknown',
-                        amenities: 'None',
-                        pricePerSqm: '0',
-                        yearBuilt: 'Unknown',
-                        source: 'Sample',
-                        contactInfo: 'N/A',
-                        description: 'Sample property',
-                        lastUpdated: '2025-08-08'
-                    }
+                    {"id":1,"lat":-1.9441,"lng":30.0619,"name":"City Center Luxury Apartment","type":"Luxury Apartment","price":"180M RWF","status":"sale","bedrooms":3,"bathrooms":3,"area":"180m²","district":"Nyarugenge","category":"Property","sector":"City Center","zoning":"Commercial","amenities":"Pool, Gym, Security, Parking","pricePerSqm":1000000,"yearBuilt":2022,"source":"Sample Data","contactInfo":"","description":"","lastUpdated":""},
+                    {"id":2,"lat":-1.9506,"lng":30.0639,"name":"Business District Condo","type":"Apartment","price":"65M RWF","status":"rent","bedrooms":2,"bathrooms":2,"area":"110m²","district":"Nyarugenge","category":"Property","sector":"Business District","zoning":"Commercial","amenities":"Security, Parking","pricePerSqm":590909,"yearBuilt":2019,"source":"Sample Data","contactInfo":"","description":"","lastUpdated":""},
+                    {"id":3,"lat":-1.9286,"lng":30.1044,"name":"Kimihurura Sunset Villa","type":"Villa","price":"320M RWF","status":"sale","bedrooms":5,"bathrooms":4,"area":"450m²","district":"Gasabo","category":"Property","sector":"Kimihurura","zoning":"R1","amenities":"Garden, Pool, Security, Garage","pricePerSqm":711111,"yearBuilt":2021,"source":"Sample Data","contactInfo":"","description":"","lastUpdated":""}
+                    // Add more sample properties as needed
                 ];
                 this.hospitals = [
                     { facility_name: 'King Faisal Hospital', facility_type: 'Hospital', lat: -1.9439, long: 30.0951 }
@@ -545,7 +514,7 @@
                 Array.isArray(data.properties) &&
                 Array.isArray(data.hospitals) &&
                 Array.isArray(data.schools) &&
-                data.properties.every(p => p.lat && p.lng && p.id)
+                data.properties.every(p => typeof p.lat === 'number' && typeof p.lng === 'number' && p.id)
             );
         }
         parseProperties(data) {
@@ -570,7 +539,6 @@
                         invalidFeatures.push({ index, reason: `Invalid coordinates (lat: ${f.geometry.y}, lng: ${f.geometry.x})` });
                         return null;
                     }
-                    // Validate coordinate range for Kigali (approx. -2.1 to -1.8 lat, 29.9 to 30.3 lng)
                     if (lat < -2.1 || lat > -1.8 || lng < 29.9 || lng > 30.3) {
                         invalidFeatures.push({ index, reason: `Coordinates out of range (lat: ${lat}, lng: ${lng})` });
                         return null;
@@ -604,7 +572,7 @@
                 console.warn(`Skipped ${invalidFeatures.length} invalid features:`, invalidFeatures);
             }
             if (properties.length === 0) {
-                console.error('No valid properties found in JSON data. Check geometry.x and geometry.y fields.');
+                console.error('No valid properties found. Check geometry.x and geometry.y fields.');
                 document.getElementById('loadingOverlay').querySelector('.loading-text').textContent = 'No valid properties found. Check data source.';
             }
             return properties;
@@ -646,7 +614,6 @@
             }).addTo(this.map);
             this.addProperties();
             this.map.on('click', () => this.clearSelection());
-            this.map.on('moveend zoomend', () => this.updateVisibleMarkers());
             new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
         }
         addProperties() {
@@ -655,7 +622,7 @@
                 document.getElementById('chatMessages').innerHTML = `
                     <div class="message ai">
                         <div class="message-content">
-                            No properties loaded. Please check the data source (geometry.x and geometry.y fields).
+                            No properties loaded. Please check the data source.
                         </div>
                     </div>`;
                 return;
@@ -669,18 +636,8 @@
                 }),
                 maxClusterRadius: 80
             });
-            this.updateVisibleMarkers();
-            this.map.addLayer(this.markerCluster);
-            this.updateFilterSummary();
-        }
-        updateVisibleMarkers() {
-            const bounds = this.map.getBounds();
-            const visibleProperties = this.filteredProperties
-                .slice(0, this.initialLoadLimit)
-                .filter(p => bounds.contains([p.lat, p.lng]));
-            this.markerCluster.clearLayers();
             requestAnimationFrame(() => {
-                visibleProperties.forEach(prop => {
+                this.filteredProperties.forEach(prop => {
                     if (!prop.lat || !prop.lng) {
                         console.warn(`Invalid coordinates for property: ${prop.name}`);
                         return;
@@ -703,6 +660,8 @@
                     marker.on('click', () => this.selectProperty(prop, marker));
                     this.markerCluster.addLayer(marker);
                 });
+                this.map.addLayer(this.markerCluster);
+                this.updateFilterSummary();
                 this.map.invalidateSize();
             });
         }
@@ -862,8 +821,35 @@
                 }
                 return true;
             });
-            this.updateVisibleMarkers();
-            this.updateFilterSummary();
+            this.markerCluster.clearLayers();
+            requestAnimationFrame(() => {
+                this.filteredProperties.forEach(p => {
+                    if (!p.lat || !p.lng) {
+                        console.warn(`Invalid coordinates for filtered property: ${p.name}`);
+                        return;
+                    }
+                    const marker = L.marker([p.lat, p.lng], {
+                        icon: L.divIcon({
+                            className: `property-marker ${p.status}`,
+                            html: `<div style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        })
+                    });
+                    marker.bindTooltip(`
+                        <strong>${this.sanitizeHTML(p.name)}</strong><br>
+                        Type: ${this.sanitizeHTML(p.type)}<br>
+                        Price: ${this.sanitizeHTML(p.price)}<br>
+                        ${p.bedrooms ? `${p.bedrooms}BR • ${p.bathrooms}BA` : ''}<br>
+                        District: ${this.sanitizeHTML(p.district)}
+                    `, { direction: 'top', offset: [0, -10] });
+                    marker.on('click', () => this.selectProperty(p, marker));
+                    this.markerCluster.addLayer(marker);
+                });
+                this.map.addLayer(this.markerCluster);
+                this.updateFilterSummary();
+                this.map.invalidateSize();
+            });
         }
         updateFilterSummary() {
             const filterSummary = document.getElementById('filterSummary');
