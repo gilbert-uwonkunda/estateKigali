@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +41,6 @@
             position: relative;
         }
         
-        /* Chat Container - Simplified */
         .chat-container {
             width: 400px;
             background: var(--glass);
@@ -68,7 +68,6 @@
             background: #1a1a2e;
         }
         
-        /* App Header */
         .app-header {
             padding: 20px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -99,7 +98,6 @@
             transform: scale(1.05);
         }
         
-        /* Filter Section */
         .filter-section {
             padding: 15px 20px;
             border-bottom: 1px solid var(--glass-light);
@@ -150,7 +148,6 @@
             border-radius: 6px;
         }
         
-        /* Chat Messages Section */
         .chat-section {
             flex: 1;
             display: flex;
@@ -196,7 +193,6 @@
             max-width: 85%;
         }
         
-        /* Chat Input */
         .chat-input-container {
             padding: 20px;
             background: rgba(15, 23, 42, 0.9);
@@ -245,7 +241,6 @@
             cursor: not-allowed;
         }
         
-        /* Map Controls */
         .map-search-controls {
             position: absolute;
             top: 20px;
@@ -289,7 +284,7 @@
             background: rgba(99, 102, 241, 0.1);
         }
         
-        .location-btn {
+        .location-btn, .home-btn {
             background: var(--primary);
             border: none;
             color: white;
@@ -301,23 +296,12 @@
             transition: all 0.3s ease;
         }
         
-        .location-btn:hover {
+        .location-btn:hover, .home-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
         
-        /* Map Data Panels */
         .data-panels {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-        
-        .facilities-panels {
             position: absolute;
             bottom: 20px;
             right: 20px;
@@ -391,15 +375,6 @@
             color: var(--primary);
         }
         
-        .schools-panel .panel-title {
-            color: var(--education);
-        }
-        
-        .hospitals-panel .panel-title {
-            color: var(--success);
-        }
-        
-        /* Property Markers */
         .property-marker {
             background: white;
             border: 2px solid var(--primary);
@@ -439,7 +414,6 @@
             z-index: 1001;
         }
         
-        /* Status Indicators */
         .property-marker.sale {
             border-color: var(--danger);
             color: var(--danger);
@@ -517,18 +491,6 @@
             line-height: 1;
         }
         
-        /* Reduce visual noise when zoomed out */
-        .property-marker.distant {
-            opacity: 0.6;
-            font-size: 10px;
-            padding: 3px 6px;
-        }
-        
-        .property-marker.distant:hover {
-            opacity: 1;
-        }
-        
-        /* School Markers */
         .school-marker {
             width: 28px !important;
             height: 28px !important;
@@ -550,7 +512,6 @@
             box-shadow: 0 6px 25px rgba(139, 92, 246, 0.6);
         }
         
-        /* Hospital Markers */
         .hospital-marker {
             width: 28px !important;
             height: 28px !important;
@@ -572,7 +533,6 @@
             box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
         }
         
-        /* Info Panels in Chat */
         .property-info {
             background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
             border-radius: 12px;
@@ -629,7 +589,6 @@
             font-weight: 500;
         }
         
-        /* Tooltips */
         .leaflet-tooltip.compact-tooltip {
             background: var(--glass) !important;
             border: 1px solid var(--glass-light) !important;
@@ -655,7 +614,6 @@
             backdrop-filter: blur(10px) !important;
         }
         
-        /* Responsive Design */
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
@@ -681,13 +639,6 @@
             .data-panels {
                 flex-direction: column;
                 bottom: 10px;
-                left: 10px;
-                gap: 6px;
-            }
-            
-            .facilities-panels {
-                flex-direction: column;
-                bottom: 10px;
                 right: 10px;
                 gap: 6px;
             }
@@ -711,7 +662,6 @@
             }
         }
         
-        /* Scrollbar */
         .chat-messages::-webkit-scrollbar {
             width: 6px;
         }
@@ -725,7 +675,6 @@
             background: rgba(255,255,255,0.05);
         }
         
-        /* Welcome Message */
         .welcome-message {
             text-align: center;
             padding: 20px;
@@ -740,7 +689,6 @@
             margin-bottom: 8px;
         }
         
-        /* Typing Indicator */
         .typing-indicator {
             display: none;
             padding: 10px 20px;
@@ -768,9 +716,7 @@
 </head>
 <body>
     <div class="main-container">
-        <!-- Clean Chat Container -->
         <div class="chat-container" id="chatContainer">
-            <!-- App Header -->
             <div class="app-header">
                 <div class="app-title">PropertyIntel Kigali</div>
                 <button class="toggle-chat-btn" onclick="toggleChat()" aria-label="Toggle chat">
@@ -778,7 +724,6 @@
                 </button>
             </div>
             
-            <!-- Filter Section -->
             <div class="filter-section">
                 <div class="filter-title">
                     <i class="fas fa-filter"></i> Property Filters
@@ -812,31 +757,27 @@
                 </div>
             </div>
             
-            <!-- Chat Section -->
             <div class="chat-section">
                 <div class="chat-messages" id="chatMessages">
                     <div class="welcome-message">
                         <div class="welcome-title">Welcome to PropertyIntel!</div>
-                        Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                        Your AI-powered real estate assistant for Kigali. Ask me about market trends, investment opportunities, or specific properties!
                     </div>
                 </div>
                 <div class="typing-indicator" id="typingIndicator"></div>
                 
-                <!-- Chat Input -->
                 <div class="chat-input-container">
                     <textarea class="chat-input" id="chatInput" 
-                              placeholder="Select a property to start asking questions..." 
-                              rows="1" disabled aria-label="Ask about property"></textarea>
-                    <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
+                              placeholder="Ask about Kigali real estate market, investment tips, or specific properties..." 
+                              rows="1" aria-label="Ask about property"></textarea>
+                    <button class="send-btn" id="sendBtn" aria-label="Send message">
                         <i class="fas fa-paper-plane"></i> Send Message
                     </button>
                 </div>
             </div>
         </div>
         
-        <!-- Map Container -->
         <div class="map-container">
-            <!-- Map Search Controls -->
             <div class="map-search-controls">
                 <div class="search-box">
                     <input type="text" id="locationSearch" class="search-input" 
@@ -848,13 +789,15 @@
                 <button id="locationBtn" class="location-btn" aria-label="Use current location">
                     <i class="fas fa-crosshairs"></i>
                 </button>
+                <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
+                    <i class="fas fa-home"></i>
+                </button>
             </div>
             
-            <!-- Data Panels -->
             <div class="data-panels">
                 <div class="data-panel properties-panel">
                     <div class="panel-title">
-                        <i class="fas fa-home"></i> Properties
+                        <i class="fas fa-home"></i> Property Listings
                     </div>
                     <div class="panel-value" id="propertiesCount">20</div>
                     <div class="panel-subtitle">Available listings</div>
@@ -889,32 +832,52 @@
                 </div>
             </div>
             
-            <!-- Facilities Panels -->
-            <div class="facilities-panels">
-                <div class="data-panel schools-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-graduation-cap"></i> Schools
-                    </div>
-                    <div class="panel-value" id="schoolsCount">0</div>
-                    <div class="panel-subtitle">Educational facilities</div>
-                </div>
-                
-                <div class="data-panel hospitals-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-hospital"></i> Hospitals
-                    </div>
-                    <div class="panel-value" id="hospitalsCount">0</div>
-                    <div class="panel-subtitle">Health facilities</div>
-                </div>
-            </div>
-            
             <div id="map"></div>
         </div>
     </div>
     
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+    </script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Enhanced PropertyIntel System
         class PropertyIntelSystem {
             constructor() {
                 this.map = null;
@@ -961,7 +924,7 @@
                 await this.loadSchools();
                 this.initializeMap();
                 this.setupEventListeners();
-                this.updateStats(); // This will now show the breakdown
+                this.updateStats();
             }
             
             async loadFacilities() {
@@ -987,15 +950,12 @@
                     }
                 } catch (error) {
                     console.error('Failed to load facilities:', error);
-                    // Fallback data
                     this.facilities = [
                         { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, long: 30.0951, district: "Gasabo" },
                         { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, long: 30.0604, district: "Nyarugenge" },
                         { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
                     ];
                 }
-                
-                document.getElementById('hospitalsCount').textContent = this.facilities.length;
             }
             
             async loadSchools() {
@@ -1022,15 +982,12 @@
                     }
                 } catch (error) {
                     console.error('Failed to load schools:', error);
-                    // Sample fallback data
                     this.schools = [
                         { school_name: "ITETERO NURSERY SCHOOL", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9489, lng: 30.0000, established: 2009 },
                         { school_name: "Green Hills Academy", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "INTERNATIONAL", lat: -1.9556, lng: 30.1044, established: 2006 },
                         { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
                     ];
                 }
-                
-                document.getElementById('schoolsCount').textContent = this.schools.length;
             }
             
             initializeMap() {
@@ -1045,10 +1002,7 @@
                     this.map.invalidateSize();
                 }, 100);
                 
-                // Only add properties to map initially
                 this.addProperties();
-                
-                // Prepare hospitals and schools markers but don't add to map
                 this.prepareHospitals();
                 this.prepareSchools();
                 
@@ -1065,20 +1019,18 @@
                     const isLuxury = prop.type.toLowerCase().includes('luxury');
                     const markerClass = `property-marker ${prop.status} ${isLuxury ? 'luxury' : ''}`;
                     
-                    // Simplify price label - remove "M RWF" for cleaner look
                     const priceLabel = prop.price.replace(' RWF', '').replace('M', '');
                     
                     const marker = L.marker([prop.lat, prop.lng], {
                         icon: L.divIcon({
                             className: markerClass,
                             html: priceLabel,
-                            iconSize: [60, 24], // Fixed size
-                            iconAnchor: [30, 12], // Center the marker properly
-                            popupAnchor: [0, -12] // Position popup correctly
+                            iconSize: [60, 24],
+                            iconAnchor: [30, 24],
+                            popupAnchor: [0, -24]
                         })
                     });
                     
-                    // Simplified tooltip with key info only
                     const tooltipContent = `
                         <div style="font-weight: 600; margin-bottom: 4px; font-size: 13px;">${prop.name}</div>
                         <div style="margin-bottom: 2px; font-size: 12px;">📍 ${prop.district} • ${prop.bedrooms}BR</div>
@@ -1087,7 +1039,7 @@
                     
                     marker.bindTooltip(tooltipContent, { 
                         direction: 'top', 
-                        offset: [0, -15],
+                        offset: [0, -24],
                         permanent: false,
                         sticky: false,
                         className: 'compact-tooltip'
@@ -1103,27 +1055,11 @@
                     });
                 });
                 
-                // Add zoom-based styling
-                this.map.on('zoomend', () => {
-                    const zoom = this.map.getZoom();
-                    this.propertyMarkers.forEach(item => {
-                        const element = item.marker.getElement();
-                        if (element) {
-                            if (zoom < 12) {
-                                element.classList.add('distant');
-                            } else {
-                                element.classList.remove('distant');
-                            }
-                        }
-                    });
-                });
-                
                 this.updateFilterSummary();
             }
             
             prepareHospitals() {
                 this.hospitalMarkers = [];
-                // Create hospital markers but don't add to map initially
                 this.facilities.forEach(facility => {
                     const marker = L.marker([facility.lat, facility.long], {
                         icon: L.divIcon({
@@ -1148,14 +1084,12 @@
                         sticky: true
                     });
                     
-                    // Store marker but don't add to map
                     this.hospitalMarkers.push(marker);
                 });
             }
             
             prepareSchools() {
                 this.schoolMarkers = [];
-                // Create school markers but don't add to map initially
                 this.schools.forEach(school => {
                     const marker = L.marker([school.lat, school.lng], {
                         icon: L.divIcon({
@@ -1181,13 +1115,11 @@
                         sticky: true
                     });
                     
-                    // Store marker but don't add to map
                     this.schoolMarkers.push(marker);
                 });
             }
             
             selectProperty(property, marker) {
-                // Remove previous selection
                 if (this.selectedMarker) {
                     const prevElement = this.selectedMarker.getElement();
                     if (prevElement) {
@@ -1198,14 +1130,11 @@
                 this.currentProperty = property;
                 this.selectedMarker = marker;
                 
-                // Add selection class
                 const markerElement = marker.getElement();
                 if (markerElement) {
                     markerElement.classList.add('selected');
                 }
                 
-                document.getElementById('chatInput').disabled = false;
-                document.getElementById('sendBtn').disabled = false;
                 document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
                 
                 this.analyzeProperty(property);
@@ -1213,16 +1142,13 @@
             }
             
             analyzeProperty(property) {
-                // Clear any existing markers first
                 this.clearNearbyMarkers();
-                
                 this.analyzeProximity(property);
                 this.displayPropertyAnalysis(property);
                 this.showNearbyFacilities(property);
             }
             
             clearNearbyMarkers() {
-                // Remove any existing nearby facility markers
                 this.hospitalMarkers.forEach(marker => {
                     if (this.map.hasLayer(marker)) {
                         this.map.removeLayer(marker);
@@ -1237,7 +1163,6 @@
             }
             
             showNearbyFacilities(property) {
-                // Show nearby hospitals
                 this.nearbyHospitals.forEach(hospital => {
                     const marker = this.hospitalMarkers.find(m => {
                         const markerLatLng = m.getLatLng();
@@ -1249,7 +1174,6 @@
                     }
                 });
                 
-                // Show nearby schools
                 this.nearbySchools.forEach(school => {
                     const marker = this.schoolMarkers.find(m => {
                         const markerLatLng = m.getLatLng();
@@ -1263,13 +1187,12 @@
             }
             
             analyzeProximity(property) {
-                // Analyze hospitals
                 this.nearbyHospitals = [];
                 this.facilities.forEach(facility => {
                     const distance = L.latLng(property.lat, property.lng)
                         .distanceTo([facility.lat, facility.long]) / 1000;
                     
-                    if (distance <= 3) { // 3km for hospitals
+                    if (distance <= 3) {
                         this.nearbyHospitals.push({
                             ...facility,
                             distance: distance
@@ -1278,13 +1201,12 @@
                 });
                 this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
                 
-                // Analyze schools
                 this.nearbySchools = [];
                 this.schools.forEach(school => {
                     const distance = L.latLng(property.lat, property.lng)
                         .distanceTo([school.lat, school.lng]) / 1000;
                     
-                    if (distance <= 2) { // 2km for schools
+                    if (distance <= 2) {
                         this.nearbySchools.push({
                             ...school,
                             distance: distance
@@ -1298,7 +1220,6 @@
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.innerHTML = '';
                 
-                // Property Info
                 let propertyHtml = `
                     <div class="property-info">
                         <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
@@ -1312,7 +1233,6 @@
                 
                 messagesContainer.innerHTML += propertyHtml;
                 
-                // Education Analysis
                 if (this.nearbySchools.length > 0) {
                     let schoolHtml = `
                         <div class="education-info">
@@ -1338,7 +1258,6 @@
                         </div>`;
                 }
                 
-                // Healthcare Analysis
                 if (this.nearbyHospitals.length > 0) {
                     let hospitalHtml = `
                         <div class="proximity-info">
@@ -1371,8 +1290,11 @@
                 this.map.setView([lat, lng], 16);
             }
             
+            resetToHomeView() {
+                this.map.setView([-1.9441, 30.0619], 11);
+            }
+            
             handleMapClick(e) {
-                // Clear nearby facility markers when clicking on empty map
                 this.clearNearbyMarkers();
                 
                 if (!this.currentProperty) {
@@ -1380,7 +1302,7 @@
                     messagesContainer.innerHTML = `
                         <div class="welcome-message">
                             <div class="welcome-title">Welcome to PropertyIntel!</div>
-                            Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                            Your AI-powered real estate assistant for Kigali. Ask me about market trends, investment opportunities, or specific properties!
                         </div>`;
                 }
             }
@@ -1391,11 +1313,11 @@
                 const locationSearch = document.getElementById('locationSearch');
                 const searchBtn = document.getElementById('searchBtn');
                 const locationBtn = document.getElementById('locationBtn');
+                const homeBtn = document.getElementById('homeBtn');
                 const statusFilter = document.getElementById('statusFilter');
                 const typeFilter = document.getElementById('typeFilter');
                 const priceFilter = document.getElementById('priceFilter');
                 
-                // Chat input
                 chatInput.addEventListener('input', function() {
                     this.style.height = 'auto';
                     this.style.height = Math.min(this.scrollHeight, 100) + 'px';
@@ -1410,15 +1332,14 @@
                 
                 sendBtn.addEventListener('click', () => this.sendMessage());
                 
-                // Search
                 locationSearch.addEventListener('keypress', e => {
                     if (e.key === 'Enter') this.performLocationSearch();
                 });
                 
                 searchBtn.addEventListener('click', () => this.performLocationSearch());
                 locationBtn.addEventListener('click', () => this.useCurrentLocation());
+                homeBtn.addEventListener('click', () => this.resetToHomeView());
                 
-                // Filters
                 statusFilter.addEventListener('change', () => this.applyFilters());
                 typeFilter.addEventListener('change', () => this.applyFilters());
                 priceFilter.addEventListener('change', () => this.applyFilters());
@@ -1521,7 +1442,6 @@
                 const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
                 const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
                 
-                // Count by property type
                 const apartments = this.filteredProperties.filter(p => 
                     p.type.toLowerCase().includes('apartment')).length;
                 const houses = this.filteredProperties.filter(p => 
@@ -1531,7 +1451,6 @@
                 const luxury = this.filteredProperties.filter(p => 
                     p.type.toLowerCase().includes('luxury')).length;
                 
-                // Update all counters
                 document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
                 document.getElementById('forSaleCount').textContent = forSale;
                 document.getElementById('forRentCount').textContent = forRent;
@@ -1547,7 +1466,7 @@
                 
                 const chatInput = document.getElementById('chatInput');
                 const message = chatInput.value.trim();
-                if (!message || !this.currentProperty) {
+                if (!message) {
                     this.isSending = false;
                     return;
                 }
@@ -1564,11 +1483,451 @@
                 this.showTyping();
                 setTimeout(() => {
                     this.hideTyping();
-                    this.generateAIResponse(message, this.currentProperty);
+                    this.generateAIResponse(message);
                     this.isSending = false;
                 }, 1500);
                 
                 this.scrollToBottom();
+            }
+            
+            generateAIResponse(question) {
+                const messagesContainer = document.getElementById('chatMessages');
+                let response = '';
+                
+                const lowerQuestion = question.toLowerCase();
+                
+                // Enhanced AI responses for real estate enthusiasts
+                if (lowerQuestion.includes('market') || lowerQuestion.includes('trend')) {
+                    response = this.generateMarketAnalysis();
+                } else if (lowerQuestion.includes('investment') || lowerQuestion.includes('roi') || lowerQuestion.includes('return')) {
+                    response = this.generateInvestmentAdvice();
+                } else if (lowerQuestion.includes('district') || lowerQuestion.includes('area') || lowerQuestion.includes('neighborhood')) {
+                    response = this.generateDistrictAnalysis();
+                } else if (lowerQuestion.includes('luxury') || lowerQuestion.includes('premium')) {
+                    response = this.generateLuxuryMarketInsight();
+                } else if (lowerQuestion.includes('rental') || lowerQuestion.includes('rent')) {
+                    response = this.generateRentalMarketAnalysis();
+                } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('value')) {
+                    response = this.currentProperty ? this.generatePriceResponse(this.currentProperty) : this.generatePricingInsights();
+                } else if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
+                    response = this.currentProperty ? this.generateSchoolResponse(this.currentProperty) : this.generateEducationInsights();
+                } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
+                    response = this.currentProperty ? this.generateHealthResponse(this.currentProperty) : this.generateHealthcareInsights();
+                } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
+                    response = this.currentProperty ? this.generateFamilyResponse(this.currentProperty) : this.generateFamilyLivingInsights();
+                } else if (lowerQuestion.includes('developer') || lowerQuestion.includes('construction')) {
+                    response = this.generateDevelopmentInsights();
+                } else if (lowerQuestion.includes('infrastructure') || lowerQuestion.includes('transport')) {
+                    response = this.generateInfrastructureInsights();
+                } else {
+                    response = this.currentProperty ? this.generateGeneralResponse(this.currentProperty) : this.generateGeneralMarketResponse();
+                }
+                
+                messagesContainer.innerHTML += `
+                    <div class="message ai">
+                        <div class="message-content">${response}</div>
+                    </div>`;
+                
+                this.scrollToBottom();
+            }
+            
+            generateMarketAnalysis() {
+                return `<h4>📈 Kigali Real Estate Market Analysis</h4><br>
+                
+                <strong>Current Market Overview (2025):</strong><br>
+                • Market shows strong growth with 12-15% annual appreciation<br>
+                • Foreign investment increasing, especially in luxury segment<br>
+                • New infrastructure projects driving demand in Gasabo district<br><br>
+                
+                <strong>Hot Districts:</strong><br>
+                🔥 <strong>Gasabo:</strong> Premium locations like Nyarutarama, Kimihurura<br>
+                🏢 <strong>Nyarugenge:</strong> CBD proximity, business district appeal<br>
+                🏭 <strong>Kicukiro:</strong> Industrial growth, affordable housing<br><br>
+                
+                <strong>Price Trends:</strong><br>
+                • Luxury villas: 300M - 600M RWF (high demand)<br>
+                • Executive houses: 150M - 300M RWF (steady growth)<br>
+                • Apartments: 35M - 180M RWF (rental yields 6-8%)<br><br>
+                
+                <strong>Investment Outlook:</strong><br>
+                Strong fundamentals with Rwanda's economic growth, urbanization, and Vision 2050 driving long-term demand. Best opportunities in mixed-use developments and rental properties near business hubs.`;
+            }
+            
+            generateInvestmentAdvice() {
+                return `<h4>💼 Investment Strategy for Kigali Real Estate</h4><br>
+                
+                <strong>Top Investment Strategies:</strong><br>
+                🎯 <strong>Buy-to-Let:</strong> Target young professionals, expats<br>
+                🏗️ <strong>Off-Plan Purchases:</strong> 15-20% discounts, payment plans<br>
+                📍 <strong>Location Arbitrage:</strong> Emerging areas before infrastructure<br><br>
+                
+                <strong>ROI Expectations:</strong><br>
+                • Rental Yield: 6-8% annually<br>
+                • Capital Appreciation: 12-15% per year<br>
+                • Total Return: 18-23% potential<br><br>
+                
+                <strong>Smart Investment Zones:</strong><br>
+                🌟 <strong>Kimihurura:</strong> Established, expat community<br>
+                🚀 <strong>Kacyiru:</strong> Government offices, growing demand<br>
+                💎 <strong>Nyarutarama:</strong> Ultra-luxury, limited supply<br>
+                ⚡ <strong>Remera:</strong> Shopping, transport hub<br><br>
+                
+                <strong>Risk Factors:</strong><br>
+                • Currency fluctuation (USD vs RWF)<br>
+                • Oversupply in luxury segment<br>
+                • Regulatory changes in foreign ownership<br><br>
+                
+                <strong>Due Diligence Tips:</strong><br>
+                ✅ Verify land titles with Rwanda Development Board<br>
+                ✅ Check infrastructure development plans<br>
+                ✅ Analyze rental comparables in 500m radius<br>
+                ✅ Factor in maintenance and management costs`;
+            }
+            
+            generateDistrictAnalysis() {
+                return `<h4>🏘️ Kigali District Investment Guide</h4><br>
+                
+                <strong>GASABO DISTRICT</strong> - Premium Investment Zone<br>
+                💰 Price Range: 45M - 600M RWF<br>
+                📈 Growth Rate: 15-18% annually<br>
+                🎯 Target: Executives, expats, luxury buyers<br>
+                Key Areas: Nyarutarama (ultra-luxury), Kimihurura (family-friendly), Kacyiru (government sector)<br><br>
+                
+                <strong>NYARUGENGE DISTRICT</strong> - Business Hub<br>
+                💰 Price Range: 35M - 180M RWF<br>
+                📈 Growth Rate: 10-12% annually<br>
+                🎯 Target: Business owners, young professionals<br>
+                Key Areas: City Center (CBD proximity), Nyamirambo (cultural significance)<br><br>
+                
+                <strong>KICUKIRO DISTRICT</strong> - Emerging Value<br>
+                💰 Price Range: 35M - 200M RWF<br>
+                📈 Growth Rate: 12-15% annually<br>
+                🎯 Target: Industrial workers, first-time buyers<br>
+                Key Areas: Gikondo (industrial), Kibagabaga (university area)<br><br>
+                
+                <strong>Investment Recommendations:</strong><br>
+                🏆 <strong>Best Overall:</strong> Gasabo (established, high appreciation)<br>
+                💸 <strong>Best Value:</strong> Kicukiro (affordable entry point)<br>
+                🏢 <strong>Best Rental:</strong> Nyarugenge (business district demand)<br>
+                🚀 <strong>Best Growth:</strong> Gasabo periphery (infrastructure development)`;
+            }
+            
+            generateLuxuryMarketInsight() {
+                return `<h4>👑 Luxury Real Estate Market in Kigali</h4><br>
+                
+                <strong>Luxury Market Dynamics:</strong><br>
+                • Ultra-high-end: 400M+ RWF (limited inventory)<br>
+                • High-end: 200M - 400M RWF (growing segment)<br>
+                • Premium: 100M - 200M RWF (most active)<br><br>
+                
+                <strong>Luxury Hotspots:</strong><br>
+                🏌️ <strong>Nyarutarama:</strong> Golf course access, diplomatic community<br>
+                🌅 <strong>Kigali Heights:</strong> Panoramic views, gated community<br>
+                🏖️ <strong>Kimihurura:</strong> Established luxury, family compounds<br><br>
+                
+                <strong>Luxury Features in Demand:</strong><br>
+                • Smart home technology and automation<br>
+                • Private pools and spa facilities<br>
+                • Wine cellars and entertainment rooms<br>
+                • Multi-car garages and staff quarters<br>
+                • 24/7 security and gated access<br><br>
+                
+                <strong>Market Insights:</strong><br>
+                📊 Luxury segment represents 15% of total sales<br>
+                💼 80% buyers are business executives or diplomats<br>
+                🌍 40% are foreign nationals or diaspora<br>
+                ⏱️ Average time on market: 3-6 months<br><br>
+                
+                <strong>Investment Potential:</strong><br>
+                • Strong appreciation in prime locations (20%+ annually)<br>
+                • Limited supply maintaining price stability<br>
+                • High-end rental yields: 4-6% but strong capital gains<br>
+                • Trophy asset appeal for wealth preservation`;
+            }
+            
+            generateRentalMarketAnalysis() {
+                return `<h4>🏠 Rental Market Intelligence - Kigali</h4><br>
+                
+                <strong>Rental Yield Analysis:</strong><br>
+                🏢 <strong>Apartments:</strong> 6-8% annual yield<br>
+                🏘️ <strong>Houses:</strong> 5-7% annual yield<br>
+                🏰 <strong>Villas:</strong> 4-6% annual yield<br><br>
+                
+                <strong>High-Demand Rental Areas:</strong><br>
+                💼 <strong>Kacyiru:</strong> Government employees, stable tenants<br>
+                🎓 <strong>Kimihurura:</strong> Expat families, international schools<br>
+                🏢 <strong>City Center:</strong> Business professionals, short commutes<br>
+                📚 <strong>Remera:</strong> Shopping access, transport links<br><br>
+                
+                <strong>Tenant Profiles:</strong><br>
+                • Young professionals (25-35): 1-2BR apartments<br>
+                • Expat families (30-45): 3-4BR houses with gardens<br>
+                • Business executives (35-50): Luxury apartments/villas<br>
+                • Students/interns (20-30): Shared accommodations<br><br>
+                
+                <strong>Rental Rate Ranges (Monthly):</strong><br>
+                • 1BR Apartment: 300K - 600K RWF<br>
+                • 2BR Apartment: 500K - 900K RWF<br>
+                • 3BR House: 800K - 1.5M RWF<br>
+                • 4BR Villa: 1.2M - 3M RWF<br><br>
+                
+                <strong>Landlord Tips:</strong><br>
+                ✅ Furnish properties for higher yields (+20-30%)<br>
+                ✅ Include utilities in rent for convenience<br>
+                ✅ Target corporate clients for stability<br>
+                ✅ Maintain properties proactively<br>
+                ✅ Use professional property management`;
+            }
+            
+            generatePricingInsights() {
+                return `<h4>💰 Kigali Property Pricing Intelligence</h4><br>
+                
+                <strong>Price Per Square Meter Analysis:</strong><br>
+                🏢 <strong>Apartments:</strong> 800K - 1.2M RWF/m²<br>
+                🏘️ <strong>Houses:</strong> 600K - 1M RWF/m²<br>
+                🏰 <strong>Villas:</strong> 1M - 1.8M RWF/m²<br><br>
+                
+                <strong>Price Drivers:</strong><br>
+                📍 <strong>Location:</strong> 30-40% impact on pricing<br>
+                🏗️ <strong>Build Quality:</strong> 20-25% price variation<br>
+                🎯 <strong>Amenities:</strong> 15-20% premium for luxury features<br>
+                📅 <strong>Age:</strong> 10-15% depreciation for older properties<br><br>
+                
+                <strong>Negotiation Insights:</strong><br>
+                • Properties on market >6 months: 5-10% negotiable<br>
+                • Cash purchases: 3-7% discount potential<br>
+                • Off-season timing (Jan-Mar): Better deals<br>
+                • Multiple property purchases: Volume discounts<br><br>
+                
+                <strong>Value-Add Opportunities:</strong><br>
+                🔧 <strong>Renovations:</strong> 20-30% value increase potential<br>
+                🌊 <strong>Pool Addition:</strong> 15-25% premium<br>
+                🔒 <strong>Security Upgrades:</strong> 10-15% value boost<br>
+                🌱 <strong>Landscaping:</strong> 5-12% aesthetic value<br><br>
+                
+                <strong>Price Forecast (2025-2027):</strong><br>
+                • Continued 12-15% annual appreciation expected<br>
+                • Infrastructure projects driving growth<br>
+                • Foreign investment maintaining momentum<br>
+                • Supply constraints in prime locations`;
+            }
+            
+            generateEducationInsights() {
+                return `<h4>🎓 Education Infrastructure Analysis</h4><br>
+                
+                <strong>School Distribution in Kigali:</strong><br>
+                📚 <strong>International Schools:</strong> Primarily in Gasabo district<br>
+                🏫 <strong>Private Schools:</strong> Well-distributed across all districts<br>
+                🎒 <strong>Public Schools:</strong> Available in all neighborhoods<br><br>
+                
+                <strong>Top-Rated International Schools:</strong><br>
+                • Green Hills Academy (Nyarutarama)<br>
+                • Kigali International School (Kimihurura)<br>
+                • Ecole Belge (Kacyiru)<br>
+                • American International School<br><br>
+                
+                <strong>Impact on Property Values:</strong><br>
+                📈 Properties within 1km of top schools: +15-25% premium<br>
+                🚌 School transport routes: +8-12% value addition<br>
+                🏫 New school developments: 20%+ appreciation potential<br><br>
+                
+                <strong>Family Investment Strategy:</strong><br>
+                • Target areas with multiple school options<br>
+                • Consider future family expansion needs<br>
+                • Factor in school fees vs property costs<br>
+                • International curriculum access for expat appeal<br><br>
+                
+                <strong>Educational Investment Hotspots:</strong><br>
+                🎯 <strong>Kimihurura:</strong> Multiple international schools<br>
+                🎯 <strong>Nyarutarama:</strong> Premium education cluster<br>
+                🎯 <strong>Kacyiru:</strong> Growing educational infrastructure<br>
+                🎯 <strong>Remera:</strong> Emerging school developments`;
+            }
+            
+            generateHealthcareInsights() {
+                return `<h4>🏥 Healthcare Infrastructure & Property Impact</h4><br>
+                
+                <strong>Major Healthcare Facilities:</strong><br>
+                🏥 <strong>King Faisal Hospital:</strong> Premier private facility<br>
+                🏥 <strong>CHUK:</strong> Main public teaching hospital<br>
+                🏥 <strong>Rwanda Military Hospital:</strong> Specialized care<br>
+                🏥 <strong>Clinic facilities:</strong> Distributed across districts<br><br>
+                
+                <strong>Healthcare Access Impact:</strong><br>
+                📍 Properties within 2km of major hospitals: +10-15% premium<br>
+                🚑 Emergency response time factor in luxury segments<br>
+                👨‍⚕️ Medical professionals prefer healthcare proximity<br><br>
+                
+                <strong>Investment Considerations:</strong><br>
+                • Aging expat population increasing healthcare demand<br>
+                • Medical tourism growing in Rwanda<br>
+                • Private healthcare expansion planned<br>
+                • Properties near medical facilities have stable rental demand<br><br>
+                
+                <strong>Health-Conscious Buyer Trends:</strong><br>
+                🏃‍♂️ Properties with fitness amenities<br>
+                🌱 Clean air and low pollution areas<br>
+                💧 Water quality and reliable utilities<br>
+                🚶‍♀️ Walkable neighborhoods for active lifestyle<br><br>
+                
+                <strong>Future Healthcare Developments:</strong><br>
+                • New medical centers planned in Gasabo<br>
+                • Telemedicine infrastructure improving<br>
+                • Specialized care facilities expanding<br>
+                • Medical insurance market growing`;
+            }
+            
+            generateFamilyLivingInsights() {
+                return `<h4>👨‍👩‍👧‍👦 Family-Friendly Living in Kigali</h4><br>
+                
+                <strong>Family Property Preferences:</strong><br>
+                🏠 <strong>3-4 Bedrooms:</strong> Most popular for growing families<br>
+                🌳 <strong>Garden Space:</strong> 80% of families prioritize outdoor areas<br>
+                🚗 <strong>Parking:</strong> Multi-car households standard<br>
+                🔒 <strong>Security:</strong> Gated communities preferred<br><br>
+                
+                <strong>Family-Friendly Districts Ranking:</strong><br>
+                🥇 <strong>Kimihurura:</strong> Schools, parks, expat community<br>
+                🥈 <strong>Nyarutarama:</strong> Luxury amenities, safe environment<br>
+                🥉 <strong>Kacyiru:</strong> Government sector, stable community<br>
+                4️⃣ <strong>Remera:</strong> Shopping, entertainment options<br><br>
+                
+                <strong>Child-Friendly Amenities:</strong><br>
+                🏊‍♀️ Swimming pools and recreational facilities<br>
+                🎮 Playgrounds and safe outdoor spaces<br>
+                🛡️ 24/7 security and controlled access<br>
+                🚌 School transport accessibility<br>
+                🏥 Healthcare facilities proximity<br><br>
+                
+                <strong>Family Investment Tips:</strong><br>
+                • Larger properties hold value better<br>
+                • Community amenities add rental appeal<br>
+                • Consider future schooling needs<br>
+                • Factor in household help accommodation<br>
+                • Plan for teenage privacy requirements<br><br>
+                
+                <strong>Cost Considerations for Families:</strong><br>
+                • Larger utility bills for family homes<br>
+                • Security and maintenance costs<br>
+                • School fees and transport<br>
+                • Domestic help and gardening<br>
+                • Community fees for gated developments`;
+            }
+            
+            generateDevelopmentInsights() {
+                return `<h4>🏗️ Development & Construction Market Insights</h4><br>
+                
+                <strong>Active Development Areas:</strong><br>
+                🚧 <strong>Kigali Heights:</strong> Luxury hillside development<br>
+                🚧 <strong>Vision City:</strong> Integrated mixed-use project<br>
+                🚧 <strong>Green City Kigali:</strong> Sustainable urban development<br>
+                🚧 <strong>Gacuriro:</strong> Emerging residential area<br><br>
+                
+                <strong>Construction Quality Standards:</strong><br>
+                🏗️ International building codes adopted<br>
+                🌱 Green building certifications growing<br>
+                🔧 Modern materials and techniques<br>
+                ⚡ Smart home integration standard in luxury<br><br>
+                
+                <strong>Key Developers to Watch:</strong><br>
+                • Prime Holdings Rwanda<br>
+                • Horizon Construction Group<br>
+                • Kigali Green City Development<br>
+                • Various international partnerships<br><br>
+                
+                <strong>Off-Plan Investment Opportunities:</strong><br>
+                💰 15-20% discounts vs completed properties<br>
+                📅 Flexible payment plans available<br>
+                🎯 Choose prime locations early<br>
+                ⚠️ Developer track record crucial<br><br>
+                
+                <strong>Construction Timeline Considerations:</strong><br>
+                • Standard homes: 12-18 months<br>
+                • Luxury villas: 18-24 months<br>
+                • Apartment complexes: 24-36 months<br>
+                • Infrastructure can cause delays<br><br>
+                
+                <strong>Quality Control Tips:</strong><br>
+                ✅ Regular site inspections<br>
+                ✅ Material quality verification<br>
+                ✅ Completion milestone payments<br>
+                ✅ Professional snagging surveys<br>
+                ✅ Warranty and aftercare services`;
+            }
+            
+            generateInfrastructureInsights() {
+                return `<h4>🛣️ Infrastructure Development Impact</h4><br>
+                
+                <strong>Major Infrastructure Projects:</strong><br>
+                🚄 <strong>Bus Rapid Transit:</strong> Connecting all districts<br>
+                ✈️ <strong>Airport Expansion:</strong> International connectivity<br>
+                🛣️ <strong>Road Networks:</strong> Ongoing upgrades citywide<br>
+                💡 <strong>Smart City Initiative:</strong> Digital infrastructure<br><br>
+                
+                <strong>Transport Infrastructure Impact:</strong><br>
+                📈 Properties near BRT routes: +20-30% value increase<br>
+                🚗 Improved road access: +15-25% appreciation<br>
+                ✈️ Airport proximity: Commercial and luxury demand<br>
+                🚶‍♀️ Walkability projects: Community value addition<br><br>
+                
+                <strong>Utility Infrastructure:</strong><br>
+                ⚡ Reliable electricity: 98% coverage achieved<br>
+                💧 Clean water access: Expanding to all areas<br>
+                📡 Fiber optic internet: High-speed connectivity<br>
+                🗑️ Waste management: Modern systems implemented<br><br>
+                
+                <strong>Smart City Features:</strong><br>
+                📱 Digital payment systems integration<br>
+                🚦 Traffic management technology<br>
+                🔒 CCTV security networks<br>
+                🌐 Public WiFi expansion<br><br>
+                
+                <strong>Investment Strategy by Infrastructure:</strong><br>
+                🎯 Target areas with planned improvements<br>
+                ⏰ Buy before infrastructure completion<br>
+                🔍 Monitor government development plans<br>
+                📊 Analyze connectivity improvements<br><br>
+                
+                <strong>Future Infrastructure Plans:</strong><br>
+                • Light rail system feasibility studies<br>
+                • Green energy grid expansion<br>
+                • Digital government services<br>
+                • Regional connectivity improvements`;
+            }
+            
+            generateGeneralMarketResponse() {
+                return `<h4>🏠 Your Kigali Real Estate Assistant</h4><br>
+                
+                I'm here to help you navigate Kigali's dynamic property market! As your AI real estate expert, I can provide insights on:<br><br>
+                
+                <strong>Market Intelligence:</strong><br>
+                📈 Current market trends and pricing analysis<br>
+                💼 Investment opportunities and ROI projections<br>
+                🏘️ District comparisons and neighborhood profiles<br>
+                🏗️ Development projects and their impact<br><br>
+                
+                <strong>Property Analysis:</strong><br>
+                🎯 Specific property evaluations<br>
+                🏫 School and healthcare proximity<br>
+                👨‍👩‍👧‍👦 Family-friendly location assessment<br>
+                💎 Luxury market insights<br><br>
+                
+                <strong>Investment Guidance:</strong><br>
+                💰 Financing options and strategies<br>
+                📊 Rental yield calculations<br>
+                🔍 Due diligence checklists<br>
+                ⚖️ Risk assessment and mitigation<br><br>
+                
+                Click on any property marker on the map for detailed analysis, or ask me about specific aspects of Kigali's real estate market. I'm equipped with comprehensive data on pricing, infrastructure, amenities, and investment potential across all districts.<br><br>
+                
+                <strong>Popular Questions:</strong><br>
+                • "What are the best investment areas in Kigali?"<br>
+                • "How do property prices compare between districts?"<br>
+                • "What rental yields can I expect?"<br>
+                • "Which areas are best for families?"<br><br>
+                
+                What would you like to explore in Kigali's property market today?`;
+                 this.scrollToBottom();
             }
             
             generateAIResponse(question, property) {
@@ -1598,7 +1957,6 @@
             }
             
             generateSchoolResponse(property) {
-                // Show schools when user asks about education
                 this.clearNearbyMarkers();
                 this.showNearbyFacilities(property);
                 
@@ -1627,7 +1985,6 @@
             }
             
             generateHealthResponse(property) {
-                // Show hospitals when user asks about healthcare
                 this.clearNearbyMarkers();
                 this.showNearbyFacilities(property);
                 
@@ -1661,24 +2018,18 @@
                 response += `<strong>Current Price:</strong> ${property.price}<br>`;
                 response += `<strong>Price per m²:</strong> ${Math.round(priceValue * 1000000 / parseInt(property.area))} RWF/m²<br><br>`;
                 
-                // Calculate scores based on amenities
-                let investmentScore = 60; // Base score
-                
-                // Location premium
+                let investmentScore = 60;
                 if (property.district === 'Gasabo') investmentScore += 15;
                 else if (property.district === 'Nyarugenge') investmentScore += 10;
                 else investmentScore += 5;
                 
-                // School proximity
                 investmentScore += Math.min(this.nearbySchools.length * 5, 15);
-                
-                // Hospital proximity  
                 investmentScore += Math.min(this.nearbyHospitals.length * 3, 10);
                 
                 response += `<strong>Investment Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
                 
                 if (property.status === 'sale') {
-                    const estimatedRent = Math.round(priceValue * 0.5); // 0.5% monthly return
+                    const estimatedRent = Math.round(priceValue * 0.5);
                     response += `<strong>Rental Potential:</strong><br>`;
                     response += `• Estimated monthly rent: ${estimatedRent}K RWF<br>`;
                     response += `• Annual yield: ~6%<br><br>`;
@@ -1696,18 +2047,15 @@
             generateFamilyResponse(property) {
                 let response = `<h4>👨‍👩‍👧‍👦 Family Suitability Analysis</h4><br>`;
                 
-                let familyScore = 50; // Base score
+                let familyScore = 50;
                 
-                // Space assessment
                 if (property.bedrooms >= 4) familyScore += 20;
                 else if (property.bedrooms >= 3) familyScore += 15;
                 else if (property.bedrooms >= 2) familyScore += 10;
                 
-                // Education access
                 if (this.nearbySchools.length >= 3) familyScore += 20;
                 else if (this.nearbySchools.length >= 1) familyScore += 10;
                 
-                // Healthcare access
                 if (this.nearbyHospitals.length >= 2) familyScore += 10;
                 else if (this.nearbyHospitals.length >= 1) familyScore += 5;
                 
@@ -1778,7 +2126,6 @@
             }
         }
         
-        // Global functions for button handlers
         let propertyIntel = null;
         
         function toggleChat() {
@@ -1795,14 +2142,9 @@
             if (propertyIntel) propertyIntel.map.invalidateSize();
         }
         
-        // Initialize the system when page loads
         window.addEventListener('DOMContentLoaded', () => {
             propertyIntel = new PropertyIntelSystem();
         });
     </script>
 </body>
 </html>
-
-
-
-Dont change anything except to remove school and hospitals panel and position properties panel on the lower right corner. Lets go and my amstel beer is waiting
