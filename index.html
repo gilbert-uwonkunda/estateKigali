@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -308,18 +306,8 @@
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
         
-        /* Map Data Panels */
+        /* Data Panels */
         .data-panels {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-        
-        .facilities-panels {
             position: absolute;
             bottom: 20px;
             right: 20px;
@@ -391,14 +379,6 @@
         
         .properties-panel .panel-title {
             color: var(--primary);
-        }
-        
-        .schools-panel .panel-title {
-            color: var(--education);
-        }
-        
-        .hospitals-panel .panel-title {
-            color: var(--success);
         }
         
         /* Property Markers */
@@ -683,13 +663,6 @@
             .data-panels {
                 flex-direction: column;
                 bottom: 10px;
-                left: 10px;
-                gap: 6px;
-            }
-            
-            .facilities-panels {
-                flex-direction: column;
-                bottom: 10px;
                 right: 10px;
                 gap: 6px;
             }
@@ -891,25 +864,6 @@
                 </div>
             </div>
             
-            <!-- Facilities Panels -->
-            <div class="facilities-panels">
-                <div class="data-panel schools-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-graduation-cap"></i> Schools
-                    </div>
-                    <div class="panel-value" id="schoolsCount">0</div>
-                    <div class="panel-subtitle">Educational facilities</div>
-                </div>
-                
-                <div class="data-panel hospitals-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-hospital"></i> Hospitals
-                    </div>
-                    <div class="panel-value" id="hospitalsCount">0</div>
-                    <div class="panel-subtitle">Health facilities</div>
-                </div>
-            </div>
-            
             <div id="map"></div>
         </div>
     </div>
@@ -996,8 +950,6 @@
                         { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
                     ];
                 }
-                
-                document.getElementById('hospitalsCount').textContent = this.facilities.length;
             }
             
             async loadSchools() {
@@ -1031,8 +983,6 @@
                         { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
                     ];
                 }
-                
-                document.getElementById('schoolsCount').textContent = this.schools.length;
             }
             
             initializeMap() {
@@ -1056,7 +1006,7 @@
                 
                 this.map.on('click', this.handleMapClick.bind(this));
                 
-                new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
+                new ResizePlanck('map').observe(document.getElementById('map'));
             }
             
             addProperties() {
