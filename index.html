@@ -1,9 +1,49 @@
-<!DOCTYPE html>
+
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropertyIntel Kigali - Location Intelligence</title>
+    <title>PropertyIntel Kigali - Mobile Version</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -34,30 +74,8 @@
             overflow: hidden;
         }
         
-        .main-container {
-            display: flex;
-            height: 100vh;
-            position: relative;
-        }
-        
-        .chat-container {
-            width: 400px;
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid var(--glass-light);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
-            transition: all 0.3s ease;
-        }
-        
-        .chat-container.collapsed {
-            width: 60px;
-            overflow: hidden;
-        }
-        
         .map-container {
-            flex: 1;
+            height: 100vh;
             position: relative;
         }
         
@@ -67,86 +85,50 @@
             background: #1a1a2e;
         }
         
+        /* App Header for Chat */
         .app-header {
-            padding: 20px;
+            padding: 16px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            border-bottom: 1px solid var(--glass-light);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .app-title {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 800;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         
         .toggle-chat-btn {
-            background: rgba(255, 255, 255, 0.25);
+            background: transparent;
             border: none;
             color: #fff;
-            padding: 10px 14px;
-            border-radius: 20px;
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
         
-        .toggle-chat-btn:hover {
-            background: rgba(255, 255, 255, 0.35);
-            transform: scale(1.05);
+        /* Chat Container as Side Panel */
+        .chat-container {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100vh;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+            transition: right 0.3s ease;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
         }
         
-        .filter-section {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--glass-light);
-            background: rgba(15, 23, 42, 0.8);
+        .chat-container.open {
+            right: 0;
         }
         
-        .filter-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--primary);
-        }
-        
-        .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-        
-        .filter-select {
-            padding: 8px 12px;
-            border: 2px solid rgba(255,255,255,0.15);
-            border-radius: 8px;
-            background: rgba(255,255,255,0.08);
-            color: #fff;
-            font-size: 0.8rem;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-        
-        .filter-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
-        }
-        
-        .filter-select option {
-            background: var(--dark);
-            color: #fff;
-        }
-        
-        .filter-summary {
-            margin-top: 8px;
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.7);
-            text-align: center;
-            padding: 6px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 6px;
-        }
-        
+        /* Chat Messages Section */
         .chat-section {
             flex: 1;
             display: flex;
@@ -157,14 +139,12 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            padding: 12px;
             background: rgba(15, 23, 42, 0.4);
-            min-height: 150px;
-            max-height: calc(100vh - 300px);
         }
         
         .message {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             animation: fadeIn 0.4s ease-out;
         }
         
@@ -177,49 +157,49 @@
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
             border: 2px solid rgba(99, 102, 241, 0.3);
             border-radius: 16px 16px 16px 4px;
-            padding: 16px 18px;
-            font-size: 0.9rem;
-            line-height: 1.6;
+            padding: 12px 14px;
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
         
         .message.user .message-content {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
             border: 2px solid rgba(16, 185, 129, 0.3);
             border-radius: 16px 16px 4px 16px;
-            padding: 16px 18px;
-            font-size: 0.9rem;
+            padding: 12px 14px;
+            font-size: 0.85rem;
             margin-left: auto;
             max-width: 85%;
         }
         
+        /* Chat Input */
         .chat-input-container {
-            padding: 20px;
+            padding: 12px;
             background: rgba(15, 23, 42, 0.9);
             border-top: 1px solid var(--glass-light);
         }
         
         .chat-input {
             width: 100%;
-            padding: 14px 18px;
+            padding: 10px 14px;
             border: 2px solid rgba(255,255,255,0.15);
             border-radius: 20px;
             background: rgba(255,255,255,0.08);
             color: #fff;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             resize: none;
             outline: none;
             transition: all 0.3s ease;
-            max-height: 100px;
+            max-height: 80px;
         }
         
         .chat-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
         
         .send-btn {
-            margin-top: 10px;
-            padding: 12px 24px;
+            margin-top: 8px;
+            padding: 10px 20px;
             border-radius: 20px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: #fff;
@@ -227,12 +207,6 @@
             cursor: pointer;
             width: 100%;
             font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .send-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
         }
         
         .send-btn:disabled {
@@ -240,140 +214,142 @@
             cursor: not-allowed;
         }
         
-        .map-search-controls {
+        /* Map Controls */
+        .map-controls {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            width: calc(100% - 20px);
+            max-width: 300px;
         }
         
         .search-box {
+            flex: 1;
             background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             overflow: hidden;
             display: flex;
             align-items: center;
-            min-width: 300px;
         }
         
         .search-input {
             flex: 1;
-            padding: 14px 16px;
+            padding: 10px 12px;
             border: none;
             background: transparent;
             color: #333;
-            font-size: 15px;
+            font-size: 14px;
             outline: none;
         }
         
         .search-btn {
-            padding: 14px 16px;
+            padding: 10px 12px;
             border: none;
             background: transparent;
             color: var(--primary);
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            font-size: 14px;
         }
         
-        .search-btn:hover {
-            background: rgba(99, 102, 241, 0.1);
-        }
-        
-        .location-btn, .home-btn {
+        .location-btn, .filter-btn {
             background: var(--primary);
             border: none;
             color: white;
-            padding: 14px 16px;
-            border-radius: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-            transition: all 0.3s ease;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
         }
         
-        .location-btn:hover, .home-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-        }
-        
-        .data-panels {
+        .home-btn {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            top: 10px;
+            right: 10px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
             z-index: 1000;
         }
         
-        .data-panel {
+        /* Filter Panel */
+        .filter-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 85%;
+            max-width: 280px;
+            height: 100vh;
             background: var(--glass);
-            border: 1px solid var(--glass-light);
-            border-radius: 10px;
-            padding: 12px 16px;
             backdrop-filter: blur(20px);
-            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
-            min-width: 140px;
-            max-width: 200px;
-        }
-        
-        .panel-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            margin-bottom: 8px;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+            transition: right 0.3s ease;
+            z-index: 2000;
+            padding: 16px;
             display: flex;
-            align-items: center;
-            gap: 6px;
+            flex-direction: column;
         }
         
-        .panel-value {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 8px;
+        .filter-panel.open {
+            right: 0;
         }
         
-        .panel-subtitle {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-        }
-        
-        .panel-breakdown {
-            font-size: 0.7rem;
-            line-height: 1.4;
-        }
-        
-        .breakdown-item {
+        .filter-header {
             display: flex;
             justify-content: space-between;
-            margin: 3px 0;
-            padding: 2px 0;
+            align-items: center;
+            margin-bottom: 16px;
         }
         
-        .breakdown-sale {
-            color: var(--danger);
+        .filter-title {
+            font-size: 1.2rem;
             font-weight: 600;
         }
         
-        .breakdown-rent {
-            color: var(--success);
+        .filter-close-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .filter-option input {
+            margin-right: 8px;
+        }
+        
+        .filter-option label {
+            font-size: 0.9rem;
+        }
+        
+        .apply-filter-btn {
+            margin-top: auto;
+            padding: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
             font-weight: 600;
         }
         
-        .breakdown-type {
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
-        }
-        
-        .properties-panel .panel-title {
-            color: var(--primary);
-        }
-        
+        /* Property Markers */
         .property-marker {
             background: white;
             border: 2px solid var(--primary);
@@ -384,7 +360,6 @@
             color: var(--primary);
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
             position: relative;
             white-space: nowrap;
             text-align: center;
@@ -399,18 +374,7 @@
         
         .property-marker:hover {
             transform: scale(1.15);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
             opacity: 1;
-            z-index: 1000;
-        }
-        
-        .property-marker.selected {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.2);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-            opacity: 1;
-            z-index: 1001;
         }
         
         .property-marker.sale {
@@ -418,283 +382,100 @@
             color: var(--danger);
         }
         
-        .property-marker.sale.selected {
-            background: var(--danger);
-            color: white;
-        }
-        
-        .property-marker.sale::after {
-            content: 'SALE';
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: var(--danger);
-            color: white;
-            font-size: 7px;
-            font-weight: 800;
-            padding: 1px 3px;
-            border-radius: 3px;
-            line-height: 1;
-        }
-        
         .property-marker.rent {
             border-color: var(--success);
             color: var(--success);
         }
         
-        .property-marker.rent.selected {
-            background: var(--success);
-            color: white;
-        }
-        
-        .property-marker.rent::after {
-            content: 'RENT';
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: var(--success);
-            color: white;
-            font-size: 7px;
-            font-weight: 800;
-            padding: 1px 3px;
-            border-radius: 3px;
-            line-height: 1;
-        }
-        
         .property-marker.luxury {
             border-color: var(--warning);
             color: var(--warning);
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
-            background: linear-gradient(135deg, #fff, #fffbeb);
         }
         
-        .property-marker.luxury.selected {
-            background: var(--warning);
-            color: white;
-        }
-        
-        .property-marker.luxury::before {
-            content: '⭐';
-            position: absolute;
-            top: -6px;
-            left: -6px;
-            background: var(--warning);
-            color: white;
-            font-size: 8px;
-            width: 14px;
-            height: 14px;
+        /* School and Hospital Markers */
+        .school-marker, .hospital-marker {
+            width: 28px !important;
+            height: 28px !important;
+            border: 3px solid white;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 14px;
+            box-sizing: border-box !important;
         }
         
         .school-marker {
-            width: 28px !important;
-            height: 28px !important;
             background: var(--education);
-            border: 3px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-size: 14px;
-            box-sizing: border-box !important;
-        }
-        
-        .school-marker:hover {
-            transform: scale(1.2);
-            box-shadow: 0 6px 25px rgba(139, 92, 246, 0.6);
         }
         
         .hospital-marker {
-            width: 28px !important;
-            height: 28px !important;
             background: var(--success);
-            border: 3px solid white;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-size: 14px;
-            box-sizing: border-box !important;
         }
         
-        <style>
-        .hospital-marker:hover {
-            transform: scale(1.2);
-            box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
-        }
-        
-        .property-info {
+        /* Info Panels in Chat */
+        .property-info, .proximity-info, .education-info {
             background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
             border-left: 4px solid var(--primary);
         }
         
-        .proximity-info {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08));
-            border-radius: 12px;
-            padding: 16px;
-            margin: 12px 0;
-            border-left: 4px solid var(--success);
-        }
-        
-        .education-info {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(124, 58, 237, 0.08));
-            border-radius: 12px;
-            padding: 16px;
-            margin: 12px 0;
-            border-left: 4px solid var(--education);
-        }
-        
         .facility-list {
-            margin-top: 12px;
+            margin-top: 8px;
         }
         
         .facility-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            margin: 6px 0;
+            padding: 6px 8px;
+            margin: 4px 0;
             background: rgba(255,255,255,0.05);
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .facility-item:hover {
-            background: rgba(255,255,255,0.1);
-            transform: translateX(4px);
         }
         
         .facility-name {
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         
         .facility-distance {
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.8rem;
-            font-weight: 500;
         }
         
-        .leaflet-tooltip.compact-tooltip {
-            background: var(--glass) !important;
-            border: 1px solid var(--glass-light) !important;
-            border-radius: 6px !important;
-            color: #ffffff !important;
-            font-size: 11px !important;
-            font-weight: 500 !important;
-            padding: 6px 8px !important;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(10px) !important;
-            max-width: 200px !important;
+        /* Tooltips and Popups */
+        .leaflet-popup-content {
+            font-size: 0.85rem;
+            line-height: 1.4;
         }
         
-        .leaflet-tooltip {
-            background: var(--glass) !important;
-            border: 1px solid var(--glass-light) !important;
-            border-radius: 8px !important;
-            color: #ffffff !important;
-            font-size: 13px !important;
-            font-weight: 500 !important;
-            padding: 8px 12px !important;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(10px) !important;
+        .leaflet-popup-content p {
+            margin: 4px 0;
         }
         
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
-            }
-            
-            .chat-container {
-                width: 100%;
-                height: 45vh;
-                order: 2;
-                border-right: none;
-                border-top: 1px solid var(--glass-light);
-            }
-            
-            .chat-container.collapsed {
-                height: 60px;
-            }
-            
-            .map-container {
-                height: 55vh;
-                order: 1;
-            }
-            
-            .data-panels {
-                flex-direction: column;
-                bottom: 10px;
-                right: 10px;
-                gap: 6px;
-            }
-            
-            .data-panel {
-                padding: 10px 12px;
-                min-width: 120px;
-                max-width: 160px;
-            }
-            
-            .map-search-controls {
-                top: 10px;
-                right: 10px;
-                left: unset;
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .search-box {
-                min-width: unset;
-            }
+        .leaflet-popup-content button {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
         }
         
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 3px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-        }
-        
-        .welcome-message {
-            text-align: center;
-            padding: 20px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9rem;
-        }
-        
-        .welcome-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-        
+        /* Typing Indicator */
         .typing-indicator {
             display: none;
-            padding: 10px 20px;
+            padding: 8px 12px;
             color: var(--primary);
             font-style: italic;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         
         .typing-indicator.show {
@@ -712,133 +493,150 @@
             60% { content: 'AI analyzing..'; }
             80%, 100% { content: 'AI analyzing...'; }
         }
+        
+        /* Scrollbar */
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        /* Flash Screen Guide */
+        .flash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .flash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .flash-screen h1 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .flash-screen p {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .flash-screen button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="chat-container" id="chatContainer">
-            <div class="app-header">
-                <div class="app-title">PropertyIntel Kigali</div>
-                <button class="toggle-chat-btn" onclick="toggleChat()" aria-label="Toggle chat">
-                    <i class="fas fa-chevron-left" id="toggleIcon"></i>
+    <!-- Flash Screen Guide -->
+    <div class="flash-screen" id="flashScreen">
+        <h1>Welcome to PropertyIntel Kigali</h1>
+        <p>Explore properties in Kigali with ease.</p>
+        <p>Use the search bar to find locations, tap markers to view property details, or use the filter button to narrow down property types.</p>
+        <p>Click "Ask more questions" on a property to chat with our AI for insights!</p>
+        <button onclick="hideFlashScreen()">Get Started</button>
+    </div>
+    
+    <!-- Map Container -->
+    <div class="map-container">
+        <!-- Map Controls -->
+        <div class="map-controls">
+            <div class="search-box">
+                <input type="text" id="locationSearch" class="search-input" 
+                       placeholder="Search in Kigali..." aria-label="Search location">
+                <button id="searchBtn" class="search-btn" aria-label="Search">
+                    <i class="fas fa-search"></i>
                 </button>
             </div>
-            
-            <div class="filter-section">
-                <div class="filter-title">
-                    <i class="fas fa-filter"></i> Property Filters
-                </div>
-                <div class="filter-grid">
-                    <select id="statusFilter" class="filter-select" aria-label="Filter by status">
-                        <option value="">All Status</option>
-                        <option value="sale">For Sale</option>
-                        <option value="rent">For Rent</option>
-                    </select>
-                    
-                    <select id="typeFilter" class="filter-select" aria-label="Filter by type">
-                        <option value="">All Types</option>
-                        <option value="villa">Villa</option>
-                        <option value="apartment">Apartment</option>
-                        <option value="house">House</option>
-                        <option value="luxury">Luxury</option>
-                        <option value="plot">Plot</option>
-                    </select>
-                    
-                    <select id="priceFilter" class="filter-select" aria-label="Filter by price">
-                        <option value="">All Prices</option>
-                        <option value="0-50">Under 50M RWF</option>
-                        <option value="50-100">50M - 100M RWF</option>
-                        <option value="100-200">100M - 200M RWF</option>
-                        <option value="200+">Above 200M RWF</option>
-                    </select>
-                </div>
-                
-                <div class="filter-summary" id="filterSummary">
-                    Showing all properties
-                </div>
-            </div>
-            
-            <div class="chat-section">
-                <div class="chat-messages" id="chatMessages">
-                    <div class="welcome-message">
-                        <div class="welcome-title">Welcome to PropertyIntel!</div>
-                        Your AI-powered real estate assistant for Kigali. Ask me about market trends, investment opportunities, or specific properties!
-                    </div>
-                </div>
-                <div class="typing-indicator" id="typingIndicator"></div>
-                
-                <div class="chat-input-container">
-                    <textarea class="chat-input" id="chatInput" 
-                              placeholder="Ask about Kigali real estate market, investment tips, or specific properties..." 
-                              rows="1" aria-label="Ask about property"></textarea>
-                    <button class="send-btn" id="sendBtn" aria-label="Send message">
-                        <i class="fas fa-paper-plane"></i> Send Message
-                    </button>
-                </div>
-            </div>
+            <button id="locationBtn" class="location-btn" aria-label="Current location">
+                <i class="fas fa-crosshairs"></i>
+            </button>
+            <button id="filterBtn" class="filter-btn" aria-label="Filter properties">
+                <i class="fas fa-filter"></i>
+            </button>
         </div>
         
-        <div class="map-container">
-            <div class="map-search-controls">
-                <div class="search-box">
-                    <input type="text" id="locationSearch" class="search-input" 
-                           placeholder="Search location in Kigali..." aria-label="Search location">
-                    <button id="searchBtn" class="search-btn" aria-label="Search">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-                <button id="locationBtn" class="location-btn" aria-label="Use current location">
-                    <i class="fas fa-crosshairs"></i>
-                </button>
-                <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
-                    <i class="fas fa-home"></i>
-                </button>
-            </div>
-            
-            <div class="data-panels">
-                <div class="data-panel properties-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-home"></i> Property Listings
-                    </div>
-                    <div class="panel-value" id="propertiesCount">20</div>
-                    <div class="panel-subtitle">Available listings</div>
-                    <div class="panel-breakdown">
-                        <div class="breakdown-item">
-                            <span class="breakdown-sale">For Sale:</span>
-                            <span id="forSaleCount">0</span>
-                        </div>
-                        <div class="breakdown-item">
-                            <span class="breakdown-rent">For Rent:</span>
-                            <span id="forRentCount">0</span>
-                        </div>
-                        <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0; padding-top: 4px;">
-                            <div class="breakdown-item">
-                                <span class="breakdown-type">Apartments:</span>
-                                <span id="apartmentCount">0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span class="breakdown-type">Houses:</span>
-                                <span id="houseCount">0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span class="breakdown-type">Villas:</span>
-                                <span id="villaCount">0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span class="breakdown-type">Luxury:</span>
-                                <span id="luxuryCount">0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span class="breakdown-type">Plots:</span>
-                                <span id="plotCount">0</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="map"></div>
+        <!-- Home Button -->
+        <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
+            <i class="fas fa-home"></i>
+        </button>
+        
+        <div id="map"></div>
+    </div>
+    
+    <!-- Chat Container (Side Panel) -->
+    <div class="chat-container" id="chatContainer">
+        <!-- App Header -->
+        <div class="app-header">
+            <div class="app-title">PropertyIntel Kigali</div>
+            <button class="toggle-chat-btn" onclick="closeChat()" aria-label="Close chat">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
+        
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="typing-indicator" id="typingIndicator"></div>
+            
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <textarea class="chat-input" id="chatInput" 
+                          placeholder="Ask about this property..." 
+                          rows="1" aria-label="Ask about property"></textarea>
+                <button class="send-btn" id="sendBtn" aria-label="Send message">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Panel -->
+    <div class="filter-panel" id="filterPanel">
+        <div class="filter-header">
+            <div class="filter-title">Filter Properties</div>
+            <button class="filter-close-btn" onclick="closeFilterPanel()" aria-label="Close filter">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="saleFilter" checked>
+            <label for="saleFilter">For Sale</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="rentFilter" checked>
+            <label for="rentFilter">For Rent</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="luxuryFilter" checked>
+            <label for="luxuryFilter">Luxury</label>
+        </div>
+        <button class="apply-filter-btn" onclick="applyFilters()">Apply Filters</button>
     </div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -847,7 +645,6 @@
             constructor() {
                 this.map = null;
                 this.currentProperty = null;
-                this.selectedMarker = null;
                 this.facilities = [];
                 this.schools = [];
                 this.propertyMarkers = [];
@@ -855,11 +652,8 @@
                 this.schoolMarkers = [];
                 this.nearbyHospitals = [];
                 this.nearbySchools = [];
-                this.filteredProperties = [];
                 this.isSending = false;
-                this.chatHistory = [];
                 
-                // Expanded dataset with plots and affordable properties
                 this.properties = [
                     { id: 1, lat: -1.9441, lng: 30.0619, name: 'City Center Luxury Apartment', type: 'Luxury Apartment', price: '180M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '180m²', yearBuilt: 2022, district: 'Nyarugenge', amenities: ['Pool', 'Gym', 'Security', 'Parking'] },
                     { id: 2, lat: -1.9506, lng: 30.0639, name: 'Business District Condo', type: 'Apartment', price: '65M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '110m²', yearBuilt: 2019, district: 'Nyarugenge', amenities: ['Security', 'Parking'] },
@@ -880,13 +674,7 @@
                     { id: 17, lat: -1.9706, lng: 30.1059, name: 'Kibagabaga Student Apartment', type: 'Apartment', price: '35M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '55m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Study Area', 'Internet'] },
                     { id: 18, lat: -1.9636, lng: 30.1029, name: 'Kibagabaga Family House', type: 'House', price: '110M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '210m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
                     { id: 19, lat: -1.9356, lng: 30.1112, name: 'Nyarutarama Golf Course Villa', type: 'Luxury Villa', price: '520M RWF', status: 'sale', bedrooms: 7, bathrooms: 6, area: '700m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Golf Access', 'Pool', 'Tennis Court', 'Spa'] },
-                    { id: 20, lat: -1.9286, lng: 30.1082, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Golf View', 'Security', 'Gym'] },
-                    { id: 21, lat: -1.9706, lng: 30.0929, name: 'Kicukiro Modern Plot', type: 'Plot', price: '40M RWF', status: 'sale', area: '600m²', district: 'Kicukiro', amenities: ['Utilities Ready'] },
-                    { id: 22, lat: -1.9506, lng: 30.1262, name: 'Remera Residential Plot', type: 'Plot', price: '45M RWF', status: 'sale', area: '550m²', district: 'Gasabo', amenities: ['Utilities Ready'] },
-                    { id: 23, lat: -1.9624, lng: 30.0879, name: 'Kacyiru New Plot', type: 'Plot', price: '42M RWF', status: 'sale', area: '520m²', district: 'Gasabo', amenities: ['Utilities Ready'] },
-                    { id: 24, lat: -1.9406, lng: 30.0809, name: 'Gisozi Affordable Apartment', type: 'Apartment', price: '30M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '80m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Security', 'Parking'] },
-                    { id: 25, lat: -1.9654, lng: 30.0949, name: 'Kicukiro Budget Plot', type: 'Plot', price: '38M RWF', status: 'sale', area: '500m²', district: 'Kicukiro', amenities: ['Utilities Ready'] },
-                    { id: 26, lat: -1.9476, lng: 30.1152, name: 'Remera Compact Apartment', type: 'Apartment', price: '28M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '70m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Security', 'Balcony'] }
+                    { id: 20, lat: -1.9286, lng: 30.1082, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Golf View', 'Security', 'Gym'] }
                 ];
                 
                 this.init();
@@ -895,10 +683,9 @@
             async init() {
                 await this.loadFacilities();
                 await this.loadSchools();
-                await this.fetchRealTimeData();
                 this.initializeMap();
                 this.setupEventListeners();
-                this.updateStats();
+                this.showFlashScreen();
             }
             
             async loadFacilities() {
@@ -920,7 +707,6 @@
                             sector: feature.attributes.sector || 'N/A',
                             ownership: feature.attributes.ownership || 'N/A'
                         }));
-                        console.log('Loaded health facilities:', this.facilities.length);
                     }
                 } catch (error) {
                     console.error('Failed to load facilities:', error);
@@ -952,7 +738,6 @@
                             lng: feature.attributes.longitude,
                             established: feature.attributes.establishm || 'N/A'
                         }));
-                        console.log('Loaded schools:', this.schools.length);
                     }
                 } catch (error) {
                     console.error('Failed to load schools:', error);
@@ -961,19 +746,6 @@
                         { school_name: "Green Hills Academy", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "INTERNATIONAL", lat: -1.9556, lng: 30.1044, established: 2006 },
                         { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
                     ];
-                }
-            }
-            
-            async fetchRealTimeData() {
-                try {
-                    const mockApiResponse = [
-                        { id: 27, lat: -1.9686, lng: 30.0989, name: 'Kicukiro Expansion Plot', type: 'Plot', price: '35M RWF', status: 'sale', area: '480m²', district: 'Kicukiro', amenities: ['Utilities Ready'] },
-                        { id: 28, lat: -1.9466, lng: 30.1122, name: 'Remera Budget Apartment', type: 'Apartment', price: '25M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '60m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Security'] }
-                    ];
-                    this.properties = [...this.properties, ...mockApiResponse];
-                    console.log('Fetched real-time properties:', mockApiResponse.length);
-                } catch (error) {
-                    console.error('Failed to fetch real-time data:', error);
                 }
             }
             
@@ -1000,7 +772,6 @@
             
             addProperties() {
                 this.propertyMarkers = [];
-                this.filteredProperties = [...this.properties];
                 
                 this.properties.forEach((prop) => {
                     const isLuxury = prop.type.toLowerCase().includes('luxury');
@@ -1013,41 +784,38 @@
                             className: markerClass,
                             html: priceLabel,
                             iconSize: [60, 24],
-                            iconAnchor: [30, 24],
-                            popupAnchor: [0, -24]
+                            iconAnchor: [30, 12],
+                            popupAnchor: [0, -12]
                         })
                     });
                     
-                    const tooltipContent = `
-                        <div style="font-weight: 600; margin-bottom: 4px; font-size: 13px;">${prop.name}</div>
-                        <div style="margin-bottom: 2px; font-size: 12px;">📍 ${prop.district} ${prop.bedrooms ? '• ' + prop.bedrooms + 'BR' : ''}</div>
-                        <div style="font-weight: 600; color: #6366f1; font-size: 13px;">💰 ${prop.price}</div>
+                    const popupContent = `
+                        <div>
+                            <h3>${prop.name}</h3>
+                            <p><strong>Type:</strong> ${prop.type}</p>
+                            <p><strong>Price:</strong> ${prop.price}</p>
+                            <p><strong>Bedrooms:</strong> ${prop.bedrooms}</p>
+                            <p><strong>Bathrooms:</strong> ${prop.bathrooms}</p>
+                            <p><strong>Area:</strong> ${prop.area}</p>
+                            <p><strong>District:</strong> ${prop.district}</p>
+                            <p><strong>Amenities:</strong> ${prop.amenities.join(', ')}</p>
+                            <button onclick="propertyIntel.openChat(${prop.id})">Ask more questions</button>
+                        </div>
                     `;
                     
-                    marker.bindTooltip(tooltipContent, { 
-                        direction: 'top', 
-                        offset: [0, -24],
-                        permanent: false,
-                        sticky: false,
-                        className: 'compact-tooltip'
-                    });
+                    marker.bindPopup(popupContent);
                     
-                    marker.on('click', () => this.selectProperty(prop, marker));
                     marker.addTo(this.map);
                     
                     this.propertyMarkers.push({
                         marker: marker,
-                        property: prop,
-                        visible: true
+                        property: prop
                     });
                 });
-                
-                this.updateFilterSummary();
             }
             
             prepareHospitals() {
-                this.hospitalMarkers = [];
-                this.facilities.forEach(facility => {
+                this.hospitalMarkers = this.facilities.map(facility => {
                     const marker = L.marker([facility.lat, facility.long], {
                         icon: L.divIcon({
                             className: 'hospital-marker',
@@ -1071,13 +839,12 @@
                         sticky: true
                     });
                     
-                    this.hospitalMarkers.push(marker);
+                    return marker;
                 });
             }
             
             prepareSchools() {
-                this.schoolMarkers = [];
-                this.schools.forEach(school => {
+                this.schoolMarkers = this.schools.map(school => {
                     const marker = L.marker([school.lat, school.lng], {
                         icon: L.divIcon({
                             className: 'school-marker',
@@ -1102,30 +869,35 @@
                         sticky: true
                     });
                     
-                    this.schoolMarkers.push(marker);
+                    return marker;
                 });
             }
             
-            selectProperty(property, marker) {
-                if (this.selectedMarker) {
-                    const prevElement = this.selectedMarker.getElement();
-                    if (prevElement) {
-                        prevElement.classList.remove('selected');
-                    }
-                }
+            showFlashScreen() {
+                const flashScreen = document.getElementById('flashScreen');
+                setTimeout(() => {
+                    flashScreen.classList.add('hidden');
+                }, 5000); // Hide after 5 seconds
+            }
+            
+            openChat(id) {
+                const prop = this.properties.find(p => p.id === id);
+                if (!prop) return;
                 
-                this.currentProperty = property;
-                this.selectedMarker = marker;
+                this.currentProperty = prop;
+                this.analyzeProperty(prop);
+                this.map.closePopup();
+                this.map.setView([prop.lat, prop.lng], 15);
                 
-                const markerElement = marker.getElement();
-                if (markerElement) {
-                    markerElement.classList.add('selected');
-                }
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.classList.add('open');
                 
-                document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
-                
-                this.analyzeProperty(property);
-                this.map.setView([property.lat, property.lng], 15);
+                const chatInput = document.getElementById('chatInput');
+                const sendBtn = document.getElementById('sendBtn');
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.placeholder = `Ask about ${prop.name}...`;
+                chatInput.focus();
             }
             
             analyzeProperty(property) {
@@ -1137,70 +909,38 @@
             
             clearNearbyMarkers() {
                 this.hospitalMarkers.forEach(marker => {
-                    if (this.map.hasLayer(marker)) {
-                        this.map.removeLayer(marker);
-                    }
+                    if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
                 });
-                
                 this.schoolMarkers.forEach(marker => {
-                    if (this.map.hasLayer(marker)) {
-                        this.map.removeLayer(marker);
-                    }
+                    if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
                 });
             }
             
             showNearbyFacilities(property) {
-                this.nearbyHospitals.forEach(hospital => {
-                    const marker = this.hospitalMarkers.find(m => {
-                        const markerLatLng = m.getLatLng();
-                        return Math.abs(markerLatLng.lat - hospital.lat) < 0.0001 && 
-                               Math.abs(markerLatLng.lng - hospital.long) < 0.0001;
-                    });
-                    if (marker) {
-                        marker.addTo(this.map);
-                    }
+                this.nearbyHospitals.forEach((hospital, index) => {
+                    this.hospitalMarkers[index].addTo(this.map);
                 });
-                
-                this.nearbySchools.forEach(school => {
-                    const marker = this.schoolMarkers.find(m => {
-                        const markerLatLng = m.getLatLng();
-                        return Math.abs(markerLatLng.lat - school.lat) < 0.0001 && 
-                               Math.abs(markerLatLng.lng - school.lng) < 0.0001;
-                    });
-                    if (marker) {
-                        marker.addTo(this.map);
-                    }
+                this.nearbySchools.forEach((school, index) => {
+                    this.schoolMarkers[index].addTo(this.map);
                 });
             }
             
-            analyzeProximity(property, params = {}) {
-                this.nearbyHospitals = [];
-                this.facilities.forEach(facility => {
-                    const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([facility.lat, facility.long]) / 1000;
-                    
-                    if (distance <= (params.hospitalDistance || 3)) {
-                        this.nearbyHospitals.push({
-                            ...facility,
-                            distance: distance
-                        });
-                    }
-                });
-                this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
+            analyzeProximity(property) {
+                this.nearbyHospitals = this.facilities
+                    .map(facility => ({
+                        ...facility,
+                        distance: L.latLng(property.lat, property.lng).distanceTo([facility.lat, facility.long]) / 1000
+                    }))
+                    .filter(f => f.distance <= 3)
+                    .sort((a, b) => a.distance - b.distance);
                 
-                this.nearbySchools = [];
-                this.schools.forEach(school => {
-                    const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([school.lat, school.lng]) / 1000;
-                    
-                    if (distance <= (params.schoolDistance || 2)) {
-                        this.nearbySchools.push({
-                            ...school,
-                            distance: distance
-                        });
-                    }
-                });
-                this.nearbySchools.sort((a, b) => a.distance - b.distance);
+                this.nearbySchools = this.schools
+                    .map(school => ({
+                        ...school,
+                        distance: L.latLng(property.lat, property.lng).distanceTo([school.lat, school.lng]) / 1000
+                    }))
+                    .filter(s => s.distance <= 2)
+                    .sort((a, b) => a.distance - b.distance);
             }
             
             displayPropertyAnalysis(property) {
@@ -1212,8 +952,8 @@
                         <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
                         <div style="margin-bottom: 6px;"><strong>Type:</strong> ${property.type}</div>
                         <div style="margin-bottom: 6px;"><strong>Price:</strong> ${property.price}</div>
-                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms ? property.bedrooms + 'BR • ' + property.bathrooms + 'BA • ' : ''}${property.area}</div>
-                        <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt || 'N/A'}</div>
+                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}</div>
+                        <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt}</div>
                         <div style="margin-bottom: 6px;"><strong>District:</strong> ${property.district}</div>
                         <div><strong>Amenities:</strong> ${property.amenities ? property.amenities.join(', ') : 'Standard'}</div>
                     </div>`;
@@ -1241,7 +981,7 @@
                     messagesContainer.innerHTML += `
                         <div class="education-info">
                             <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
-                            <p>No schools within 2km walking distance. Consider transportation needs for school-age children.</p>
+                            <p>No schools within 2km walking distance.</p>
                         </div>`;
                 }
                 
@@ -1266,7 +1006,7 @@
                     messagesContainer.innerHTML += `
                         <div class="proximity-info">
                             <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
-                            <p>No hospitals within 3km radius. Emergency services may take longer to reach this location.</p>
+                            <p>No hospitals within 3km radius.</p>
                         </div>`;
                 }
                 
@@ -1275,23 +1015,40 @@
             
             focusLocation(lat, lng) {
                 this.map.setView([lat, lng], 16);
-            }
-            
-            resetToHomeView() {
-                this.map.setView([-1.9441, 30.0619], 11);
+                document.getElementById('chatContainer').classList.remove('open');
             }
             
             handleMapClick(e) {
                 this.clearNearbyMarkers();
+                document.getElementById('filterPanel').classList.remove('open');
+            }
+            
+            resetMapView() {
+                this.map.setView([-1.9441, 30.0619], 11);
+                this.clearNearbyMarkers();
+                this.applyFilters();
+            }
+            
+            applyFilters() {
+                const saleFilter = document.getElementById('saleFilter').checked;
+                const rentFilter = document.getElementById('rentFilter').checked;
+                const luxuryFilter = document.getElementById('luxuryFilter').checked;
                 
-                if (!this.currentProperty) {
-                    const messagesContainer = document.getElementById('chatMessages');
-                    messagesContainer.innerHTML = `
-                        <div class="welcome-message">
-                            <div class="welcome-title">Welcome to PropertyIntel!</div>
-                            Your AI-powered real estate assistant for Kigali. Ask me about market trends, investment opportunities, or specific properties!
-                        </div>`;
-                }
+                this.propertyMarkers.forEach(({ marker, property }) => {
+                    const isLuxury = property.type.toLowerCase().includes('luxury');
+                    const showMarker = 
+                        (saleFilter && property.status === 'sale' && !isLuxury) ||
+                        (rentFilter && property.status === 'rent' && !isLuxury) ||
+                        (luxuryFilter && isLuxury);
+                    
+                    if (showMarker && !this.map.hasLayer(marker)) {
+                        marker.addTo(this.map);
+                    } else if (!showMarker && this.map.hasLayer(marker)) {
+                        this.map.removeLayer(marker);
+                    }
+                });
+                
+                document.getElementById('filterPanel').classList.remove('open');
             }
             
             setupEventListeners() {
@@ -1301,13 +1058,11 @@
                 const searchBtn = document.getElementById('searchBtn');
                 const locationBtn = document.getElementById('locationBtn');
                 const homeBtn = document.getElementById('homeBtn');
-                const statusFilter = document.getElementById('statusFilter');
-                const typeFilter = document.getElementById('typeFilter');
-                const priceFilter = document.getElementById('priceFilter');
+                const filterBtn = document.getElementById('filterBtn');
                 
                 chatInput.addEventListener('input', function() {
                     this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+                    this.style.height = Math.min(this.scrollHeight, 80) + 'px';
                 });
                 
                 chatInput.addEventListener('keypress', e => {
@@ -1325,11 +1080,10 @@
                 
                 searchBtn.addEventListener('click', () => this.performLocationSearch());
                 locationBtn.addEventListener('click', () => this.useCurrentLocation());
-                homeBtn.addEventListener('click', () => this.resetToHomeView());
-                
-                statusFilter.addEventListener('change', () => this.applyFilters());
-                typeFilter.addEventListener('change', () => this.applyFilters());
-                priceFilter.addEventListener('change', () => this.applyFilters());
+                homeBtn.addEventListener('click', () => this.resetMapView());
+                filterBtn.addEventListener('click', () => {
+                    document.getElementById('filterPanel').classList.toggle('open');
+                });
             }
             
             async performLocationSearch() {
@@ -1348,14 +1102,13 @@
                         alert('Location not found in Kigali');
                     }
                 } catch (error) {
-                    console.error('Search failed:', error);
                     alert('Search failed. Please try again.');
                 }
             }
             
             useCurrentLocation() {
                 if (!navigator.geolocation) {
-                    alert('Geolocation not supported by this browser');
+                    alert('Geolocation not supported');
                     return;
                 }
                 
@@ -1365,94 +1118,13 @@
                         this.map.setView([lat, lng], 15);
                     },
                     error => {
-                        alert('Unable to get your location');
+                        alert('Unable to get location');
                     }
                 );
             }
             
-            applyFilters() {
-                const statusFilter = document.getElementById('statusFilter').value;
-                const typeFilter = document.getElementById('typeFilter').value;
-                const priceFilter = document.getElementById('priceFilter').value;
-                
-                this.filteredProperties = this.properties.filter(property => {
-                    if (statusFilter && property.status !== statusFilter) return false;
-                    
-                    if (typeFilter) {
-                        const propType = property.type.toLowerCase();
-                        if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
-                        if (typeFilter === 'villa' && !propType.includes('villa')) return false;
-                        if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
-                        if (typeFilter === 'house' && !propType.includes('house')) return false;
-                        if (typeFilter === 'plot' && !propType.includes('plot')) return false;
-                    }
-                    
-                    if (priceFilter) {
-                        const price = parseInt(property.price.replace(/[^0-9]/g, '')) * (property.price.includes('M') ? 1000000 : 1000);
-                        if (priceFilter === '0-50' && price >= 50 * 1000000) return false;
-                        if (priceFilter === '50-100' && (price < 50 * 1000000 || price >= 100 * 1000000)) return false;
-                        if (priceFilter === '100-200' && (price < 100 * 1000000 || price >= 200 * 1000000)) return false;
-                        if (priceFilter === '200+' && price < 200 * 1000000) return false;
-                    }
-                    
-                    return true;
-                });
-                
-                this.updatePropertyVisibility();
-                this.updateFilterSummary();
-                this.updateStats();
-            }
-            
-            updatePropertyVisibility() {
-                this.propertyMarkers.forEach(item => {
-                    const isVisible = this.filteredProperties.includes(item.property);
-                    if (isVisible && !item.visible) {
-                        item.marker.addTo(this.map);
-                        item.visible = true;
-                    } else if (!isVisible && item.visible) {
-                        this.map.removeLayer(item.marker);
-                        item.visible = false;
-                    }
-                });
-            }
-            
-            updateFilterSummary() {
-                const filterSummary = document.getElementById('filterSummary');
-                const total = this.properties.length;
-                const shown = this.filteredProperties.length;
-                
-                filterSummary.textContent = shown === total ? 
-                    `Showing all ${total} properties` : 
-                    `Showing ${shown} of ${total} properties`;
-            }
-            
-            updateStats() {
-                const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
-                const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
-                
-                const apartments = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('apartment')).length;
-                const houses = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('house')).length;
-                const villas = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('villa') && !p.type.toLowerCase().includes('luxury')).length;
-                const luxury = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('luxury')).length;
-                const plots = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('plot')).length;
-                
-                document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
-                document.getElementById('forSaleCount').textContent = forSale;
-                document.getElementById('forRentCount').textContent = forRent;
-                document.getElementById('apartmentCount').textContent = apartments;
-                document.getElementById('houseCount').textContent = houses;
-                document.getElementById('villaCount').textContent = villas;
-                document.getElementById('luxuryCount').textContent = luxury;
-                document.getElementById('plotCount').textContent = plots;
-            }
-            
-            async sendMessage() {
-                if (this.isSending) return;
+            sendMessage() {
+                if (this.isSending || !this.currentProperty) return;
                 this.isSending = true;
                 
                 const chatInput = document.getElementById('chatInput');
@@ -1472,420 +1144,128 @@
                 chatInput.style.height = 'auto';
                 
                 this.showTyping();
-                this.chatHistory.push({ role: 'user', content: message });
-                
                 setTimeout(() => {
                     this.hideTyping();
-                    const response = this.processQuery(message);
-                    messagesContainer.innerHTML += `
-                        <div class="message ai">
-                            <div class="message-content">${response}</div>
-                        </div>`;
+                    this.generateAIResponse(message, this.currentProperty);
                     this.isSending = false;
-                    this.scrollToBottom();
                 }, 1500);
                 
                 this.scrollToBottom();
             }
             
-            processQuery(query) {
-                const lowerQuery = query.toLowerCase();
-                const params = {};
+            generateAIResponse(question, property) {
+                const messagesContainer = document.getElementById('chatMessages');
+                let response = '';
                 
-                // Parse query for filters
-                if (lowerQuery.includes('residential')) params.types = ['Apartment', 'House', 'Villa', 'Luxury Apartment', 'Luxury Villa'];
-                if (lowerQuery.includes('plot')) params.types = ['Plot'];
-                if (lowerQuery.includes('sale')) params.status = 'sale';
-                if (lowerQuery.includes('rent')) params.status = 'rent';
-                if (lowerQuery.includes('nyarugenge')) params.district = 'Nyarugenge';
-                if (lowerQuery.includes('gasabo')) params.district = 'Gasabo';
-                if (lowerQuery.includes('kicukiro')) params.district = 'Kicukiro';
-                if (lowerQuery.includes('remera')) params.district = 'Gasabo';
-                if (lowerQuery.includes('kimihurura')) params.district = 'Gasabo';
-                if (lowerQuery.includes('nyarutarama')) params.district = 'Gasabo';
+                const lowerQuestion = question.toLowerCase();
                 
-                // Parse price constraints
-                const priceMatch = lowerQuery.match(/(under|below|less than)\s*(\d+)\s*(m|million)/i);
-                if (priceMatch) params.maxPrice = parseFloat(priceMatch[2]) * 1000000;
-                
-                // Parse area constraints
-                const areaMatch = lowerQuery.match(/(\d+)\s*(m²|square meters)/i);
-                if (areaMatch) params.minArea = parseFloat(areaMatch[1]);
-                
-                // Parse proximity constraints
-                const schoolDistanceMatch = lowerQuery.match(/schools?\s*within\s*(\d+)\s*(m|km|meters|kilometers)/i);
-                if (schoolDistanceMatch) {
-                    params.schoolDistance = schoolDistanceMatch[2].startsWith('k') ? parseFloat(schoolDistanceMatch[1]) : parseFloat(schoolDistanceMatch[1]) / 1000;
-                    params.minSchools = lowerQuery.includes('multiple') || lowerQuery.includes('several') ? 2 : 1;
+                if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
+                    response = this.generateSchoolResponse(property);
+                } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
+                    response = this.generateHealthResponse(property);
+                } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('investment')) {
+                    response = this.generatePriceResponse(property);
+                } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
+                    response = this.generateFamilyResponse(property);
+                } else {
+                    response = this.generateGeneralResponse(property);
                 }
                 
-                const hospitalDistanceMatch = lowerQuery.match(/hospitals?\s*within\s*(\d+)\s*(m|km|meters|kilometers)/i);
-                if (hospitalDistanceMatch) {
-                    params.hospitalDistance = hospitalDistanceMatch[2].startsWith('k') ? parseFloat(hospitalDistanceMatch[1]) : parseFloat(hospitalDistanceMatch[1]) / 1000;
-                    params.minHospitals = lowerQuery.includes('multiple') || lowerQuery.includes('several') ? 2 : 1;
-                }
+                messagesContainer.innerHTML += `
+                    <div class="message ai">
+                        <div class="message-content">${response}</div>
+                    </div>`;
                 
-                // Handle equidistant queries
-                if (lowerQuery.includes('equidistant')) {
-                    params.equidistant = true;
-                }
-                
-                // Handle general analysis queries
-                if (lowerQuery.includes('market') || lowerQuery.includes('trend')) {
-                    return this.generateMarketAnalysis();
-                } else if (lowerQuery.includes('investment') || lowerQuery.includes('roi') || lowerQuery.includes('return')) {
-                    return this.generateInvestmentAdvice();
-                } else if (lowerQuery.includes('district') || lowerQuery.includes('area') || lowerQuery.includes('neighborhood')) {
-                    return this.generateDistrictAnalysis();
-                } else if (lowerQuery.includes('luxury') || lowerQuery.includes('premium')) {
-                    return this.generateLuxuryMarketInsight();
-                } else if (lowerQuery.includes('rental') || lowerQuery.includes('rent')) {
-                    return this.generateRentalMarketAnalysis();
-                } else if (lowerQuery.includes('price') || lowerQuery.includes('cost') || lowerQuery.includes('value')) {
-                    return this.currentProperty ? this.generatePriceResponse(this.currentProperty) : this.generatePricingInsights();
-                } else if (lowerQuery.includes('school') || lowerQuery.includes('education')) {
-                    return this.currentProperty ? this.generateSchoolResponse(this.currentProperty) : this.generateEducationInsights();
-                } else if (lowerQuery.includes('hospital') || lowerQuery.includes('health') || lowerQuery.includes('medical')) {
-                    return this.currentProperty ? this.generateHealthResponse(this.currentProperty) : this.generateHealthcareInsights();
-                } else if (lowerQuery.includes('family') || lowerQuery.includes('children')) {
-                    return this.currentProperty ? this.generateFamilyResponse(this.currentProperty) : this.generateFamilyLivingInsights();
-                } else if (lowerQuery.includes('developer') || lowerQuery.includes('construction')) {
-                    return this.generateDevelopmentInsights();
-                } else if (lowerQuery.includes('infrastructure') || lowerQuery.includes('transport')) {
-                    return this.generateInfrastructureInsights();
-                }
-                
-                // Filter properties based on parsed parameters
-                const results = this.filterProperties(params);
-                
-                if (results.length === 0) {
-                    return `No properties match your criteria. Try relaxing filters or check listings on ewawe.com or kigaliproperties.online.`;
-                }
-                
-                let response = `<h4>🔍 Property Search Results</h4><br>Found <strong>${results.length} properties</strong> matching your criteria:<br><br>`;
-                
-                results.forEach(property => {
-                    this.analyzeProximity(property, params);
-                    response += `<strong>${property.name}</strong> (${property.district})<br>`;
-                    response += `• Type: ${property.type}<br>`;
-                    response += `• Price: ${property.price}<br>`;
-                    response += `• Size: ${property.bedrooms ? property.bedrooms + 'BR • ' + property.bathrooms + 'BA • ' : ''}${property.area}<br>`;
-                    if (this.nearbySchools.length > 0) {
-                        response += `• Schools: ${this.nearbySchools.slice(0, 2).map(s => `${s.school_name} (~${(s.distance * 1000).toFixed(0)}m)`).join(', ')}<br>`;
-                    }
-                    if (this.nearbyHospitals.length > 0) {
-                        response += `• Hospitals: ${this.nearbyHospitals.slice(0, 2).map(h => `${h.facility_name} (~${h.distance.toFixed(1)}km)`).join(', ')}<br>`;
-                    }
-                    response += `• Coordinates: (${property.lat}, ${property.lng})<br><br>`;
-                });
-                
-                response += `Click a property marker on the map for detailed analysis or refine your search.`;
-                
-                this.filteredProperties = results;
-                this.updatePropertyVisibility();
-                if (results.length > 0) {
-                    this.map.setView([results[0].lat, results[0].lng], 15);
-                }
-                
-                return response;
-            }
-            
-            filterProperties(params) {
-                const lowerQuery = this.chatHistory.length > 0 ? this.chatHistory[this.chatHistory.length - 1].content.toLowerCase() : '';
-                
-                return this.properties
-                    .map(property => {
-                        let score = 0;
-                        let matchesCriteria = true;
-
-                        // Type filter
-                        if (params.types && !params.types.includes(property.type)) {
-                            matchesCriteria = false;
-                        }
-
-                        // Status filter
-                        if (params.status && property.status !== params.status) {
-                            matchesCriteria = false;
-                        }
-
-                        // District filter
-                        if (params.district && property.district !== params.district) {
-                            matchesCriteria = false;
-                        }
-
-                        // Price filter
-                        if (params.maxPrice) {
-                            const price = parseInt(property.price.replace(/[^0-9]/g, '')) * (property.price.includes('M') ? 1000000 : 1000);
-                            if (price > params.maxPrice) {
-                                matchesCriteria = false;
-                            } else {
-                                score += (params.maxPrice - price) / params.maxPrice;
-                            }
-                        }
-
-                        // Area filter
-                        if (params.minArea) {
-                            const area = parseInt(property.area.replace(/[^0-9]/g, ''));
-                            if (area < params.minArea) {
-                                matchesCriteria = false;
-                            } else {
-                                score += area / params.minArea;
-                            }
-                        }
-
-                        // Proximity to schools
-                        if (params.schoolDistance && params.minSchools) {
-                            this.analyzeProximity(property, params);
-                            if (this.nearbySchools.length < params.minSchools) {
-                                matchesCriteria = false;
-                            } else {
-                                const avgSchoolDistance = this.nearbySchools.reduce((sum, s) => sum + s.distance, 0) / this.nearbySchools.length;
-                                score += (params.schoolDistance - avgSchoolDistance) / params.schoolDistance;
-                            }
-                        }
-
-                        // Proximity to hospitals
-                        if (params.hospitalDistance && params.minHospitals) {
-                            this.analyzeProximity(property, params);
-                            if (this.nearbyHospitals.length < params.minHospitals) {
-                                matchesCriteria = false;
-                            } else {
-                                const avgHospitalDistance = this.nearbyHospitals.reduce((sum, h) => sum + h.distance, 0) / this.nearbyHospitals.length;
-                                score += (params.hospitalDistance - avgHospitalDistance) / params.hospitalDistance;
-                            }
-                        }
-
-                        // Equidistant logic
-                        if (params.equidistant && params.schoolDistance && params.hospitalDistance) {
-                            this.analyzeProximity(property, params);
-                            if (this.nearbySchools.length > 0 && this.nearbyHospitals.length > 0) {
-                                const minSchoolDistance = Math.min(...this.nearbySchools.map(s => s.distance));
-                                const minHospitalDistance = Math.min(...this.nearbyHospitals.map(h => h.distance));
-                                const distanceDiff = Math.abs(minSchoolDistance - minHospitalDistance);
-                                if (distanceDiff > 0.5) {
-                                    matchesCriteria = false;
-                                } else {
-                                    score += (0.5 - distanceDiff) / 0.5;
-                                }
-                            } else {
-                                matchesCriteria = false;
-                            }
-                        }
-
-                        // Family-friendly scoring
-                        if (lowerQuery.includes('family') || lowerQuery.includes('children')) {
-                            if (property.bedrooms >= 3) score += 0.5;
-                            if (this.nearbySchools.length >= 2) score += 0.5;
-                            if (property.amenities.includes('Garden')) score += 0.3;
-                        }
-
-                        // Investment scoring
-                        if (lowerQuery.includes('investment')) {
-                            if (['Gasabo', 'Nyarugenge'].includes(property.district)) score += 0.5;
-                            if (property.price.includes('M') && parseInt(property.price) < 100) score += 0.3;
-                        }
-
-                        return { property, score, matchesCriteria };
-                    })
-                    .filter(item => item.matchesCriteria)
-                    .sort((a, b) => b.score - a.score)
-                    .map(item => item.property);
-            }
-            
-            generateMarketAnalysis() {
-                return `
-                    <h4>📈 Kigali Real Estate Market Overview</h4>
-                    <p>The Kigali real estate market is experiencing steady growth, driven by urban development and foreign investment. Key trends include:</p>
-                    <ul>
-                        <li><strong>High Demand in Gasabo and Nyarugenge</strong>: These districts see strong interest due to proximity to business hubs and amenities.</li>
-                        <li><strong>Rental Market Growth</strong>: Apartments under 50M RWF are popular among young professionals and expatriates.</li>
-                        <li><strong>Land Appreciation</strong>: Plots in Kicukiro and Gasabo are appreciating at 5-7% annually due to infrastructure projects.</li>
-                    </ul>
-                    <p>Explore specific districts or property types for detailed insights!</p>`;
-            }
-            
-            generateInvestmentAdvice() {
-                return `
-                    <h4>💰 Investment Opportunities in Kigali</h4>
-                    <p>For optimal ROI, consider:</p>
-                    <ul>
-                        <li><strong>Gasabo Plots</strong>: Affordable plots (40-50M RWF) in areas like Remera offer high appreciation potential.</li>
-                        <li><strong>Rental Apartments</strong>: Properties under 100M RWF in Kacyiru and Nyarugenge yield 6-8% annually.</li>
-                        <li><strong>Luxury Market</strong>: High-end villas in Nyarutarama attract expatriates and diplomats, ensuring stable rental income.</li>
-                    </ul>
-                    <p>Ask for specific properties or districts to tailor your investment strategy!</p>`;
-            }
-            
-            generateDistrictAnalysis() {
-                return `
-                    <h4>🏙️ Kigali District Insights</h4>
-                    <p>Key districts for real estate:</p>
-                    <ul>
-                        <li><strong>Gasabo</strong>: Home to affluent areas like Nyarutarama and Kimihurura. Ideal for luxury and family homes.</li>
-                        <li><strong>Nyarugenge</strong>: Central business district with high rental demand for apartments.</li>
-                        <li><strong>Kicukiro</strong>: Emerging area with affordable plots and growing infrastructure.</li>
-                    </ul>
-                    <p>Filter by district to explore available properties!</p>`;
-            }
-            
-            generateLuxuryMarketInsight() {
-                return `
-                    <h4>⭐ Luxury Property Insights</h4>
-                    <p>Kigali’s luxury market is thriving, particularly in:</p>
-                    <ul>
-                        <li><strong>Nyarutarama</strong>: Golf course villas with amenities like pools and smart home systems.</li>
-                        <li><strong>Kigali Heights</strong>: Exclusive properties with panoramic views, priced above 400M RWF.</li>
-                    </ul>
-                    <p>Search for luxury villas or apartments to see premium listings!</p>`;
-            }
-            
-            generateRentalMarketAnalysis() {
-                return `
-                    <h4>🏠 Rental Market Insights</h4>
-                    <p>Kigali’s rental market is vibrant, with:</p>
-                    <ul>
-                        <li><strong>Affordable Apartments</strong>: 1-2 bedroom units in Kibagabaga and Gisozi, priced 30-75M RWF.</li>
-                        <li><strong>High-Demand Areas</strong>: Nyarugenge and Kacyiru offer strong rental yields due to business proximity.</li>
-                    </ul>
-                    <p>Filter for rentals to explore available options!</p>`;
-            }
-            
-            generatePricingInsights() {
-                return `
-                    <h4>💸 Pricing Trends</h4>
-                    <p>Kigali property prices vary by district and type:</p>
-                    <ul>
-                        <li><strong>Plots</strong>: 40-50M RWF in Kicukiro and Remera.</li>
-                        <li><strong>Apartments</strong>: 30-75M RWF for rentals, 65-150M RWF for sales.</li>
-                        <li><strong>Villas</strong>: 140-520M RWF, with luxury options in Nyarutarama.</li>
-                    </ul>
-                    <p>Specify a budget or property type for tailored results!</p>`;
-            }
-            
-            generateEducationInsights() {
-                return `
-                    <h4>🎓 Education Access in Kigali</h4>
-                    <p>Key areas with strong school access:</p>
-                    <ul>
-                        <li><strong>Gasabo</strong>: Home to Green Hills Academy and Kigali Parents School.</li>
-                        <li><strong>Nyarugenge</strong>: Proximity to national curriculum schools like ITETERO.</li>
-                    </ul>
-                    <p>Search for properties near schools for family-friendly options!</p>`;
-            }
-            
-            generateHealthcareInsights() {
-                return `
-                    <h4>🏥 Healthcare Access</h4>
-                    <p>Major hospitals are concentrated in:</p>
-                    <ul>
-                        <li><strong>Gasabo</strong>: King Faisal Hospital, Rwanda Military Hospital.</li>
-                        <li><strong>Nyarugenge</strong>: CHUK for specialized care.</li>
-                    </ul>
-                    <p>Filter for properties near hospitals for healthcare proximity!</p>`;
-            }
-            
-            generateFamilyLivingInsights() {
-                return `
-                    <h4>👨‍👩‍👧 Family-Friendly Living</h4>
-                    <p>Best areas for families:</p>
-                    <ul>
-                        <li><strong>Kimihurura</strong>: Quiet, with large houses and nearby schools.</li>
-                        <li><strong>Kibagabaga</strong>: Affordable family homes with garden spaces.</li>
-                    </ul>
-                    <p>Search for 3+ bedroom houses near schools for ideal family homes!</p>`;
-            }
-            
-            generateDevelopmentInsights() {
-                return `
-                    <h4>🏗️ Development Insights</h4>
-                    <p>Kigali’s real estate is boosted by:</p>
-                    <ul>
-                        <li><strong>Infrastructure Growth</strong>: New roads and utilities in Kicukiro.</li>
-                        <li><strong>Developer Activity</strong>: Affordable plots in Remera and Gisozi are popular for new builds.</li>
-                    </ul>
-                    <p>Explore plots for development opportunities!</p>`;
-            }
-            
-            generateInfrastructureInsights() {
-                return `
-                    <h4>🛣️ Infrastructure Insights</h4>
-                    <p>Kigali’s infrastructure supports real estate growth:</p>
-                    <ul>
-                        <li><strong>Transport</strong>: Improved roads in Gasabo and Kicukiro enhance accessibility.</li>
-                        <li><strong>Utilities</strong>: Reliable power and water in most urban areas.</li>
-                    </ul>
-                    <p>Search properties in well-connected districts for convenience!</p>`;
-            }
-            
-            generatePriceResponse(property) {
-                return `
-                    <h4>💰 Price Analysis for ${property.name}</h4>
-                    <p><strong>Price:</strong> ${property.price}</p>
-                    <p><strong>Market Context:</strong> This ${property.type.toLowerCase()} in ${property.district} is priced ${this.isPriceCompetitive(property) ? 'competitively' : 'above average'} for its amenities and location.</p>
-                    <p>Explore similar properties to compare!</p>`;
+                this.scrollToBottom();
             }
             
             generateSchoolResponse(property) {
-                this.analyzeProximity(property);
-                let response = `<h4>🎓 Schools near ${property.name}</h4>`;
+                this.clearNearbyMarkers();
+                this.showNearbyFacilities(property);
+                
+                let response = `<h4>🎓 Education Analysis for ${property.name}</h4><br>`;
+                
                 if (this.nearbySchools.length > 0) {
-                    response += `<p>Found ${this.nearbySchools.length} schools within 2km:</p><ul>`;
+                    response += `Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
+                    
                     this.nearbySchools.slice(0, 3).forEach(school => {
-                        response += `<li>${school.school_name} (${(school.distance * 1000).toFixed(0)}m)</li>`;
+                        const walkTime = Math.round(school.distance * 12);
+                        response += `📚 <strong>${school.school_name}</strong><br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Type: ${school.school_status} (${school.curriculum})<br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
                     });
-                    response += `</ul>`;
                 } else {
-                    response += `<p>No schools within 2km. Consider transportation for school access.</p>`;
+                    response += `No schools within 2km.<br><br>`;
+                    response += `<strong>Recommendations:</strong><br>• Consider transport for school.`;
                 }
+                
                 return response;
             }
             
             generateHealthResponse(property) {
-                this.analyzeProximity(property);
-                let response = `<h4>🏥 Hospitals near ${property.name}</h4>`;
+                this.clearNearbyMarkers();
+                this.showNearbyFacilities(property);
+                
+                let response = `<h4>🏥 Healthcare Analysis for ${property.name}</h4><br>`;
+                
                 if (this.nearbyHospitals.length > 0) {
-                    response += `<p>Found ${this.nearbyHospitals.length} hospitals within 3km:</p><ul>`;
+                    response += `<strong>${this.nearbyHospitals.length} facilities</strong> within 3km:<br><br>`;
+                    
                     this.nearbyHospitals.slice(0, 3).forEach(hospital => {
-                        response += `<li>${hospital.facility_name} (${hospital.distance.toFixed(1)}km)</li>`;
+                        response += `🏥 <strong>${hospital.facility_name}</strong><br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Type: ${hospital.facility_type}<br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
                     });
-                    response += `</ul>`;
                 } else {
-                    response += `<p>No hospitals within 3km. Emergency services may be farther.</p>`;
+                    response += `No facilities within 3km.<br><br>`;
+                    response += `<strong>Considerations:</strong><br>• Emergency response may be slower.`;
                 }
+                
+                return response;
+            }
+            
+            generatePriceResponse(property) {
+                const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
+                let response = `<h4>💰 Investment Analysis</h4><br>`;
+                
+                response += `<strong>Price:</strong> ${property.price}<br>`;
+                response += `<strong>Per m²:</strong> ${Math.round(priceValue * 1000000 / parseInt(property.area))} RWF/m²<br><br>`;
+                
+                let investmentScore = 60 + Math.min(this.nearbySchools.length * 5, 15) + Math.min(this.nearbyHospitals.length * 3, 10);
+                response += `<strong>Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
+                
+                if (property.status === 'sale') {
+                    const estimatedRent = Math.round(priceValue * 0.5);
+                    response += `Estimated monthly rent: ${estimatedRent}K RWF<br>`;
+                }
+                
                 return response;
             }
             
             generateFamilyResponse(property) {
-                this.analyzeProximity(property);
-                let response = `<h4>👨‍👩‍👧 Family Suitability for ${property.name}</h4>`;
-                response += `<p><strong>Type:</strong> ${property.type}, ${property.bedrooms || 0} bedrooms</p>`;
-                if (property.bedrooms >= 3 && this.nearbySchools.length >= 2) {
-                    response += `<p>Ideal for families: Spacious with ${this.nearbySchools.length} schools nearby.</p>`;
-                } else {
-                    response += `<p>${property.bedrooms < 3 ? 'Limited bedrooms' : 'Good size'}, but ${this.nearbySchools.length} schools within 2km.</p>`;
-                }
-                if (property.amenities.includes('Garden')) {
-                    response += `<p>Bonus: Includes a garden for family activities.</p>`;
-                }
+                let response = `<h4>👨‍👩‍👧‍👦 Family Suitability</h4><br>`;
+                
+                let familyScore = 50 + (property.bedrooms >= 3 ? 15 : 10) + (this.nearbySchools.length >= 1 ? 10 : 0) + (this.nearbyHospitals.length >= 1 ? 5 : 0);
+                response += `<strong>Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
+                
+                response += `Space: ${property.bedrooms}BR, ${property.area}<br>`;
+                response += `Schools: ${this.nearbySchools.length} nearby<br>`;
+                response += `Health: ${this.nearbyHospitals.length} facilities<br>`;
+                
                 return response;
             }
             
-            isPriceCompetitive(property) {
-                const price = parseInt(property.price.replace(/[^0-9]/g, '')) * (property.price.includes('M') ? 1000000 : 1000);
-                const similarProperties = this.properties.filter(p => p.type === property.type && p.district === property.district);
-                const avgPrice = similarProperties.reduce((sum, p) => sum + parseInt(p.price.replace(/[^0-9]/g, '')) * (p.price.includes('M') ? 1000000 : 1000), 0) / similarProperties.length;
-                return price <= avgPrice;
-            }
-            
-            sanitizeHTML(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
+            generateGeneralResponse(property) {
+                let response = `<h4>🏠 Overview</h4><br>`;
+                
+                response += `Ask about: education, healthcare, price, or family suitability.<br><br>`;
+                response += `Quick Facts:<br>• Location: ${property.district}<br>• Built: ${property.yearBuilt}`;
+                
+                return response;
             }
             
             showTyping() {
                 document.getElementById('typingIndicator').classList.add('show');
-                this.scrollToBottom();
             }
             
             hideTyping() {
@@ -1896,18 +1276,38 @@
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
+            
+            sanitizeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
         }
         
-        const propertyIntel = new PropertyIntelSystem();
+        let propertyIntel = null;
         
-        function toggleChat() {
-            const chatContainer = document.getElementById('chatContainer');
-            const toggleIcon = document.getElementById('toggleIcon');
-            chatContainer.classList.toggle('collapsed');
-            toggleIcon.classList.toggle('fa-chevron-left');
-            toggleIcon.classList.toggle('fa-chevron-right');
-            propertyIntel.map.invalidateSize();
+        function closeChat() {
+            document.getElementById('chatContainer').classList.remove('open');
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            propertyIntel.clearNearbyMarkers();
         }
+        
+        function closeFilterPanel() {
+            document.getElementById('filterPanel').classList.remove('open');
+        }
+        
+        function applyFilters() {
+            propertyIntel.applyFilters();
+        }
+        
+        function hideFlashScreen() {
+            document.getElementById('flashScreen').classList.add('hidden');
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            propertyIntel = new PropertyIntelSystem();
+        });
     </script>
 </body>
 </html>
