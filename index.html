@@ -1,44 +1,4 @@
-
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -85,7 +45,6 @@
             background: #1a1a2e;
         }
         
-        /* App Header for Chat */
         .app-header {
             padding: 16px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -107,14 +66,13 @@
             cursor: pointer;
         }
         
-        /* Chat Container as Left Side Panel */
         .chat-container {
             position: fixed;
             top: 0;
             left: -100%;
             width: 85%;
             max-width: 320px;
-            height: 100vh;
+            height: 70vh; /* Reduced height for mobile accessibility */
             background: var(--glass);
             backdrop-filter: blur(20px);
             box-shadow: 4px 0 20px rgba(0,0,0,0.3);
@@ -128,7 +86,6 @@
             left: 0;
         }
         
-        /* Chat Messages Section */
         .chat-section {
             flex: 1;
             display: flex;
@@ -172,7 +129,6 @@
             max-width: 85%;
         }
         
-        /* Chat Input */
         .chat-input-container {
             padding: 12px;
             background: rgba(15, 23, 42, 0.9);
@@ -214,7 +170,6 @@
             cursor: not-allowed;
         }
         
-        /* Map Controls */
         .map-controls {
             position: absolute;
             top: 10px;
@@ -282,14 +237,13 @@
             z-index: 1000;
         }
         
-        /* Filter Panel */
         .filter-panel {
             position: fixed;
             top: 0;
             right: -100%;
             width: 85%;
             max-width: 280px;
-            height: 100vh;
+            height: 70vh; /* Reduced height for mobile accessibility */
             background: var(--glass);
             backdrop-filter: blur(20px);
             box-shadow: -4px 0 20px rgba(0,0,0,0.3);
@@ -349,7 +303,6 @@
             font-weight: 600;
         }
         
-        /* Property Markers */
         .property-marker {
             background: white;
             border: 2px solid var(--primary);
@@ -392,7 +345,6 @@
             color: var(--warning);
         }
         
-        /* School and Hospital Markers */
         .school-marker, .hospital-marker {
             width: 28px !important;
             height: 28px !important;
@@ -415,8 +367,7 @@
             background: var(--success);
         }
         
-        /* Info Panels in Chat */
-        .property-info, .proximity-info, .education-info {
+        .proximity-info, .education-info {
             background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
             border-radius: 8px;
             padding: 12px;
@@ -448,7 +399,6 @@
             font-size: 0.8rem;
         }
         
-        /* Tooltips and Popups */
         .leaflet-popup-content {
             font-size: 0.85rem;
             line-height: 1.4;
@@ -469,7 +419,6 @@
             width: 100%;
         }
         
-        /* Typing Indicator */
         .typing-indicator {
             display: none;
             padding: 8px 12px;
@@ -494,7 +443,6 @@
             80%, 100% { content: 'AI analyzing...'; }
         }
         
-        /* Scrollbar */
         .chat-messages::-webkit-scrollbar {
             width: 4px;
         }
@@ -504,7 +452,6 @@
             border-radius: 2px;
         }
         
-        /* Flash Screen Guide */
         .flash-screen {
             position: fixed;
             top: 0;
@@ -553,7 +500,6 @@
     </style>
 </head>
 <body>
-    <!-- Flash Screen Guide -->
     <div class="flash-screen" id="flashScreen">
         <h1>Welcome to PropertyIntel Kigali</h1>
         <p>Explore properties in Kigali with ease.</p>
@@ -562,9 +508,7 @@
         <button onclick="hideFlashScreen()">Get Started</button>
     </div>
     
-    <!-- Map Container -->
     <div class="map-container">
-        <!-- Map Controls -->
         <div class="map-controls">
             <div class="search-box">
                 <input type="text" id="locationSearch" class="search-input" 
@@ -581,7 +525,6 @@
             </button>
         </div>
         
-        <!-- Home Button -->
         <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
             <i class="fas fa-home"></i>
         </button>
@@ -589,9 +532,7 @@
         <div id="map"></div>
     </div>
     
-    <!-- Chat Container (Left Side Panel) -->
     <div class="chat-container" id="chatContainer">
-        <!-- App Header -->
         <div class="app-header">
             <div class="app-title">PropertyIntel Kigali</div>
             <button class="toggle-chat-btn" onclick="closeChat()" aria-label="Close chat">
@@ -599,12 +540,10 @@
             </button>
         </div>
         
-        <!-- Chat Section -->
         <div class="chat-section">
             <div class="chat-messages" id="chatMessages"></div>
             <div class="typing-indicator" id="typingIndicator"></div>
             
-            <!-- Chat Input -->
             <div class="chat-input-container">
                 <textarea class="chat-input" id="chatInput" 
                           placeholder="Ask about this property..." 
@@ -616,7 +555,6 @@
         </div>
     </div>
     
-    <!-- Filter Panel -->
     <div class="filter-panel" id="filterPanel">
         <div class="filter-header">
             <div class="filter-title">Filter Properties</div>
@@ -653,6 +591,37 @@
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+        
         class PropertyIntelSystem {
             constructor() {
                 this.map = null;
@@ -889,7 +858,7 @@
                 const flashScreen = document.getElementById('flashScreen');
                 setTimeout(() => {
                     flashScreen.classList.add('hidden');
-                }, 15000); // Hide after 15 seconds
+                }, 15000);
             }
             
             openChat(id) {
@@ -897,7 +866,7 @@
                 if (!prop) return;
                 
                 this.currentProperty = prop;
-                this.analyzeProperty(prop);
+                this.analyzeProximity(prop);
                 this.map.closePopup();
                 this.map.setView([prop.lat, prop.lng], 15);
                 
@@ -910,13 +879,84 @@
                 sendBtn.disabled = false;
                 chatInput.placeholder = `Ask about ${prop.name}...`;
                 chatInput.focus();
+                
+                // Show initial proximity analysis
+                this.displayProximityAnalysis(prop);
             }
             
-            analyzeProperty(property) {
-                this.clearNearbyMarkers();
-                this.analyzeProximity(property);
-                this.displayPropertyAnalysis(property);
-                this.showNearbyFacilities(property);
+            analyzeProximity(property) {
+                this.nearbyHospitals = this.facilities
+                    .map(facility => ({
+                        ...facility,
+                        distance: L.latLng(property.lat, property.lng).distanceTo([facility.lat, facility.long]) / 1000
+                    }))
+                    .filter(f => f.distance <= 2) // Reduced to 2km for health facilities
+                    .sort((a, b) => a.distance - b.distance);
+                
+                this.nearbySchools = this.schools
+                    .map(school => ({
+                        ...school,
+                        distance: L.latLng(property.lat, property.lng).distanceTo([school.lat, school.lng]) / 1000
+                    }))
+                    .filter(s => s.distance <= 1.5) // Reduced to 1.5km for schools
+                    .sort((a, b) => a.distance - b.distance);
+            }
+            
+            displayProximityAnalysis(property) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = '';
+                
+                if (this.nearbySchools.length > 0) {
+                    let schoolHtml = `
+                        <div class="education-info">
+                            <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
+                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 1.5km</p>
+                            <div class="facility-list">`;
+                    
+                    this.nearbySchools.slice(0, 5).forEach(school => {
+                        schoolHtml += `
+                            <div class="facility-item" onclick="propertyIntel.focusLocation(${school.lat}, ${school.lng})">
+                                <div class="facility-name">${school.school_name}</div>
+                                <div class="facility-distance">${(school.distance * 1000).toFixed(0)}m</div>
+                            </div>`;
+                    });
+                    
+                    schoolHtml += `</div></div>`;
+                    messagesContainer.innerHTML += schoolHtml;
+                } else {
+                    messagesContainer.innerHTML += `
+                        <div class="education-info">
+                            <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
+                            <p>No schools within 1.5km walking distance.</p>
+                        </div>`;
+                }
+                
+                if (this.nearbyHospitals.length > 0) {
+                    let hospitalHtml = `
+                        <div class="proximity-info">
+                            <h4 style="margin-bottom: 8px;">🏥 Healthcare Access</h4>
+                            <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 2km</p>
+                            <div class="facility-list">`;
+                    
+                    this.nearbyHospitals.slice(0, 5).forEach(hospital => {
+                        hospitalHtml += `
+                            <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.long})">
+                                <div class="facility-name">${hospital.facility_name}</div>
+                                <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
+                            </div>`;
+                    });
+                    
+                    hospitalHtml += `</div></div>`;
+                    messagesContainer.innerHTML += hospitalHtml;
+                } else {
+                    messagesContainer.innerHTML += `
+                        <div class="proximity-info">
+                            <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
+                            <p>No hospitals within 2km radius.</p>
+                        </div>`;
+                }
+                
+                this.scrollToBottom();
             }
             
             clearNearbyMarkers() {
@@ -935,94 +975,6 @@
                 this.nearbySchools.forEach((school, index) => {
                     this.schoolMarkers[index].addTo(this.map);
                 });
-            }
-            
-            analyzeProximity(property) {
-                this.nearbyHospitals = this.facilities
-                    .map(facility => ({
-                        ...facility,
-                        distance: L.latLng(property.lat, property.lng).distanceTo([facility.lat, facility.long]) / 1000
-                    }))
-                    .filter(f => f.distance <= 3)
-                    .sort((a, b) => a.distance - b.distance);
-                
-                this.nearbySchools = this.schools
-                    .map(school => ({
-                        ...school,
-                        distance: L.latLng(property.lat, property.lng).distanceTo([school.lat, school.lng]) / 1000
-                    }))
-                    .filter(s => s.distance <= 2)
-                    .sort((a, b) => a.distance - b.distance);
-            }
-            
-            displayPropertyAnalysis(property) {
-                const messagesContainer = document.getElementById('chatMessages');
-                messagesContainer.innerHTML = '';
-                
-                let propertyHtml = `
-                    <div class="property-info">
-                        <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
-                        <div style="margin-bottom: 6px;"><strong>Type:</strong> ${property.type}</div>
-                        <div style="margin-bottom: 6px;"><strong>Price:</strong> ${property.price}</div>
-                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}</div>
-                        <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt}</div>
-                        <div style="margin-bottom: 6px;"><strong>District:</strong> ${property.district}</div>
-                        <div><strong>Amenities:</strong> ${property.amenities ? property.amenities.join(', ') : 'Standard'}</div>
-                    </div>`;
-                
-                messagesContainer.innerHTML += propertyHtml;
-                
-                if (this.nearbySchools.length > 0) {
-                    let schoolHtml = `
-                        <div class="education-info">
-                            <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 2km</p>
-                            <div class="facility-list">`;
-                    
-                    this.nearbySchools.slice(0, 5).forEach(school => {
-                        schoolHtml += `
-                            <div class="facility-item" onclick="propertyIntel.focusLocation(${school.lat}, ${school.lng})">
-                                <div class="facility-name">${school.school_name}</div>
-                                <div class="facility-distance">${(school.distance * 1000).toFixed(0)}m</div>
-                            </div>`;
-                    });
-                    
-                    schoolHtml += `</div></div>`;
-                    messagesContainer.innerHTML += schoolHtml;
-                } else {
-                    messagesContainer.innerHTML += `
-                        <div class="education-info">
-                            <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
-                            <p>No schools within 2km walking distance.</p>
-                        </div>`;
-                }
-                
-                if (this.nearbyHospitals.length > 0) {
-                    let hospitalHtml = `
-                        <div class="proximity-info">
-                            <h4 style="margin-bottom: 8px;">🏥 Healthcare Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 3km</p>
-                            <div class="facility-list">`;
-                    
-                    this.nearbyHospitals.slice(0, 5).forEach(hospital => {
-                        hospitalHtml += `
-                            <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.long})">
-                                <div class="facility-name">${hospital.facility_name}</div>
-                                <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
-                            </div>`;
-                    });
-                    
-                    hospitalHtml += `</div></div>`;
-                    messagesContainer.innerHTML += hospitalHtml;
-                } else {
-                    messagesContainer.innerHTML += `
-                        <div class="proximity-info">
-                            <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
-                            <p>No hospitals within 3km radius.</p>
-                        </div>`;
-                }
-                
-                this.scrollToBottom();
             }
             
             focusLocation(lat, lng) {
@@ -1210,7 +1162,7 @@
                 let response = `<h4>🎓 Education Analysis for ${property.name}</h4><br>`;
                 
                 if (this.nearbySchools.length > 0) {
-                    response += `Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
+                    response += `Found <strong>${this.nearbySchools.length} schools</strong> within 1.5km:<br><br>`;
                     
                     this.nearbySchools.slice(0, 3).forEach(school => {
                         const walkTime = Math.round(school.distance * 12);
@@ -1219,7 +1171,7 @@
                         response += `&nbsp;&nbsp;&nbsp;• Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
                     });
                 } else {
-                    response += `No schools within 2km.<br><br>`;
+                    response += `No schools within 1.5km.<br><br>`;
                     response += `<strong>Recommendations:</strong><br>• Consider transport for school.`;
                 }
                 
@@ -1233,7 +1185,7 @@
                 let response = `<h4>🏥 Healthcare Analysis for ${property.name}</h4><br>`;
                 
                 if (this.nearbyHospitals.length > 0) {
-                    response += `<strong>${this.nearbyHospitals.length} facilities</strong> within 3km:<br><br>`;
+                    response += `<strong>${this.nearbyHospitals.length} facilities</strong> within 2km:<br><br>`;
                     
                     this.nearbyHospitals.slice(0, 3).forEach(hospital => {
                         response += `🏥 <strong>${hospital.facility_name}</strong><br>`;
@@ -1241,7 +1193,7 @@
                         response += `&nbsp;&nbsp;&nbsp;• Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
                     });
                 } else {
-                    response += `No facilities within 3km.<br><br>`;
+                    response += `No facilities within 2km.<br><br>`;
                     response += `<strong>Considerations:</strong><br>• Emergency response may be slower.`;
                 }
                 
