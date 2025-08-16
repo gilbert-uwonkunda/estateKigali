@@ -107,25 +107,25 @@
             cursor: pointer;
         }
         
-        /* Chat Container as Side Panel */
+        /* Chat Container as Left Side Panel */
         .chat-container {
             position: fixed;
             top: 0;
-            right: -100%;
+            left: -100%;
             width: 85%;
             max-width: 320px;
             height: 100vh;
             background: var(--glass);
             backdrop-filter: blur(20px);
-            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
-            transition: right 0.3s ease;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            transition: left 0.3s ease;
             z-index: 2000;
             display: flex;
             flex-direction: column;
         }
         
         .chat-container.open {
-            right: 0;
+            left: 0;
         }
         
         /* Chat Messages Section */
@@ -557,7 +557,7 @@
     <div class="flash-screen" id="flashScreen">
         <h1>Welcome to PropertyIntel Kigali</h1>
         <p>Explore properties in Kigali with ease.</p>
-        <p>Use the search bar to find locations, tap markers to view property details, or use the filter button to narrow down property types.</p>
+        <p>Use the search bar to find locations, tap markers to view property details, or use the filter button to narrow down by type and price.</p>
         <p>Click "Ask more questions" on a property to chat with our AI for insights!</p>
         <button onclick="hideFlashScreen()">Get Started</button>
     </div>
@@ -589,7 +589,7 @@
         <div id="map"></div>
     </div>
     
-    <!-- Chat Container (Side Panel) -->
+    <!-- Chat Container (Left Side Panel) -->
     <div class="chat-container" id="chatContainer">
         <!-- App Header -->
         <div class="app-header">
@@ -635,6 +635,18 @@
         <div class="filter-option">
             <input type="checkbox" id="luxuryFilter" checked>
             <label for="luxuryFilter">Luxury</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="priceLowFilter" checked>
+            <label for="priceLowFilter">Under 50M RWF</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="priceMidFilter" checked>
+            <label for="priceMidFilter">50M - 150M RWF</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="priceHighFilter" checked>
+            <label for="priceHighFilter">Over 150M RWF</label>
         </div>
         <button class="apply-filter-btn" onclick="applyFilters()">Apply Filters</button>
     </div>
@@ -877,7 +889,7 @@
                 const flashScreen = document.getElementById('flashScreen');
                 setTimeout(() => {
                     flashScreen.classList.add('hidden');
-                }, 5000); // Hide after 5 seconds
+                }, 15000); // Hide after 15 seconds
             }
             
             openChat(id) {
@@ -1033,13 +1045,25 @@
                 const saleFilter = document.getElementById('saleFilter').checked;
                 const rentFilter = document.getElementById('rentFilter').checked;
                 const luxuryFilter = document.getElementById('luxuryFilter').checked;
+                const priceLowFilter = document.getElementById('priceLowFilter').checked;
+                const priceMidFilter = document.getElementById('priceMidFilter').checked;
+                const priceHighFilter = document.getElementById('priceHighFilter').checked;
                 
                 this.propertyMarkers.forEach(({ marker, property }) => {
                     const isLuxury = property.type.toLowerCase().includes('luxury');
-                    const showMarker = 
+                    const priceValue = parseInt(property.price.replace(/[^0-9]/g, '')) * 1000000;
+                    
+                    const showByType = 
                         (saleFilter && property.status === 'sale' && !isLuxury) ||
                         (rentFilter && property.status === 'rent' && !isLuxury) ||
                         (luxuryFilter && isLuxury);
+                    
+                    const showByPrice = 
+                        (priceLowFilter && priceValue < 50000000) ||
+                        (priceMidFilter && priceValue >= 50000000 && priceValue <= 150000000) ||
+                        (priceHighFilter && priceValue > 150000000);
+                    
+                    const showMarker = showByType && showByPrice;
                     
                     if (showMarker && !this.map.hasLayer(marker)) {
                         marker.addTo(this.map);
