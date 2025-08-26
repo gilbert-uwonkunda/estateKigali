@@ -867,1274 +867,1148 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         class PropertyIntelSystem {
-            constructor() {
-                this.map = null;
-                this.currentProperty = null;
-                this.selectedMarker = null;
-                this.facilities = [];
-                this.schools = [];
-                this.propertyMarkers = [];
-                this.hospitalMarkers = [];
-                this.schoolMarkers = [];
-                this.nearbyHospitals = [];
-                this.nearbySchools = [];
-                this.filteredProperties = [];
-                this.isSending = false;
-                this.properties = [];
-                this.baseLayers = {};
-                this.currentBaseLayer = 'street';
-                this.bufferCircle = null;
-                this.tempLine = null;
-                
-                this.init();
+    constructor() {
+        this.map = null;
+        this.currentProperty = null;
+        this.selectedMarker = null;
+        this.facilities = [];
+        this.schools = [];
+        this.properties = [];
+        this.propertyMarkers = [];
+        this.hospitalMarkers = [];
+        this.schoolMarkers = [];
+        this.nearbyHospitals = [];
+        this.nearbySchools = [];
+        this.filteredProperties = [];
+        this.isSending = false;
+        this.baseLayers = {};
+        this.currentBaseLayer = 'street';
+        this.bufferCircle = null;
+        this.tempLine = null;
+        
+        // API configuration
+        this.apiBaseUrl = 'http://localhost:3001/api';
+        
+        this.init();
+    }
+    
+    async init() {
+        try {
+            await this.loadDataFromAPI();
+            this.initializeMap();
+            this.setupEventListeners();
+            this.updateStats();
+            this.updateFilterSummary();
+        } catch (error) {
+            console.error('Failed to initialize PropertyIntel:', error);
+            this.showErrorMessage('Failed to initialize application. Please check if the API server is running.');
+        }
+    }
+    
+    async loadDataFromAPI() {
+        try {
+            console.log('Loading data from API...');
+            
+            // Test API connection
+            const healthResponse = await fetch(`${this.apiBaseUrl}/health`);
+            if (!healthResponse.ok) {
+                throw new Error('API server not responding');
             }
             
-            async init() {
-                await this.loadProperties();
-                await this.loadFacilities();
-                await this.loadSchools();
-                this.initializeMap();
-                this.setupEventListeners();
-                this.updateStats();
-                this.updateFilterSummary();
-                // Force map refresh after initialization
-                setTimeout(() => {
-                    if (this.map) {
-                        this.map.invalidateSize();
-                        this.addProperties();
-                    }
-                }, 500);
+            console.log('API connection successful');
+            
+            // Load all data from API
+            const [propertiesResponse, facilitiesResponse, schoolsResponse] = await Promise.all([
+                fetch(`${this.apiBaseUrl}/properties`),
+                this.loadFacilitiesFromAPI(),
+                this.loadSchoolsFromAPI()
+            ]);
+            
+            if (!propertiesResponse.ok) {
+                throw new Error(`Failed to load properties: ${propertiesResponse.status}`);
             }
             
-            async loadProperties() {
-                try {
-                    const response = await fetch('http://localhost:3001/api/properties', {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    console.log('API Response:', data);
-                    
-                    // Transform API data to match frontend format
-                    this.properties = data.map(property => {
-                        const normalizedType = this.normalizePropertyType(property.type);
-                        return {
-                            id: property.id || Math.random().toString(36).substr(2, 9),
-                            lat: parseFloat(property.latitude) || 0,
-                            lng: parseFloat(property.longitude) || 0,
-                            name: property.name || 'Unnamed Property',
-                            type: normalizedType,
-                            price: this.formatPrice(property.price),
-                            status: (property.status || 'sale').toLowerCase(),
-                            bedrooms: parseInt(property.bedrooms) || 0,
-                            bathrooms: parseInt(property.bathrooms) || 0,
-                            area: property.area ? `${parseInt(property.area)}m²` : 'N/A',
-                            yearBuilt: property.year_built || 'N/A',
-                            district: property.district || 'Unknown',
-                            amenities: property.amenities ? property.amenities.split(',').map(item => item.trim()) : []
-                        };
-                    }).filter(prop => {
-                        const valid = prop.lat !== 0 && prop.lng !== 0 && !isNaN(prop.lat) && !isNaN(prop.lng);
-                        if (!valid) {
-                            console.warn(`Invalid coordinates for property ${prop.name}: lat=${prop.lat}, lng=${prop.lng}`);
-                        }
-                        return valid;
-                    });
-                    
-                    console.log('Processed properties:', this.properties.length, this.properties);
-                    
-                    // Fallback to provided sample data if no properties are loaded
-                    if (this.properties.length === 0) {
-                        console.warn('No properties loaded from API, using fallback data');
-                        this.properties = [
-                            {
-                                id: '1',
-                                lat: -1.9454393203203149,
-                                lng: 30.090843600629185,
-                                name: 'Kacyiru Executive Apartments',
-                                type: 'Apartment',
-                                price: '400K RWF',
-                                status: 'sale',
-                                bedrooms: 4,
-                                bathrooms: 3,
-                                area: '200m²',
-                                yearBuilt: 2015,
-                                district: 'Gasabo',
-                                amenities: ['Garden', 'Security']
-                            },
-                            {
-                                id: '2',
-                                lat: -1.94278564698374,
-                                lng: 30.090095476955412,
-                                name: 'Pedro Apartments',
-                                type: 'Apartment',
-                                price: '350K RWF',
-                                status: 'rent',
-                                bedrooms: 2,
-                                bathrooms: 1,
-                                area: '100m²',
-                                yearBuilt: 2018,
-                                district: 'Gasabo',
-                                amenities: ['Parking']
-                            },
-                            {
-                                id: '3',
-                                lat: -1.9515638960060595,
-                                lng: 30.059049686506583,
-                                name: 'Altis Apartments',
-                                type: 'Apartment',
-                                price: '500K RWF',
-                                status: 'rent',
-                                bedrooms: 2,
-                                bathrooms: 1,
-                                area: '100m²',
-                                yearBuilt: 2018,
-                                district: 'Nyarugenge',
-                                amenities: ['Parking']
-                            },
-                            {
-                                id: '4',
-                                lat: -1.9495749673401483,
-                                lng: 30.078914337931103,
-                                name: 'Rubangura Luxury Apartments',
-                                type: 'Luxury Apartment',
-                                price: '500K RWF',
-                                status: 'rent',
-                                bedrooms: 2,
-                                bathrooms: 1,
-                                area: '100m²',
-                                yearBuilt: 2018,
-                                district: 'Gasabo',
-                                amenities: ['Parking']
-                            },
-                            {
-                                id: '5',
-                                lat: -1.9582643574784928,
-                                lng: 30.095969639942403,
-                                name: 'Palm Apartments',
-                                type: 'Apartment',
-                                price: '500K RWF',
-                                status: 'rent',
-                                bedrooms: 2,
-                                bathrooms: 1,
-                                area: '100m²',
-                                yearBuilt: 2018,
-                                district: 'Gasabo',
-                                amenities: ['Parking']
-                            
-                             },
-                        {
-                            id: '6',
-                            lat: -1.9187916986285154,
-                            lng: 30.09436296997897,
-                            name: 'Lexor Apartments',
-                            type: 'Apartment',
-                            price: '500K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                             },
-                        {
-                            id: '7',
-                            lat: -1.9425824620370156,
-                            lng: 30.1009806013011,
-                            name: 'Select Private Apartments',
-                            type: 'Apartment',
-                            price: '150K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        
-                             },
-                        {
-                            id: '8',
-                            lat: -1.9485756448460192,
-                            lng: 30.102409587745765,
-                            name: 'Le Royale Apartments',
-                            type: 'Apartment',
-                            price: '500K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        } 
-                        
-                    }
-                    
-                    this.filteredProperties = [...this.properties];
-                    
-                } catch (error) {
-                    console.error('Failed to load properties:', error);
-                    // Fallback to provided sample data
-                    this.properties = [
-                        {
-                            id: '1',
-                            lat: -1.9454393203203149,
-                            lng: 30.090843600629185,
-                            name: 'Kacyiru Executive Apartments',
-                            type: 'Apartment',
-                            price: '400K RWF',
-                            status: 'sale',
-                            bedrooms: 4,
-                            bathrooms: 3,
-                            area: '200m²',
-                            yearBuilt: 2015,
-                            district: 'Gasabo',
-                            amenities: ['Garden', 'Security']
-                        },
-                        {
-                            id: '2',
-                            lat: -1.94278564698374,
-                            lng: 30.090095476955412,
-                            name: 'Pedro Apartments',
-                            type: 'Apartment',
-                            price: '350K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        },
-                        {
-                            id: '3',
-                            lat: -1.9515638960060595,
-                            lng: 30.059049686506583,
-                            name: 'Altis Apartments',
-                            type: 'Apartment',
-                            price: '500K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Nyarugenge',
-                            amenities: ['Parking']
-                        },
-                        {
-                            id: '4',
-                            lat: -1.9495749673401483,
-                            lng: 30.078914337931103,
-                            name: 'Rubangura Luxury Apartments',
-                            type: 'Luxury Apartment',
-                            price: '500K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        },
-                        {
-                            id: '5',
-                            lat: -1.9582643574784928,
-                            lng: 30.095969639942403,
-                            name: 'Palm Apartments',
-                            type: 'Apartment',
-                            price: '500K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                         },
-                        {
-                            id: '6',
-                            lat: -1.9425824620370156,
-                            lng: 30.1009806013011,
-                            name: 'Select Private Apartments',
-                            type: 'Apartment',
-                            price: '150K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        
-                             },
-                        {
-                            id: '7',
-                            lat: -1.9187916986285154,
-                            lng: 30.09436296997897,
-                            name: 'Lexor Apartments',
-                            type: 'Apartment',
-                            price: '500K RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        },
-                        {
-                            id: '8',
-                            lat: -1.9485756448460192,
-                            lng: 30.102409587745765,
-                            name: 'Le Royale Apartments',
-                            type: 'Apartment',
-                            price: '150k RWF',
-                            status: 'rent',
-                            bedrooms: 2,
-                            bathrooms: 1,
-                            area: '100m²',
-                            yearBuilt: 2018,
-                            district: 'Gasabo',
-                            amenities: ['Parking']
-                        } 
-                    ];
-                
-                    this.filteredProperties = [...this.properties];
-                    console.log('Using fallback properties:', this.properties);
-                }
-            }
+            const dbProperties = await propertiesResponse.json();
+            console.log(`Loaded ${dbProperties.length} properties from database`);
             
-            normalizePropertyType(type) {
-                if (!type) return 'House';
-                const lowerType = type.toLowerCase();
-                if (lowerType.includes('luxury')) return 'Luxury ' + (lowerType.includes('villa') ? 'Villa' : lowerType.includes('apartment') ? 'Apartment' : 'House');
-                if (lowerType.includes('villa')) return 'Villa';
-                if (lowerType.includes('apartment')) return 'Apartment';
-                return 'House';
-            }
+            // Transform database format to frontend format
+            this.properties = dbProperties.map(prop => ({
+                id: prop.id,
+                lat: parseFloat(prop.latitude),
+                lng: parseFloat(prop.longitude),
+                name: prop.name,
+                type: prop.type,
+                price: prop.price,
+                status: prop.status,
+                bedrooms: prop.bedrooms,
+                bathrooms: prop.bathrooms,
+                area: prop.area,
+                yearBuilt: prop.year_built,
+                district: prop.district,
+                amenities: prop.amenities || []
+            })).filter(prop => prop.lat && prop.lng && !isNaN(prop.lat) && !isNaN(prop.lng));
             
-            formatPrice(price) {
-                if (!price || isNaN(parseFloat(price))) return 'N/A';
-                const priceValue = parseFloat(price);
-                if (priceValue >= 1000000) {
-                    return `${Math.round(priceValue / 1000000)}M RWF`;
-                }
-                return `${Math.round(priceValue / 1000)}K RWF`;
-            }
+            this.filteredProperties = [...this.properties];
+            console.log(`Processed ${this.properties.length} valid properties`);
             
-            async loadFacilities() {
-                try {
-                    const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json');
-                    const data = await response.json();
-                    
-                    if (data.features && Array.isArray(data.features)) {
-                        this.facilities = data.features.filter(feature => 
-                            feature.attributes && 
-                            feature.attributes.lat && 
-                            feature.attributes.long
-                        ).map(feature => ({
-                            facility_name: feature.attributes.facility_name || 'Unknown',
-                            facility_type: feature.attributes.facility_type || 'Unknown',
-                            lat: feature.attributes.lat,
-                            lng: feature.attributes.long,
-                            district: feature.attributes.district || 'N/A',
-                            sector: feature.attributes.sector || 'N/A',
-                            ownership: feature.attributes.ownership || 'N/A'
-                        }));
-                        console.log('Loaded health facilities:', this.facilities.length);
-                    }
-                } catch (error) {
-                    console.error('Failed to load facilities:', error);
-                    this.facilities = [
-                        { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, lng: 30.0951, district: "Gasabo" },
-                        { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, lng: 30.0604, district: "Nyarugenge" },
-                        { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, lng: 30.1678, district: "Kicukiro" }
-                    ];
-                    console.log('Using fallback facilities:', this.facilities);
-                }
+        } catch (error) {
+            console.error('Error loading data from API:', error);
+            throw error;
+        }
+    }
+    
+    async loadFacilitiesFromAPI() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/health-facilities`);
+            if (response.ok) {
+                const apiData = await response.json();
+                this.facilities = apiData.map(facility => ({
+                    facility_name: facility.facility_name,
+                    facility_type: facility.facility_type,
+                    lat: parseFloat(facility.latitude),
+                    lng: parseFloat(facility.longitude),
+                    district: facility.district,
+                    sector: facility.sector,
+                    ownership: facility.ownership
+                })).filter(f => f.lat && f.lng && !isNaN(f.lat) && !isNaN(f.lng));
+                
+                console.log(`Loaded ${this.facilities.length} health facilities from API`);
+                return;
             }
-            
-            async loadSchools() {
-                try {
-                    const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json');
-                    const data = await response.json();
-                    
-                    if (data.features && Array.isArray(data.features)) {
-                        this.schools = data.features.filter(feature => 
-                            feature.attributes && 
-                            feature.attributes.latitude && 
-                            feature.attributes.longitude
-                        ).map(feature => ({
-                            school_name: feature.attributes.school_nam || 'Unknown School',
-                            school_type: feature.attributes.school_typ || 'Unknown',
-                            school_category: feature.attributes.school_cat || 'PRE_PRIMARY',
-                            school_status: feature.attributes.school_sta || 'Unknown',
-                            curriculum: feature.attributes.curriculum || 'National',
-                            lat: feature.attributes.latitude,
-                            lng: feature.attributes.longitude,
-                            established: feature.attributes.establishm || 'N/A'
-                        }));
-                        console.log('Loaded schools:', this.schools.length);
-                    }
-                } catch (error) {
-                    console.error('Failed to load schools:', error);
-                    this.schools = [
-                        { school_name: "ITETERO NURSERY SCHOOL", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9489, lng: 30.0000, established: 2009 },
-                        { school_name: "Green Hills Academy", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "INTERNATIONAL", lat: -1.9556, lng: 30.1044, established: 2006 },
-                        { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
-                    ];
-                    console.log('Using fallback schools:', this.schools);
-                }
-            }
-            
-            initializeMap() {
-                this.map = L.map('map').setView([-1.9441, 30.0619], 11);
-                
-                // Define basemaps
-                this.baseLayers = {
-                    street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap contributors',
-                        maxZoom: 19
-                    }),
-                    satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                        maxZoom: 19
-                    })
-                };
-                
-                // Add default street layer
-                this.baseLayers.street.addTo(this.map);
-                
-                setTimeout(() => {
-                    this.map.invalidateSize();
-                    console.log('Map initialized and refreshed');
-                }, 100);
-                
-                this.addProperties();
-                this.prepareHospitals();
-                this.prepareSchools();
-                
-                this.map.on('click', this.handleMapClick.bind(this));
-                
-                new ResizeObserver(() => {
-                    this.map.invalidateSize();
-                    console.log('Map resized');
-                }).observe(document.getElementById('map'));
-            }
-            
-            toggleBasemap() {
-                const basemapBtn = document.getElementById('basemapBtn');
-                if (this.currentBaseLayer === 'street') {
-                    this.map.removeLayer(this.baseLayers.street);
-                    this.baseLayers.satellite.addTo(this.map);
-                    this.currentBaseLayer = 'satellite';
-                    basemapBtn.textContent = 'Satellite';
-                } else {
-                    this.map.removeLayer(this.baseLayers.satellite);
-                    this.baseLayers.street.addTo(this.map);
-                    this.currentBaseLayer = 'street';
-                    basemapBtn.textContent = 'Map';
-                }
-                this.map.invalidateSize();
-            }
-            
-            addProperties() {
-                console.log('Adding properties to map:', this.filteredProperties.length);
-                
-                // Clear existing markers
-                this.propertyMarkers.forEach(item => {
-                    if (this.map.hasLayer(item.marker)) {
-                        this.map.removeLayer(item.marker);
-                    }
-                });
-                this.propertyMarkers = [];
-                
-                // Add new markers
-                this.filteredProperties.forEach((prop) => {
-                    if (!prop.lat || !prop.lng || isNaN(prop.lat) || isNaN(prop.lng)) {
-                        console.warn(`Skipping property ${prop.name} due to invalid coordinates: lat=${prop.lat}, lng=${prop.lng}`);
-                        return;
-                    }
-                    
-                    const isLuxury = prop.type.toLowerCase().includes('luxury');
-                    const markerClass = `property-marker ${prop.status} ${isLuxury ? 'luxury' : ''}`;
-                    const markerIcon = prop.type.toLowerCase().includes('apartment') ? '🏢' : '🏠';
-                    
-                    const priceLabel = prop.price.replace(' RWF', '').replace('M', '');
-                    
-                    const marker = L.marker([prop.lat, prop.lng], {
-                        icon: L.divIcon({
-                            className: markerClass,
-                            html: `${markerIcon} ${priceLabel}`,
-                            iconSize: [60, 24],
-                            iconAnchor: [30, 24],
-                            popupAnchor: [0, -24]
-                        })
-                    });
-                    
-                    const tooltipContent = `
-                        <div style="font-weight: 600; margin-bottom: 4px; font-size: 13px;">${prop.name}</div>
-                        <div style="margin-bottom: 2px; font-size: 12px;">📍 ${prop.district} • ${prop.bedrooms}BR</div>
-                        <div style="font-weight: 600; color: #6366f1; font-size: 13px;">💰 ${prop.price}</div>
-                    `;
-                    
-                    marker.bindTooltip(tooltipContent, { 
-                        direction: 'top', 
-                        offset: [0, -24],
-                        permanent: false,
-                        sticky: false,
-                        className: 'compact-tooltip'
-                    });
-                    
-                    marker.on('click', () => this.selectProperty(prop, marker));
-                    marker.addTo(this.map);
-                    
-                    this.propertyMarkers.push({
-                        marker: marker,
-                        property: prop,
-                        visible: true
-                    });
-                    
-                    console.log(`Added marker for ${prop.name} at [${prop.lat}, ${prop.lng}]`);
-                });
-                
-                console.log('Total markers added:', this.propertyMarkers.length);
-                this.updateStats();
-                this.updateFilterSummary();
-                this.map.invalidateSize();
-            }
-            
-            prepareHospitals() {
-                this.hospitalMarkers = [];
-                this.facilities.forEach(facility => {
-                    if (!facility.lat || !facility.lng || isNaN(facility.lat) || isNaN(facility.lng)) {
-                        console.warn(`Skipping hospital ${facility.facility_name} due to invalid coordinates`);
-                        return;
-                    }
-                    
-                    const marker = L.marker([facility.lat, facility.lng], {
-                        icon: L.divIcon({
-                            className: 'hospital-marker',
-                            html: '🏥',
-                            iconSize: [28, 28],
-                            iconAnchor: [14, 14],
-                            popupAnchor: [0, -14]
-                        })
-                    });
-                    
-                    const tooltipContent = `
-                        <div style="font-weight: 600; margin-bottom: 4px;">🏥 ${facility.facility_name}</div>
-                        <div style="margin-bottom: 2px;">📋 ${facility.facility_type}</div>
-                        <div>📍 ${facility.district}</div>
-                    `;
-                    
-                    marker.bindTooltip(tooltipContent, { 
-                        direction: 'top', 
-                        offset: [0, -15],
-                        permanent: false,
-                        sticky: true
-                    });
-                    
-                    this.hospitalMarkers.push(marker);
-                });
-                console.log('Prepared hospital markers:', this.hospitalMarkers.length);
-            }
-            
-            prepareSchools() {
-                this.schoolMarkers = [];
-                this.schools.forEach(school => {
-                    if (!school.lat || !school.lng || isNaN(school.lat) || isNaN(school.lng)) {
-                        console.warn(`Skipping school ${school.school_name} due to invalid coordinates`);
-                        return;
-                    }
-                    
-                    const marker = L.marker([school.lat, school.lng], {
-                        icon: L.divIcon({
-                            className: 'school-marker',
-                            html: '🎓',
-                            iconSize: [28, 28],
-                            iconAnchor: [14, 14],
-                            popupAnchor: [0, -14]
-                        })
-                    });
-                    
-                    const tooltipContent = `
-                        <div style="font-weight: 600; margin-bottom: 4px;">🎓 ${school.school_name}</div>
-                        <div style="margin-bottom: 2px;">📚 ${school.school_status} School</div>
-                        <div style="margin-bottom: 2px;">📖 ${school.curriculum} Curriculum</div>
-                        <div>📅 Est. ${school.established}</div>
-                    `;
-                    
-                    marker.bindTooltip(tooltipContent, { 
-                        direction: 'top', 
-                        offset: [0, -15],
-                        permanent: false,
-                        sticky: true
-                    });
-                    
-                    this.schoolMarkers.push(marker);
-                });
-                console.log('Prepared school markers:', this.schoolMarkers.length);
-            }
-            
-            selectProperty(property, marker) {
-                if (this.selectedMarker) {
-                    const prevElement = this.selectedMarker.getElement();
-                    if (prevElement) {
-                        prevElement.classList.remove('selected');
-                    }
-                }
-                
-                this.currentProperty = property;
-                this.selectedMarker = marker;
-                
-                const markerElement = marker.getElement();
-                if (markerElement) {
-                    markerElement.classList.add('selected');
-                }
-                
-                document.getElementById('chatInput').disabled = false;
-                document.getElementById('sendBtn').disabled = false;
-                document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
-                
-                this.analyzeProperty(property);
-                this.map.setView([property.lat, property.lng], 15);
-            }
-            
-            analyzeProperty(property) {
-                this.clearNearbyMarkers();
-                this.removeBuffer();
-                this.removeTempLine();
-                this.analyzeProximity(property);
-                this.displayPropertyAnalysis(property);
-                this.addBuffer(property);
-                this.showNearbyFacilities(property);
-            }
-            
-            addBuffer(property) {
-                this.bufferCircle = L.circle([property.lat, property.lng], {
-                    color: '#6366f1',
-                    fillColor: '#6366f1',
-                    fillOpacity: 0.1,
-                    radius: 3000
-                }).addTo(this.map);
-            }
-            
-            removeBuffer() {
-                if (this.bufferCircle) {
-                    this.map.removeLayer(this.bufferCircle);
-                    this.bufferCircle = null;
-                }
-            }
-            
-            showConnectionLine(origin, dest, distance, name) {
-                this.removeTempLine();
-                
-                this.tempLine = L.polyline([[origin.lat, origin.lng], [dest.lat, dest.lng]], {
-                    color: '#6366f1',
-                    weight: 3,
-                    dashArray: '5, 5'
-                }).addTo(this.map);
-                
-                const walkingSpeed = 5; // km/h
-                const drivingSpeed = 30; // km/h
-                const timeWalk = Math.round((distance / walkingSpeed) * 60);
-                const timeDrive = Math.round((distance / drivingSpeed) * 60);
-                
-                const tooltipContent = `
-                    ${name}<br>
-                    Distance: ${distance.toFixed(1)} km<br>
-                    Walking: ~${timeWalk} min<br>
-                    Driving: ~${timeDrive} min
-                `;
-                
-                this.tempLine.bindTooltip(tooltipContent, {
-                    direction: 'right',
-                    sticky: true,
-                    permanent: false
-                }).openTooltip();
-            }
-            
-            removeTempLine() {
-                if (this.tempLine) {
-                    this.map.removeLayer(this.tempLine);
-                    this.tempLine = null;
-                }
-            }
-            
-            clearNearbyMarkers() {
-                this.hospitalMarkers.forEach(marker => {
-                    if (this.map.hasLayer(marker)) {
-                        this.map.removeLayer(marker);
-                    }
-                });
-                
-                this.schoolMarkers.forEach(marker => {
-                    if (this.map.hasLayer(marker)) {
-                        this.map.removeLayer(marker);
-                    }
-                });
-            }
-            
-            showNearbyFacilities(property) {
-                this.nearbyHospitals.forEach(hospital => {
-                    const marker = this.hospitalMarkers.find(m => {
-                        const markerLatLng = m.getLatLng();
-                        return Math.abs(markerLatLng.lat - hospital.lat) < 0.0001 && 
-                               Math.abs(markerLatLng.lng - hospital.lng) < 0.0001;
-                    });
-                    if (marker) {
-                        marker.addTo(this.map);
-                        marker.on('mouseover', () => {
-                            this.showConnectionLine(property, hospital, hospital.distance, `🏥 ${hospital.facility_name}`);
-                        });
-                        marker.on('mouseout', () => {
-                            this.removeTempLine();
-                        });
-                    }
-                });
-                
-                this.nearbySchools.forEach(school => {
-                    const marker = this.schoolMarkers.find(m => {
-                        const markerLatLng = m.getLatLng();
-                        return Math.abs(markerLatLng.lat - school.lat) < 0.0001 && 
-                               Math.abs(markerLatLng.lng - school.lng) < 0.0001;
-                    });
-                    if (marker) {
-                        marker.addTo(this.map);
-                        marker.on('mouseover', () => {
-                            this.showConnectionLine(property, school, school.distance, `🎓 ${school.school_name}`);
-                        });
-                        marker.on('mouseout', () => {
-                            this.removeTempLine();
-                        });
-                    }
-                });
-            }
-            
-            analyzeProximity(property) {
-                this.nearbyHospitals = [];
-                this.facilities.forEach(facility => {
-                    const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([facility.lat, facility.lng]) / 1000;
-                    
-                    if (distance <= 3) {
-                        this.nearbyHospitals.push({
-                            ...facility,
-                            distance: distance
-                        });
-                    }
-                });
-                this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
-                
-                this.nearbySchools = [];
-                this.schools.forEach(school => {
-                    const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([school.lat, school.lng]) / 1000;
-                    
-                    if (distance <= 3) {
-                        this.nearbySchools.push({
-                            ...school,
-                            distance: distance
-                        });
-                    }
-                });
-                this.nearbySchools.sort((a, b) => a.distance - b.distance);
-            }
-            
-            displayPropertyAnalysis(property) {
-                const messagesContainer = document.getElementById('chatMessages');
-                messagesContainer.innerHTML = '';
-                
-                let propertyHtml = `
-                    <div class="property-info">
-                        <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
-                        <div style="margin-bottom: 6px;"><strong>Type:</strong> ${property.type}</div>
-                        <div style="margin-bottom: 6px;"><strong>Price:</strong> ${property.price}</div>
-                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}</div>
-                        <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt}</div>
-                        <div style="margin-bottom: 6px;"><strong>District:</strong> ${property.district}</div>
-                        <div><strong>Amenities:</strong> ${property.amenities ? property.amenities.join(', ') : 'Standard'}</div>
-                    </div>`;
-                
-                messagesContainer.innerHTML += propertyHtml;
-                
-                if (this.nearbySchools.length > 0) {
-                    let schoolHtml = `
-                        <div class="education-info">
-                            <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 3km</p>
-                            <div class="facility-list">`;
-                    
-                    this.nearbySchools.slice(0, 5).forEach(school => {
-                        schoolHtml += `
-                            <div class="facility-item" onclick="propertyIntel.focusLocation(${school.lat}, ${school.lng})">
-                                <div class="facility-name">${school.school_name}</div>
-                                <div class="facility-distance">${(school.distance * 1000).toFixed(0)}m</div>
-                            </div>`;
-                    });
-                    
-                    schoolHtml += `</div></div>`;
-                    messagesContainer.innerHTML += schoolHtml;
-                } else {
-                    messagesContainer.innerHTML += `
-                        <div class="education-info">
-                            <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
-                            <p>No schools within 3km walking distance. Consider transportation needs for school-age children.</p>
-                        </div>`;
-                }
-                
-                if (this.nearbyHospitals.length > 0) {
-                    let hospitalHtml = `
-                        <div class="proximity-info">
-                            <h4 style="margin-bottom: 8px;">🏥 Healthcare Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 3km</p>
-                            <div class="facility-list">`;
-                    
-                    this.nearbyHospitals.slice(0, 5).forEach(hospital => {
-                        hospitalHtml += `
-                            <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.lng})">
-                                <div class="facility-name">${hospital.facility_name}</div>
-                                <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
-                            </div>`;
-                    });
-                    
-                    hospitalHtml += `</div></div>`;
-                    messagesContainer.innerHTML += hospitalHtml;
-                } else {
-                    messagesContainer.innerHTML += `
-                        <div class="proximity-info">
-                            <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
-                            <p>No hospitals within 3km radius. Emergency services may take longer to reach this location.</p>
-                        </div>`;
-                }
-                
-                this.scrollToBottom();
-            }
-            
-            focusLocation(lat, lng) {
-                this.map.setView([lat, lng], 16);
-            }
-            
-            resetToHomeView() {
-                this.map.setView([-1.9441, 30.0619], 11);
-            }
-            
-            handleMapClick(e) {
-                this.clearNearbyMarkers();
-                this.removeBuffer();
-                this.removeTempLine();
-                
-                if (this.selectedMarker) {
-                    const prevElement = this.selectedMarker.getElement();
-                    if (prevElement) {
-                        prevElement.classList.remove('selected');
-                    }
-                    this.selectedMarker = null;
-                }
-                
-                this.currentProperty = null;
-                document.getElementById('chatInput').disabled = true;
-                document.getElementById('sendBtn').disabled = true;
-                document.getElementById('chatInput').placeholder = "Select a property to start asking questions...";
-                
-                const messagesContainer = document.getElementById('chatMessages');
-                messagesContainer.innerHTML = `
-                    <div class="welcome-message">
-                        <div class="welcome-title">Welcome to PropertyIntel!</div>
-                        Click on any property marker to see detailed analysis including nearby schools and hospitals.
-                    </div>`;
-            }
-            
-            setupEventListeners() {
-                const chatInput = document.getElementById('chatInput');
-                const sendBtn = document.getElementById('sendBtn');
-                const locationSearch = document.getElementById('locationSearch');
-                const searchBtn = document.getElementById('searchBtn');
-                const locationBtn = document.getElementById('locationBtn');
-                const homeBtn = document.getElementById('homeBtn');
-                const basemapBtn = document.getElementById('basemapBtn');
-                const statusFilter = document.getElementById('statusFilter');
-                const typeFilter = document.getElementById('typeFilter');
-                const priceFilter = document.getElementById('priceFilter');
-                
-                chatInput.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
-                });
-                
-                chatInput.addEventListener('keypress', e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        this.sendMessage();
-                    }
-                });
-                
-                sendBtn.addEventListener('click', () => this.sendMessage());
-                
-                locationSearch.addEventListener('keypress', e => {
-                    if (e.key === 'Enter') this.performLocationSearch();
-                });
-                
-                searchBtn.addEventListener('click', () => this.performLocationSearch());
-                locationBtn.addEventListener('click', () => this.useCurrentLocation());
-                homeBtn.addEventListener('click', () => this.resetToHomeView());
-                basemapBtn.addEventListener('click', () => this.toggleBasemap());
-                
-                statusFilter.addEventListener('change', () => this.applyFilters());
-                typeFilter.addEventListener('change', () => this.applyFilters());
-                priceFilter.addEventListener('change', () => this.applyFilters());
-            }
-            
-            async performLocationSearch() {
-                const locationSearch = document.getElementById('locationSearch');
-                const location = locationSearch.value.trim();
-                if (!location) return;
-                
-                try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location + ', Kigali, Rwanda')}&limit=1`);
-                    const results = await response.json();
-                    
-                    if (results.length > 0) {
-                        const { lat, lon } = results[0];
-                        this.map.setView([lat, lon], 16);
-                    } else {
-                        alert('Location not found in Kigali');
-                    }
-                } catch (error) {
-                    console.error('Search failed:', error);
-                    alert('Search failed. Please try again.');
-                }
-            }
-            
-            useCurrentLocation() {
-                if (!navigator.geolocation) {
-                    alert('Geolocation not supported by this browser');
-                    return;
-                }
-                
-                navigator.geolocation.getCurrentLocation(
-                    position => {
-                        const { latitude: lat, longitude: lng } = position.coords;
-                        this.map.setView([lat, lng], 15);
-                    },
-                    error => {
-                        alert('Unable to get your location');
-                    }
-                );
-            }
-            
-            applyFilters() {
-                const statusFilter = document.getElementById('statusFilter').value;
-                const typeFilter = document.getElementById('typeFilter').value;
-                const priceFilter = document.getElementById('priceFilter').value;
-                
-                this.filteredProperties = this.properties.filter(property => {
-                    if (statusFilter && property.status !== statusFilter) return false;
-                    
-                    if (typeFilter) {
-                        const propType = property.type.toLowerCase();
-                        if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
-                        if (typeFilter === 'villa' && !propType.includes('villa')) return false;
-                        if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
-                        if (typeFilter === 'house' && !propType.includes('house')) return false;
-                    }
-                    
-                    if (priceFilter) {
-                        const price = parseInt(property.price.replace(/[^0-9]/g, ''));
-                        if (priceFilter === '0-50' && price >= 50) return false;
-                        if (priceFilter === '50-100' && (price < 50 || price >= 100)) return false;
-                        if (priceFilter === '100-200' && (price < 100 || price >= 200)) return false;
-                        if (priceFilter === '200+' && price < 200) return false;
-                    }
-                    
-                    return true;
-                });
-                
-                console.log('Filtered properties:', this.filteredProperties.length);
-                this.updatePropertyVisibility();
-                this.updateFilterSummary();
-                this.updateStats();
-            }
-            
-            updatePropertyVisibility() {
-                this.propertyMarkers.forEach(item => {
-                    const isVisible = this.filteredProperties.includes(item.property);
-                    if (isVisible && !item.visible) {
-                        item.marker.addTo(this.map);
-                        item.visible = true;
-                        console.log(`Showing marker for ${item.property.name}`);
-                    } else if (!isVisible && item.visible) {
-                        this.map.removeLayer(item.marker);
-                        item.visible = false;
-                        console.log(`Hiding marker for ${item.property.name}`);
-                    }
-                });
-            }
-            
-            updateFilterSummary() {
-                const filterSummary = document.getElementById('filterSummary');
-                const total = this.properties.length;
-                const shown = this.filteredProperties.length;
-                
-                filterSummary.textContent = shown === total ? 
-                    `Showing all ${total} properties` : 
-                    `Showing ${shown} of ${total} properties`;
-            }
-            
-            updateStats() {
-                const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
-                const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
-                
-                const apartments = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('apartment')).length;
-                const houses = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('house')).length;
-                const villas = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('villa') && !p.type.toLowerCase().includes('luxury')).length;
-                const luxury = this.filteredProperties.filter(p => 
-                    p.type.toLowerCase().includes('luxury')).length;
-                
-                document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
-                document.getElementById('forSaleCount').textContent = forSale;
-                document.getElementById('forRentCount').textContent = forRent;
-                document.getElementById('apartmentCount').textContent = apartments;
-                document.getElementById('houseCount').textContent = houses;
-                document.getElementById('villaCount').textContent = villas;
-                document.getElementById('luxuryCount').textContent = luxury;
-            }
-            
-            sendMessage() {
-                if (this.isSending) return;
-                this.isSending = true;
-                
-                const chatInput = document.getElementById('chatInput');
-                const message = chatInput.value.trim();
-                if (!message || !this.currentProperty) {
-                    this.isSending = false;
-                    return;
-                }
-                
-                const messagesContainer = document.getElementById('chatMessages');
-                messagesContainer.innerHTML += `
-                    <div class="message user">
-                        <div class="message-content">${this.sanitizeHTML(message)}</div>
-                    </div>`;
-                
-                chatInput.value = '';
-                chatInput.style.height = 'auto';
-                
-                this.showTyping();
-                setTimeout(() => {
-                    this.hideTyping();
-                    this.generateAIResponse(message, this.currentProperty);
-                    this.isSending = false;
-                }, 1500);
-                
-                this.scrollToBottom();
-            }
-            
-            generateAIResponse(question, property) {
-                const messagesContainer = document.getElementById('chatMessages');
-                let response = '';
-                
-                const lowerQuestion = question.toLowerCase();
-                
-                if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
-                    response = this.generateSchoolResponse(property);
-                } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
-                    response = this.generateHealthResponse(property);
-                } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('investment')) {
-                    response = this.generatePriceResponse(property);
-                } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
-                    response = this.generateFamilyResponse(property);
-                } else {
-                    response = this.generateGeneralResponse(property);
-                }
-                
-                messagesContainer.innerHTML += `
-                    <div class="message ai">
-                        <div class="message-content">${response}</div>
-                    </div>`;
-                
-                this.scrollToBottom();
-            }
-            
-            generateSchoolResponse(property) {
-                let response = `<h4>🎓 Education Analysis for ${property.name}</h4><br>`;
-                
-                if (this.nearbySchools.length > 0) {
-                    response += `Great news for families! Found <strong>${this.nearbySchools.length} schools</strong> within 3km:<br><br>`;
-                    
-                    this.nearbySchools.slice(0, 3).forEach(school => {
-                        const walkTime = Math.round(school.distance * 12);
-                        response += `📚 <strong>${school.school_name}</strong><br>`;
-                        response += `&nbsp;&nbsp;&nbsp;• Type: ${school.school_status} (${school.curriculum})<br>`;
-                        response += `&nbsp;&nbsp;&nbsp;• Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
-                    });
-                    
-                    response += `This property offers excellent educational access for families with children!<br><br>Hover over school markers on the map to see connection lines and estimated travel times.`;
-                } else {
-                    response += `No schools found within 3km of this property.<br><br>`;
-                    response += `<strong>Recommendations:</strong><br>`;
-                    response += `• Consider school transport services<br>`;
-                    response += `• Look into private school bus routes<br>`;
-                    response += `• Factor in daily commute time for school runs`;
-                }
-                
-                return response;
-            }
-            
-            generateHealthResponse(property) {
-                let response = `<h4>🏥 Healthcare Analysis for ${property.name}</h4><br>`;
-                
-                if (this.nearbyHospitals.length > 0) {
-                    response += `Excellent healthcare coverage! <strong>${this.nearbyHospitals.length} health facilities</strong> within 3km:<br><br>`;
-                    
-                    this.nearbyHospitals.slice(0, 3).forEach(hospital => {
-                        response += `🏥 <strong>${hospital.facility_name}</strong><br>`;
-                        response += `&nbsp;&nbsp;&nbsp;• Type: ${hospital.facility_type}<br>`;
-                        response += `&nbsp;&nbsp;&nbsp;• Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
-                    });
-                    
-                    response += `Emergency response time: approximately 5-15 minutes depending on traffic.<br><br>Hover over hospital markers on the map to see connection lines and estimated travel times.`;
-                } else {
-                    response += `Limited healthcare access - no major facilities within 3km.<br><br>`;
-                    response += `<strong>Important considerations:</strong><br>`;
-                    response += `• Emergency response may take 20+ minutes<br>`;
-                    response += `• Consider proximity to main roads for ambulance access<br>`;
-                    response += `• Keep emergency contact numbers and first aid supplies ready`;
-                }
-                
-                return response;
-            }
-            
-            generatePriceResponse(property) {
-                const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
-                let response = `<h4>💰 Investment Analysis for ${property.name}</h4><br>`;
-                
-                response += `<strong>Current Price:</strong> ${property.price}<br>`;
-                const areaNum = parseInt(property.area);
-                response += `<strong>Price per m²:</strong> ${areaNum ? Math.round(priceValue * 1000 / areaNum) + ' RWF/m²' : 'N/A'}<br><br>`;
-                
-                let investmentScore = 60;
-                if (property.district === 'Gasabo') investmentScore += 15;
-                else if (property.district === 'Nyarugenge') investmentScore += 10;
-                else investmentScore += 5;
-                
-                investmentScore += Math.min(this.nearbySchools.length * 5, 15);
-                investmentScore += Math.min(this.nearbyHospitals.length * 3, 10);
-                
-                response += `<strong>Investment Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
-                
-                if (property.status === 'sale') {
-                    const estimatedRent = Math.round(priceValue * 0.5);
-                    response += `<strong>Rental Potential:</strong><br>`;
-                    response += `• Estimated monthly rent: ${estimatedRent}K RWF<br>`;
-                    response += `• Annual yield: ~6%<br><br>`;
-                }
-                
-                response += `<strong>Value Drivers:</strong><br>`;
-                response += `• ${this.nearbySchools.length} schools nearby<br>`;
-                response += `• ${this.nearbyHospitals.length} health facilities<br>`;
-                response += `• ${property.district} district location<br>`;
-                response += `• Built in ${property.yearBuilt} (${new Date().getFullYear() - parseInt(property.yearBuilt)} years old)`;
-                
-                return response;
-            }
-            
-            generateFamilyResponse(property) {
-                let response = `<h4>👨‍👩‍👧‍👦 Family Suitability Analysis</h4><br>`;
-                
-                let familyScore = 50;
-                
-                if (property.bedrooms >= 4) familyScore += 20;
-                else if (property.bedrooms >= 3) familyScore += 15;
-                else if (property.bedrooms >= 2) familyScore += 10;
-                
-                if (this.nearbySchools.length >= 3) familyScore += 20;
-                else if (this.nearbySchools.length >= 1) familyScore += 10;
-                
-                if (this.nearbyHospitals.length >= 2) familyScore += 10;
-                else if (this.nearbyHospitals.length >= 1) familyScore += 5;
-                
-                response += `<strong>Family Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
-                
-                response += `<strong>Space Assessment:</strong><br>`;
-                response += `• ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
-                response += `• Total area: ${property.area}<br>`;
-                response
-            }
-            
-            generateGeneralResponse(property) {
-                let response = `<h4>🏠 Complete Property Overview</h4><br>`;
-                
-                response += `I can provide detailed insights about <strong>${property.name}</strong>:<br><br>`;
-                
-                response += `<strong>Available Analysis:</strong><br>`;
-                response += `• 🎓 <strong>Education:</strong> ${this.nearbySchools.length} schools within 2km<br>`;
-                response += `• 🏥 <strong>Healthcare:</strong> ${this.nearbyHospitals.length} health facilities within 3km<br>`;
-                response += `• 💰 <strong>Investment potential</strong> and pricing analysis<br>`;
-                response += `• 👨‍👩‍👧‍👦 <strong>Family suitability</strong> assessment<br>`;
-                response += `• 🚗 <strong>Transportation</strong> and accessibility<br><br>`;
-                
-                response += `<strong>Quick Facts:</strong><br>`;
-                response += `• Location: ${property.district} District<br>`;
-                response += `• Size: ${property.bedrooms}BR, ${property.bathrooms}BA, ${property.area}<br>`;
-                response += `• Year Built: ${property.yearBuilt}<br>`;
-                response += `• Status: ${property.status === 'sale' ? 'For Sale' : 'For Rent'}<br><br>`;
-                
-                response += `What specific aspect would you like me to analyze in detail?`;
-                
-                return response;
-            }
-            
-            showTyping() {
-                document.getElementById('typingIndicator').classList.add('show');
-            }
-            
-            hideTyping() {
-                document.getElementById('typingIndicator').classList.remove('show');
-            }
-            
-            scrollToBottom() {
-                const messagesContainer = document.getElementById('chatMessages');
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-            
-            sanitizeHTML(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
+        } catch (error) {
+            console.warn('Failed to load facilities from API, trying external source:', error);
         }
         
-        let propertyIntel = null;
-        
-        function toggleChat() {
-            const chatContainer = document.getElementById('chatContainer');
-            const toggleIcon = document.getElementById('toggleIcon');
-            chatContainer.classList.toggle('collapsed');
+        // Fallback to external JSON
+        await this.loadFacilitiesFromExternal();
+    }
+    
+    async loadFacilitiesFromExternal() {
+        try {
+            const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json');
+            const data = await response.json();
             
-            if (chatContainer.classList.contains('collapsed')) {
-                toggleIcon.className = 'fas fa-chevron-right';
-            } else {
-                toggleIcon.className = 'fas fa-chevron-left';
+            if (data.features && Array.isArray(data.features)) {
+                this.facilities = data.features.filter(feature => 
+                    feature.attributes && 
+                    feature.attributes.lat && 
+                    feature.attributes.long
+                ).map(feature => ({
+                    facility_name: feature.attributes.facility_name || 'Unknown',
+                    facility_type: feature.attributes.facility_type || 'Unknown',
+                    lat: feature.attributes.lat,
+                    lng: feature.attributes.long,
+                    district: feature.attributes.district || 'N/A'
+                }));
+                console.log(`Loaded ${this.facilities.length} facilities from external source`);
             }
-            
-            if (propertyIntel) propertyIntel.map.invalidateSize();
+        } catch (error) {
+            console.error('Failed to load facilities from external source:', error);
+            this.facilities = [];
+        }
+    }
+    
+    async loadSchoolsFromAPI() {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/schools`);
+            if (response.ok) {
+                const apiData = await response.json();
+                this.schools = apiData.map(school => ({
+                    school_name: school.school_name,
+                    school_type: school.school_type,
+                    school_category: school.school_category,
+                    school_status: school.school_status,
+                    curriculum: school.curriculum,
+                    lat: parseFloat(school.latitude),
+                    lng: parseFloat(school.longitude),
+                    established: school.established
+                })).filter(s => s.lat && s.lng && !isNaN(s.lat) && !isNaN(s.lng));
+                
+                console.log(`Loaded ${this.schools.length} schools from API`);
+                return;
+            }
+        } catch (error) {
+            console.warn('Failed to load schools from API, trying external source:', error);
         }
         
-        window.addEventListener('DOMContentLoaded', () => {
-            propertyIntel = new PropertyIntelSystem();
+        // Fallback to external JSON
+        await this.loadSchoolsFromExternal();
+    }
+    
+    async loadSchoolsFromExternal() {
+        try {
+            const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json');
+            const data = await response.json();
+            
+            if (data.features && Array.isArray(data.features)) {
+                this.schools = data.features.filter(feature => 
+                    feature.attributes && 
+                    feature.attributes.latitude && 
+                    feature.attributes.longitude
+                ).map(feature => ({
+                    school_name: feature.attributes.school_nam || 'Unknown School',
+                    school_type: feature.attributes.school_typ || 'Unknown',
+                    school_category: feature.attributes.school_cat || 'PRE_PRIMARY',
+                    school_status: feature.attributes.school_sta || 'Unknown',
+                    curriculum: feature.attributes.curriculum || 'National',
+                    lat: feature.attributes.latitude,
+                    lng: feature.attributes.longitude,
+                    established: feature.attributes.establishm || 'N/A'
+                }));
+                console.log(`Loaded ${this.schools.length} schools from external source`);
+            }
+        } catch (error) {
+            console.error('Failed to load schools from external source:', error);
+            this.schools = [];
+        }
+    }
+    
+    async applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const priceFilter = document.getElementById('priceFilter').value;
+        
+        try {
+            // Build query parameters for API
+            const params = new URLSearchParams();
+            if (statusFilter) params.append('status', statusFilter);
+            if (typeFilter) params.append('type', typeFilter);
+            
+            // Handle price filter ranges
+            if (priceFilter) {
+                switch (priceFilter) {
+                    case '0-50':
+                        params.append('maxPrice', '50');
+                        break;
+                    case '50-100':
+                        params.append('minPrice', '50');
+                        params.append('maxPrice', '100');
+                        break;
+                    case '100-200':
+                        params.append('minPrice', '100');
+                        params.append('maxPrice', '200');
+                        break;
+                    case '200+':
+                        params.append('minPrice', '200');
+                        break;
+                }
+            }
+            
+            // Fetch filtered data from API
+            const response = await fetch(`${this.apiBaseUrl}/properties?${params.toString()}`);
+            if (!response.ok) throw new Error('Failed to filter properties');
+            
+            const filteredData = await response.json();
+            
+            // Transform filtered data
+            this.filteredProperties = filteredData.map(prop => ({
+                id: prop.id,
+                lat: parseFloat(prop.latitude),
+                lng: parseFloat(prop.longitude),
+                name: prop.name,
+                type: prop.type,
+                price: prop.price,
+                status: prop.status,
+                bedrooms: prop.bedrooms,
+                bathrooms: prop.bathrooms,
+                area: prop.area,
+                yearBuilt: prop.year_built,
+                district: prop.district,
+                amenities: prop.amenities || []
+            }));
+            
+            console.log(`API filter returned ${this.filteredProperties.length} properties`);
+            
+        } catch (error) {
+            console.error('Error applying API filters, using client-side filtering:', error);
+            // Fallback to client-side filtering
+            this.clientSideFiltering(statusFilter, typeFilter, priceFilter);
+        }
+        
+        this.updatePropertyVisibility();
+        this.updateFilterSummary();
+        this.updateStats();
+    }
+    
+    clientSideFiltering(statusFilter, typeFilter, priceFilter) {
+        this.filteredProperties = this.properties.filter(property => {
+            if (statusFilter && property.status !== statusFilter) return false;
+            
+            if (typeFilter) {
+                const propType = property.type.toLowerCase();
+                if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
+                if (typeFilter === 'villa' && !propType.includes('villa')) return false;
+                if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
+                if (typeFilter === 'house' && !propType.includes('house')) return false;
+            }
+            
+            if (priceFilter) {
+                const price = parseInt(property.price.replace(/[^0-9]/g, ''));
+                if (priceFilter === '0-50' && price >= 50) return false;
+                if (priceFilter === '50-100' && (price < 50 || price >= 100)) return false;
+                if (priceFilter === '100-200' && (price < 100 || price >= 200)) return false;
+                if (priceFilter === '200+' && price < 200) return false;
+            }
+            
+            return true;
         });
+    }
+    
+    async selectProperty(property, marker) {
+        if (this.selectedMarker) {
+            const prevElement = this.selectedMarker.getElement();
+            if (prevElement) {
+                prevElement.classList.remove('selected');
+            }
+        }
+        
+        this.currentProperty = property;
+        this.selectedMarker = marker;
+        
+        const markerElement = marker.getElement();
+        if (markerElement) {
+            markerElement.classList.add('selected');
+        }
+        
+        document.getElementById('chatInput').disabled = false;
+        document.getElementById('sendBtn').disabled = false;
+        document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
+        
+        // Try to load nearby facilities from API first
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/properties/${property.id}/nearby`);
+            if (response.ok) {
+                const nearbyData = await response.json();
+                
+                this.nearbyHospitals = nearbyData.nearby_health_facilities.map(facility => ({
+                    facility_name: facility.facility_name,
+                    facility_type: facility.facility_type,
+                    lat: parseFloat(facility.latitude),
+                    lng: parseFloat(facility.longitude),
+                    district: facility.district,
+                    distance: parseFloat(facility.distance)
+                }));
+                
+                this.nearbySchools = nearbyData.nearby_schools.map(school => ({
+                    school_name: school.school_name,
+                    school_type: school.school_type,
+                    school_status: school.school_status,
+                    curriculum: school.curriculum,
+                    lat: parseFloat(school.latitude),
+                    lng: parseFloat(school.longitude),
+                    established: school.established,
+                    distance: parseFloat(school.distance)
+                }));
+                
+                console.log(`API returned ${this.nearbyHospitals.length} hospitals, ${this.nearbySchools.length} schools`);
+            } else {
+                throw new Error('API nearby search failed');
+            }
+        } catch (error) {
+            console.warn('API nearby search failed, using client-side calculation:', error);
+            this.analyzeProximity(property);
+        }
+        
+        this.clearNearbyMarkers();
+        this.removeBuffer();
+        this.removeTempLine();
+        this.displayPropertyAnalysis(property);
+        this.addBuffer(property);
+        this.showNearbyFacilities(property);
+        this.map.setView([property.lat, property.lng], 15);
+    }
+    
+    analyzeProximity(property) {
+        this.nearbyHospitals = [];
+        this.facilities.forEach(facility => {
+            const distance = L.latLng(property.lat, property.lng)
+                .distanceTo([facility.lat, facility.lng]) / 1000;
+            
+            if (distance <= 3) {
+                this.nearbyHospitals.push({
+                    ...facility,
+                    distance: distance
+                });
+            }
+        });
+        this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
+        
+        this.nearbySchools = [];
+        this.schools.forEach(school => {
+            const distance = L.latLng(property.lat, property.lng)
+                .distanceTo([school.lat, school.lng]) / 1000;
+            
+            if (distance <= 2) {
+                this.nearbySchools.push({
+                    ...school,
+                    distance: distance
+                });
+            }
+        });
+        this.nearbySchools.sort((a, b) => a.distance - b.distance);
+    }
+    
+    initializeMap() {
+        this.map = L.map('map').setView([-1.9441, 30.0619], 11);
+        
+        // Define basemaps
+        this.baseLayers = {
+            street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 19
+            })
+        };
+        
+        this.baseLayers.street.addTo(this.map);
+        
+        setTimeout(() => {
+            this.map.invalidateSize();
+            this.addProperties();
+            this.prepareHospitals();
+            this.prepareSchools();
+        }, 100);
+        
+        this.map.on('click', this.handleMapClick.bind(this));
+        
+        new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
+    }
+    
+    toggleBasemap() {
+        const basemapBtn = document.getElementById('basemapBtn');
+        if (this.currentBaseLayer === 'street') {
+            this.map.removeLayer(this.baseLayers.street);
+            this.baseLayers.satellite.addTo(this.map);
+            this.currentBaseLayer = 'satellite';
+            basemapBtn.textContent = 'Satellite';
+        } else {
+            this.map.removeLayer(this.baseLayers.satellite);
+            this.baseLayers.street.addTo(this.map);
+            this.currentBaseLayer = 'street';
+            basemapBtn.textContent = 'Map';
+        }
+    }
+    
+    addProperties() {
+        this.propertyMarkers.forEach(item => {
+            if (this.map.hasLayer(item.marker)) {
+                this.map.removeLayer(item.marker);
+            }
+        });
+        this.propertyMarkers = [];
+        
+        this.filteredProperties.forEach((prop) => {
+            if (!prop.lat || !prop.lng || isNaN(prop.lat) || isNaN(prop.lng)) {
+                console.warn(`Skipping property ${prop.name} - invalid coordinates`);
+                return;
+            }
+            
+            const isLuxury = prop.type.toLowerCase().includes('luxury');
+            const markerClass = `property-marker ${prop.status} ${isLuxury ? 'luxury' : ''}`;
+            const markerIcon = prop.type.toLowerCase().includes('apartment') ? '🏢' : '🏠';
+            const priceLabel = prop.price.replace(' RWF', '').replace('M', '');
+            
+            const marker = L.marker([prop.lat, prop.lng], {
+                icon: L.divIcon({
+                    className: markerClass,
+                    html: `${markerIcon} ${priceLabel}`,
+                    iconSize: [60, 24],
+                    iconAnchor: [30, 24],
+                    popupAnchor: [0, -24]
+                })
+            });
+            
+            const tooltipContent = `
+                <div style="font-weight: 600; margin-bottom: 4px; font-size: 13px;">${prop.name}</div>
+                <div style="margin-bottom: 2px; font-size: 12px;">📍 ${prop.district} • ${prop.bedrooms}BR</div>
+                <div style="font-weight: 600; color: #6366f1; font-size: 13px;">💰 ${prop.price}</div>
+            `;
+            
+            marker.bindTooltip(tooltipContent, { 
+                direction: 'top', 
+                offset: [0, -24],
+                permanent: false,
+                sticky: false,
+                className: 'compact-tooltip'
+            });
+            
+            marker.on('click', () => this.selectProperty(prop, marker));
+            marker.addTo(this.map);
+            
+            this.propertyMarkers.push({
+                marker: marker,
+                property: prop,
+                visible: true
+            });
+        });
+        
+        console.log(`Added ${this.propertyMarkers.length} property markers to map`);
+    }
+    
+    prepareHospitals() {
+        this.hospitalMarkers = [];
+        this.facilities.forEach(facility => {
+            if (!facility.lat || !facility.lng) return;
+            
+            const marker = L.marker([facility.lat, facility.lng], {
+                icon: L.divIcon({
+                    className: 'hospital-marker',
+                    html: '🏥',
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14],
+                    popupAnchor: [0, -14]
+                })
+            });
+            
+            const tooltipContent = `
+                <div style="font-weight: 600; margin-bottom: 4px;">🏥 ${facility.facility_name}</div>
+                <div style="margin-bottom: 2px;">📋 ${facility.facility_type}</div>
+                <div>📍 ${facility.district}</div>
+            `;
+            
+            marker.bindTooltip(tooltipContent, { 
+                direction: 'top', 
+                offset: [0, -15],
+                permanent: false,
+                sticky: true
+            });
+            
+            this.hospitalMarkers.push(marker);
+        });
+    }
+    
+    prepareSchools() {
+        this.schoolMarkers = [];
+        this.schools.forEach(school => {
+            if (!school.lat || !school.lng) return;
+            
+            const marker = L.marker([school.lat, school.lng], {
+                icon: L.divIcon({
+                    className: 'school-marker',
+                    html: '🎓',
+                    iconSize: [28, 28],
+                    iconAnchor: [14, 14],
+                    popupAnchor: [0, -14]
+                })
+            });
+            
+            const tooltipContent = `
+                <div style="font-weight: 600; margin-bottom: 4px;">🎓 ${school.school_name}</div>
+                <div style="margin-bottom: 2px;">📚 ${school.school_status} School</div>
+                <div style="margin-bottom: 2px;">📖 ${school.curriculum} Curriculum</div>
+                <div>📅 Est. ${school.established}</div>
+            `;
+            
+            marker.bindTooltip(tooltipContent, { 
+                direction: 'top', 
+                offset: [0, -15],
+                permanent: false,
+                sticky: true
+            });
+            
+            this.schoolMarkers.push(marker);
+        });
+    }
+    
+    addBuffer(property) {
+        this.bufferCircle = L.circle([property.lat, property.lng], {
+            color: '#6366f1',
+            fillColor: '#6366f1',
+            fillOpacity: 0.1,
+            radius: 3000
+        }).addTo(this.map);
+    }
+    
+    removeBuffer() {
+        if (this.bufferCircle) {
+            this.map.removeLayer(this.bufferCircle);
+            this.bufferCircle = null;
+        }
+    }
+    
+    showConnectionLine(origin, dest, distance, name) {
+        this.removeTempLine();
+        
+        this.tempLine = L.polyline([[origin.lat, origin.lng], [dest.lat, dest.lng]], {
+            color: '#6366f1',
+            weight: 3,
+            dashArray: '5, 5'
+        }).addTo(this.map);
+        
+        const walkTime = Math.round((distance / 5) * 60);
+        const driveTime = Math.round((distance / 30) * 60);
+        
+        const tooltipContent = `
+            ${name}<br>
+            Distance: ${distance.toFixed(1)} km<br>
+            Walking: ~${walkTime} min<br>
+            Driving: ~${driveTime} min
+        `;
+        
+        this.tempLine.bindTooltip(tooltipContent, {
+            direction: 'right',
+            sticky: true,
+            permanent: false
+        }).openTooltip();
+    }
+    
+    removeTempLine() {
+        if (this.tempLine) {
+            this.map.removeLayer(this.tempLine);
+            this.tempLine = null;
+        }
+    }
+    
+    clearNearbyMarkers() {
+        this.hospitalMarkers.forEach(marker => {
+            if (this.map.hasLayer(marker)) {
+                this.map.removeLayer(marker);
+            }
+        });
+        
+        this.schoolMarkers.forEach(marker => {
+            if (this.map.hasLayer(marker)) {
+                this.map.removeLayer(marker);
+            }
+        });
+    }
+    
+    showNearbyFacilities(property) {
+        this.nearbyHospitals.forEach(hospital => {
+            const marker = this.hospitalMarkers.find(m => {
+                const markerLatLng = m.getLatLng();
+                return Math.abs(markerLatLng.lat - hospital.lat) < 0.0001 && 
+                       Math.abs(markerLatLng.lng - (hospital.lng || hospital.long)) < 0.0001;
+            });
+            if (marker) {
+                marker.addTo(this.map);
+                marker.on('mouseover', () => {
+                    this.showConnectionLine(property, hospital, hospital.distance, `🏥 ${hospital.facility_name}`);
+                });
+                marker.on('mouseout', () => {
+                    this.removeTempLine();
+                });
+            }
+        });
+        
+        this.nearbySchools.forEach(school => {
+            const marker = this.schoolMarkers.find(m => {
+                const markerLatLng = m.getLatLng();
+                return Math.abs(markerLatLng.lat - school.lat) < 0.0001 && 
+                       Math.abs(markerLatLng.lng - school.lng) < 0.0001;
+            });
+            if (marker) {
+                marker.addTo(this.map);
+                marker.on('mouseover', () => {
+                    this.showConnectionLine(property, school, school.distance, `🎓 ${school.school_name}`);
+                });
+                marker.on('mouseout', () => {
+                    this.removeTempLine();
+                });
+            }
+        });
+    }
+    
+    displayPropertyAnalysis(property) {
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = '';
+        
+        let propertyHtml = `
+            <div class="property-info">
+                <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
+                <div style="margin-bottom: 6px;"><strong>Type:</strong> ${property.type}</div>
+                <div style="margin-bottom: 6px;"><strong>Price:</strong> ${property.price}</div>
+                <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}</div>
+                <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt}</div>
+                <div style="margin-bottom: 6px;"><strong>District:</strong> ${property.district}</div>
+                <div><strong>Amenities:</strong> ${property.amenities && property.amenities.length ? property.amenities.join(', ') : 'Standard'}</div>
+            </div>`;
+        
+        messagesContainer.innerHTML += propertyHtml;
+        
+        if (this.nearbySchools.length > 0) {
+            let schoolHtml = `
+                <div class="education-info">
+                    <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
+                    <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 2km</p>
+                    <div class="facility-list">`;
+            
+            this.nearbySchools.slice(0, 5).forEach(school => {
+                schoolHtml += `
+                    <div class="facility-item" onclick="propertyIntel.focusLocation(${school.lat}, ${school.lng})">
+                        <div class="facility-name">${school.school_name}</div>
+                        <div class="facility-distance">${(school.distance * 1000).toFixed(0)}m</div>
+                    </div>`;
+            });
+            
+            schoolHtml += `</div></div>`;
+            messagesContainer.innerHTML += schoolHtml;
+        } else {
+            messagesContainer.innerHTML += `
+                <div class="education-info">
+                    <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
+                    <p>No schools within 2km walking distance. Consider transportation needs for school-age children.</p>
+                </div>`;
+        }
+        
+        if (this.nearbyHospitals.length > 0) {
+            let hospitalHtml = `
+                <div class="proximity-info">
+                    <h4 style="margin-bottom: 8px;">🏥 Healthcare Access</h4>
+                    <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 3km</p>
+                    <div class="facility-list">`;
+            
+            this.nearbyHospitals.slice(0, 5).forEach(hospital => {
+                hospitalHtml += `
+                    <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.lng || hospital.long})">
+                        <div class="facility-name">${hospital.facility_name}</div>
+                        <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
+                    </div>`;
+            });
+            
+            hospitalHtml += `</div></div>`;
+            messagesContainer.innerHTML += hospitalHtml;
+        } else {
+            messagesContainer.innerHTML += `
+                <div class="proximity-info">
+                    <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
+                    <p>No hospitals within 3km radius. Emergency services may take longer to reach this location.</p>
+                </div>`;
+        }
+        
+        this.scrollToBottom();
+    }
+    
+    focusLocation(lat, lng) {
+        this.map.setView([lat, lng], 16);
+    }
+    
+    resetToHomeView() {
+        this.map.setView([-1.9441, 30.0619], 11);
+    }
+    
+    handleMapClick(e) {
+        this.clearNearbyMarkers();
+        this.removeBuffer();
+        this.removeTempLine();
+        
+        if (this.selectedMarker) {
+            const prevElement = this.selectedMarker.getElement();
+            if (prevElement) {
+                prevElement.classList.remove('selected');
+            }
+            this.selectedMarker = null;
+        }
+        
+        this.currentProperty = null;
+        document.getElementById('chatInput').disabled = true;
+        document.getElementById('sendBtn').disabled = true;
+        document.getElementById('chatInput').placeholder = "Select a property to start asking questions...";
+        
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = `
+            <div class="welcome-message">
+                <div class="welcome-title">Welcome to PropertyIntel!</div>
+                Click on any property marker to see detailed analysis including nearby schools and hospitals.
+            </div>`;
+    }
+    
+    setupEventListeners() {
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const locationSearch = document.getElementById('locationSearch');
+        const searchBtn = document.getElementById('searchBtn');
+        const locationBtn = document.getElementById('locationBtn');
+        const homeBtn = document.getElementById('homeBtn');
+        const basemapBtn = document.getElementById('basemapBtn');
+        const statusFilter = document.getElementById('statusFilter');
+        const typeFilter = document.getElementById('typeFilter');
+        const priceFilter = document.getElementById('priceFilter');
+        
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+        });
+        
+        chatInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+        
+        sendBtn.addEventListener('click', () => this.sendMessage());
+        
+        locationSearch.addEventListener('keypress', e => {
+            if (e.key === 'Enter') this.performLocationSearch();
+        });
+        
+        searchBtn.addEventListener('click', () => this.performLocationSearch());
+        locationBtn.addEventListener('click', () => this.useCurrentLocation());
+        homeBtn.addEventListener('click', () => this.resetToHomeView());
+        if (basemapBtn) basemapBtn.addEventListener('click', () => this.toggleBasemap());
+        
+        statusFilter.addEventListener('change', () => this.applyFilters());
+        typeFilter.addEventListener('change', () => this.applyFilters());
+        priceFilter.addEventListener('change', () => this.applyFilters());
+    }
+    
+    async performLocationSearch() {
+        const locationSearch = document.getElementById('locationSearch');
+        const location = locationSearch.value.trim();
+        if (!location) return;
+        
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location + ', Kigali, Rwanda')}&limit=1`);
+            const results = await response.json();
+            
+            if (results.length > 0) {
+                const { lat, lon } = results[0];
+                this.map.setView([lat, lon], 16);
+            } else {
+                alert('Location not found in Kigali');
+            }
+        } catch (error) {
+            console.error('Search failed:', error);
+            alert('Search failed. Please try again.');
+        }
+    }
+    
+    useCurrentLocation() {
+        if (!navigator.geolocation) {
+            alert('Geolocation not supported by this browser');
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const { latitude: lat, longitude: lng } = position.coords;
+                this.map.setView([lat, lng], 15);
+            },
+            error => {
+                alert('Unable to get your location');
+            }
+        );
+    }
+    
+    updatePropertyVisibility() {
+        this.propertyMarkers.forEach(item => {
+            const isVisible = this.filteredProperties.includes(item.property);
+            if (isVisible && !item.visible) {
+                item.marker.addTo(this.map);
+                item.visible = true;
+            } else if (!isVisible && item.visible) {
+                this.map.removeLayer(item.marker);
+                item.visible = false;
+            }
+        });
+    }
+    
+    updateFilterSummary() {
+        const filterSummary = document.getElementById('filterSummary');
+        const total = this.properties.length;
+        const shown = this.filteredProperties.length;
+        
+        filterSummary.textContent = shown === total ? 
+            `Showing all ${total} properties` : 
+            `Showing ${shown} of ${total} properties`;
+    }
+    
+    updateStats() {
+        const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
+        const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
+        
+        const apartments = this.filteredProperties.filter(p => 
+            p.type.toLowerCase().includes('apartment')).length;
+        const houses = this.filteredProperties.filter(p => 
+            p.type.toLowerCase().includes('house')).length;
+        const villas = this.filteredProperties.filter(p => 
+            p.type.toLowerCase().includes('villa') && !p.type.toLowerCase().includes('luxury')).length;
+        const luxury = this.filteredProperties.filter(p => 
+            p.type.toLowerCase().includes('luxury')).length;
+        
+        document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
+        document.getElementById('forSaleCount').textContent = forSale;
+        document.getElementById('forRentCount').textContent = forRent;
+        document.getElementById('apartmentCount').textContent = apartments;
+        document.getElementById('houseCount').textContent = houses;
+        document.getElementById('villaCount').textContent = villas;
+        document.getElementById('luxuryCount').textContent = luxury;
+    }
+    
+    sendMessage() {
+        if (this.isSending) return;
+        this.isSending = true;
+        
+        const chatInput = document.getElementById('chatInput');
+        const message = chatInput.value.trim();
+        if (!message || !this.currentProperty) {
+            this.isSending = false;
+            return;
+        }
+        
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML += `
+            <div class="message user">
+                <div class="message-content">${this.sanitizeHTML(message)}</div>
+            </div>`;
+        
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        
+        this.showTyping();
+        setTimeout(() => {
+            this.hideTyping();
+            this.generateAIResponse(message, this.currentProperty);
+            this.isSending = false;
+        }, 1500);
+        
+        this.scrollToBottom();
+    }
+    
+    generateAIResponse(question, property) {
+        const messagesContainer = document.getElementById('chatMessages');
+        let response = '';
+        
+        const lowerQuestion = question.toLowerCase();
+        
+        if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
+            response = this.generateSchoolResponse(property);
+        } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
+            response = this.generateHealthResponse(property);
+        } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('investment')) {
+            response = this.generatePriceResponse(property);
+        } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
+            response = this.generateFamilyResponse(property);
+        } else {
+            response = this.generateGeneralResponse(property);
+        }
+        
+        messagesContainer.innerHTML += `
+            <div class="message ai">
+                <div class="message-content">${response}</div>
+            </div>`;
+        
+        this.scrollToBottom();
+    }
+    
+    generateSchoolResponse(property) {
+        let response = `<h4>Education Analysis for ${property.name}</h4><br>`;
+        
+        if (this.nearbySchools.length > 0) {
+            response += `Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
+            
+            this.nearbySchools.slice(0, 3).forEach(school => {
+                const walkTime = Math.round(school.distance * 12);
+                response += `<strong>${school.school_name}</strong><br>`;
+                response += `Type: ${school.school_status} (${school.curriculum})<br>`;
+                response += `Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
+            });
+            
+            response += `This property offers excellent educational access for families with children!<br><br>Hover over school markers on the map to see connection lines and travel times.`;
+        } else {
+            response += `No schools found within 2km of this property.<br><br>`;
+            response += `<strong>Recommendations:</strong><br>`;
+            response += `Consider school transport services<br>`;
+            response += `Look into private school bus routes<br>`;
+            response += `Factor in daily commute time for school runs`;
+        }
+        
+        return response;
+    }
+    
+    generateHealthResponse(property) {
+        let response = `<h4>Healthcare Analysis for ${property.name}</h4><br>`;
+        
+        if (this.nearbyHospitals.length > 0) {
+            response += `<strong>${this.nearbyHospitals.length} health facilities</strong> within 3km:<br><br>`;
+            
+            this.nearbyHospitals.slice(0, 3).forEach(hospital => {
+                response += `<strong>${hospital.facility_name}</strong><br>`;
+                response += `Type: ${hospital.facility_type}<br>`;
+                response += `Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
+            });
+            
+            response += `Emergency response time: approximately 5-15 minutes depending on traffic.<br><br>Hover over hospital markers on the map to see connection lines and travel times.`;
+        } else {
+            response += `Limited healthcare access - no major facilities within 3km.<br><br>`;
+            response += `<strong>Important considerations:</strong><br>`;
+            response += `Emergency response may take 20+ minutes<br>`;
+            response += `Consider proximity to main roads for ambulance access<br>`;
+            response += `Keep emergency contact numbers and first aid supplies ready`;
+        }
+        
+        return response;
+    }
+    
+    generatePriceResponse(property) {
+        const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
+        let response = `<h4>Investment Analysis for ${property.name}</h4><br>`;
+        
+        response += `<strong>Current Price:</strong> ${property.price}<br>`;
+        const areaNum = parseInt(property.area);
+        if (areaNum) {
+            response += `<strong>Price per m²:</strong> ${Math.round(priceValue * 1000000 / areaNum).toLocaleString()} RWF/m²<br><br>`;
+        }
+        
+        let investmentScore = 60;
+        if (property.district === 'Gasabo') investmentScore += 15;
+        else if (property.district === 'Nyarugenge') investmentScore += 10;
+        else investmentScore += 5;
+        
+        investmentScore += Math.min(this.nearbySchools.length * 5, 15);
+        investmentScore += Math.min(this.nearbyHospitals.length * 3, 10);
+        
+        response += `<strong>Investment Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
+        
+        if (property.status === 'sale') {
+            const estimatedRent = Math.round(priceValue * 0.5);
+            response += `<strong>Rental Potential:</strong><br>`;
+            response += `Estimated monthly rent: ${estimatedRent}K RWF<br>`;
+            response += `Annual yield: ~6%<br><br>`;
+        }
+        
+        response += `<strong>Value Drivers:</strong><br>`;
+        response += `${this.nearbySchools.length} schools nearby<br>`;
+        response += `${this.nearbyHospitals.length} health facilities<br>`;
+        response += `${property.district} district location<br>`;
+        response += `Built in ${property.yearBuilt}`;
+        
+        return response;
+    }
+    
+    generateFamilyResponse(property) {
+        let response = `<h4>Family Suitability Analysis</h4><br>`;
+        
+        let familyScore = 50;
+        
+        if (property.bedrooms >= 4) familyScore += 20;
+        else if (property.bedrooms >= 3) familyScore += 15;
+        else if (property.bedrooms >= 2) familyScore += 10;
+        
+        if (this.nearbySchools.length >= 3) familyScore += 20;
+        else if (this.nearbySchools.length >= 1) familyScore += 10;
+        
+        if (this.nearbyHospitals.length >= 2) familyScore += 10;
+        else if (this.nearbyHospitals.length >= 1) familyScore += 5;
+        
+        response += `<strong>Family Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
+        
+        response += `<strong>Space Assessment:</strong><br>`;
+        response += `${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
+        response += `Total area: ${property.area}<br>`;
+        
+        const sizeCategory = property.bedrooms <= 2 ? 'small families' : 
+                           property.bedrooms <= 4 ? 'medium families' : 'large families';
+        response += `Suitable for ${sizeCategory}<br><br>`;
+        
+        response += `<strong>Child-Friendly Features:</strong><br>`;
+        response += `Education: ${this.nearbySchools.length} schools within 2km<br>`;
+        response += `Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
+        
+        const hasSecurity = property.amenities && property.amenities.some(a => 
+            a.toLowerCase().includes('security'));
+        response += `Safety: ${hasSecurity ? 'Secured compound' : 'Check security measures'}<br>`;
+        
+        const hasGarden = property.amenities && property.amenities.some(a => 
+            a.toLowerCase().includes('garden'));
+        response += `Recreation: ${hasGarden ? 'Garden space available' : 'Limited outdoor space'}<br><br>`;
+        
+        if (familyScore >= 80) {
+            response += `<strong>Verdict:</strong> Excellent choice for families with children!`;
+        } else if (familyScore >= 60) {
+            response += `<strong>Verdict:</strong> Good option for families with some planning.`;
+        } else {
+            response += `<strong>Verdict:</strong> Better suited for professionals or couples without children.`;
+        }
+        
+        return response;
+    }
+    
+    generateGeneralResponse(property) {
+        let response = `<h4>Complete Property Overview</h4><br>`;
+        
+        response += `I can provide detailed insights about <strong>${property.name}</strong>:<br><br>`;
+        
+        response += `<strong>Available Analysis:</strong><br>`;
+        response += `Education: ${this.nearbySchools.length} schools within 2km<br>`;
+        response += `Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
+        response += `Investment potential and pricing analysis<br>`;
+        response += `Family suitability assessment<br>`;
+        response += `Transportation and accessibility<br><br>`;
+        
+        response += `<strong>Quick Facts:</strong><br>`;
+        response += `Location: ${property.district} District<br>`;
+        response += `Size: ${property.bedrooms}BR, ${property.bathrooms}BA, ${property.area}<br>`;
+        response += `Year Built: ${property.yearBuilt}<br>`;
+        response += `Status: ${property.status === 'sale' ? 'For Sale' : 'For Rent'}<br><br>`;
+        
+        response += `What specific aspect would you like me to analyze in detail?`;
+        
+        return response;
+    }
+    
+    showTyping() {
+        document.getElementById('typingIndicator').classList.add('show');
+    }
+    
+    hideTyping() {
+        document.getElementById('typingIndicator').classList.remove('show');
+    }
+    
+    scrollToBottom() {
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    sanitizeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    showErrorMessage(message) {
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = `
+            <div style="
+                background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.15));
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 16px;
+                border-left: 4px solid #ef4444;
+                text-align: center;
+            ">
+                <div style="font-weight: 600; margin-bottom: 8px; color: #ef4444;">Database Connection Error</div>
+                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.8);">${message}</div>
+                <div style="font-size: 0.8rem; margin-top: 8px; color: rgba(255, 255, 255, 0.6);">
+                    Make sure your API server is running: npm start
+                </div>
+            </div>`;
+    }
+}
+
+let propertyIntel = null;
+
+function toggleChat() {
+    const chatContainer = document.getElementById('chatContainer');
+    const toggleIcon = document.getElementById('toggleIcon');
+    chatContainer.classList.toggle('collapsed');
+    
+    if (chatContainer.classList.contains('collapsed')) {
+        toggleIcon.className = 'fas fa-chevron-right';
+    } else {
+        toggleIcon.className = 'fas fa-chevron-left';
+    }
+    
+    if (propertyIntel) propertyIntel.map.invalidateSize();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    propertyIntel = new PropertyIntelSystem();
+});
     </script>
 </body>
 </html>
