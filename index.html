@@ -1,44 +1,6 @@
 
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
 
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -323,7 +285,7 @@
             background: rgba(99, 102, 241, 0.1);
         }
         
-        .location-btn, .home-btn {
+        .location-btn, .home-btn, .basemap-btn {
             background: var(--primary);
             border: none;
             color: white;
@@ -335,7 +297,7 @@
             transition: all 0.3s ease;
         }
         
-        .location-btn:hover, .home-btn:hover {
+        .location-btn:hover, .home-btn:hover, .basemap-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
         }
@@ -412,10 +374,6 @@
         
         .properties-panel .panel-title {
             color: var(--primary);
-        }
-        
-        .hospitals-panel .panel-title {
-            color: var(--success);
         }
         
         .property-marker {
@@ -835,6 +793,9 @@
                 <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
                     <i class="fas fa-home"></i>
                 </button>
+                <button id="basemapBtn" class="basemap-btn" aria-label="Toggle basemap">
+                    <i class="fas fa-globe"></i>
+                </button>
             </div>
             
             <div class="data-panels">
@@ -842,7 +803,7 @@
                     <div class="panel-title">
                         <i class="fas fa-home"></i> Properties
                     </div>
-                    <div class="panel-value" id="propertiesCount">20</div>
+                    <div class="panel-value" id="propertiesCount">0</div>
                     <div class="panel-subtitle">Available listings</div>
                     <div class="panel-breakdown">
                         <div class="breakdown-item">
@@ -872,14 +833,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="data-panel hospitals-panel">
-                    <div class="panel-title">
-                        <i class="fas fa-hospital"></i> Hospitals
-                    </div>
-                    <div class="panel-value" id="hospitalsCount">0</div>
-                    <div class="panel-subtitle">Health facilities</div>
                 </div>
             </div>
             
@@ -934,7 +887,79 @@
                 this.nearbySchools = [];
                 this.filteredProperties = [];
                 this.isSending = false;
+                this.properties = [];
+                this.baseLayers = {};
+                this.currentBaseLayer = 'street';
                 
+                this.init();
+            }
+            
+            async init() {
+                await this.loadProperties();
+                await this.loadFacilities();
+                await this.loadSchools();
+                this.initializeMap();
+                this.setupEventListeners();
+                this.updateStats();
+                this.updateFilterSummary();
+                // Force map refresh after initialization
+                setTimeout(() => {
+                    if (this.map) {
+                        this.map.invalidateSize();
+                        this.addProperties();
+                    }
+                }, 500);
+            }
+            
+            async loadProperties() {
+                try {
+                    const response = await fetch('http://localhost:3001/api/properties', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('API Response:', data);
+                    
+                    // Transform API data to match frontend format
+                    this.properties = data.map(property => {
+                        const normalizedType = this.normalizePropertyType(property.type);
+                        return {
+                            id: property.id || Math.random().toString(36).substr(2, 9),
+                            lat: parseFloat(property.latitude) || 0,
+                            lng: parseFloat(property.longitude) || 0,
+                            name: property.name || 'Unnamed Property',
+                            type: normalizedType,
+                            price: this.formatPrice(property.price),
+                            status: (property.status || 'sale').toLowerCase(),
+                            bedrooms: parseInt(property.bedrooms) || 0,
+                            bathrooms: parseInt(property.bathrooms) || 0,
+                            area: property.area ? `${parseInt(property.area)}m²` : 'N/A',
+                            yearBuilt: property.year_built || 'N/A',
+                            district: property.district || 'Unknown',
+                            amenities: property.amenities ? property.amenities.split(',').map(item => item.trim()) : []
+                        };
+                    }).filter(prop => prop.lat !== 0 && prop.lng !== 0); // Filter out invalid coordinates
+                    
+                    this.filteredProperties = [...this.properties];
+                    console.log('Processed properties:', this.properties.length, this.properties);
+                    
+                    if (this.properties.length === 0) {
+                        console.warn('No valid properties loaded from API, using fallback data');
+                        this.loadFallbackProperties();
+                    }
+                } catch (error) {
+                    console.error('Failed to load properties:', error);
+                    this.loadFallbackProperties();
+                }
+            }
+            
+            loadFallbackProperties() {
+                // Fallback data in case API fails
                 this.properties = [
                     { id: 1, lat: -1.9441, lng: 30.0619, name: 'City Center Luxury Apartment', type: 'Luxury Apartment', price: '180M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '180m²', yearBuilt: 2022, district: 'Nyarugenge', amenities: ['Pool', 'Gym', 'Security', 'Parking'] },
                     { id: 2, lat: -1.9506, lng: 30.0639, name: 'Business District Condo', type: 'Apartment', price: '65M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '110m²', yearBuilt: 2019, district: 'Nyarugenge', amenities: ['Security', 'Parking'] },
@@ -957,16 +982,26 @@
                     { id: 19, lat: -1.9356, lng: 30.1112, name: 'Nyarutarama Golf Course Villa', type: 'Luxury Villa', price: '520M RWF', status: 'sale', bedrooms: 7, bathrooms: 6, area: '700m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Golf Access', 'Pool', 'Tennis Court', 'Spa'] },
                     { id: 20, lat: -1.9286, lng: 30.1082, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Golf View', 'Security', 'Gym'] }
                 ];
-                
-                this.init();
+                this.filteredProperties = [...this.properties];
+                console.log('Loaded fallback properties:', this.properties.length);
             }
             
-            async init() {
-                await this.loadFacilities();
-                await this.loadSchools();
-                this.initializeMap();
-                this.setupEventListeners();
-                this.updateStats();
+            normalizePropertyType(type) {
+                if (!type) return 'House';
+                const lowerType = type.toLowerCase();
+                if (lowerType.includes('luxury')) return 'Luxury ' + (lowerType.includes('villa') ? 'Villa' : lowerType.includes('apartment') ? 'Apartment' : 'House');
+                if (lowerType.includes('villa')) return 'Villa';
+                if (lowerType.includes('apartment')) return 'Apartment';
+                return 'House';
+            }
+            
+            formatPrice(price) {
+                if (!price || isNaN(parseFloat(price))) return 'N/A';
+                const priceValue = parseFloat(price);
+                if (priceValue >= 1000000) {
+                    return `${Math.round(priceValue / 1000000)}M RWF`;
+                }
+                return `${Math.round(priceValue / 1000)}K RWF`;
             }
             
             async loadFacilities() {
@@ -998,8 +1033,6 @@
                         { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
                     ];
                 }
-                
-                document.getElementById('hospitalsCount').textContent = this.facilities.length;
             }
             
             async loadSchools() {
@@ -1037,10 +1070,20 @@
             initializeMap() {
                 this.map = L.map('map').setView([-1.9441, 30.0619], 11);
                 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors',
-                    maxZoom: 19
-                }).addTo(this.map);
+                // Define basemaps
+                this.baseLayers = {
+                    street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors',
+                        maxZoom: 19
+                    }),
+                    satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                        maxZoom: 19
+                    })
+                };
+                
+                // Add default street layer
+                this.baseLayers.street.addTo(this.map);
                 
                 setTimeout(() => {
                     this.map.invalidateSize();
@@ -1055,11 +1098,36 @@
                 new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
             }
             
+            toggleBasemap() {
+                if (this.currentBaseLayer === 'street') {
+                    this.map.removeLayer(this.baseLayers.street);
+                    this.baseLayers.satellite.addTo(this.map);
+                    this.currentBaseLayer = 'satellite';
+                    document.getElementById('basemapBtn').innerHTML = '<i class="fas fa-map"></i>';
+                } else {
+                    this.map.removeLayer(this.baseLayers.satellite);
+                    this.baseLayers.street.addTo(this.map);
+                    this.currentBaseLayer = 'street';
+                    document.getElementById('basemapBtn').innerHTML = '<i class="fas fa-globe"></i>';
+                }
+            }
+            
             addProperties() {
+                // Clear existing markers
+                this.propertyMarkers.forEach(item => {
+                    if (this.map.hasLayer(item.marker)) {
+                        this.map.removeLayer(item.marker);
+                    }
+                });
                 this.propertyMarkers = [];
-                this.filteredProperties = [...this.properties];
                 
-                this.properties.forEach((prop) => {
+                // Add new markers
+                this.filteredProperties.forEach((prop) => {
+                    if (!prop.lat || !prop.lng) {
+                        console.warn(`Skipping property ${prop.name} due to invalid coordinates`);
+                        return;
+                    }
+                    
                     const isLuxury = prop.type.toLowerCase().includes('luxury');
                     const markerClass = `property-marker ${prop.status} ${isLuxury ? 'luxury' : ''}`;
                     const markerIcon = prop.type.toLowerCase().includes('apartment') ? '🏢' : '🏠';
@@ -1100,6 +1168,8 @@
                     });
                 });
                 
+                console.log('Added markers for properties:', this.propertyMarkers.length);
+                this.updateStats();
                 this.updateFilterSummary();
             }
             
@@ -1361,6 +1431,7 @@
                 const searchBtn = document.getElementById('searchBtn');
                 const locationBtn = document.getElementById('locationBtn');
                 const homeBtn = document.getElementById('homeBtn');
+                const basemapBtn = document.getElementById('basemapBtn');
                 const statusFilter = document.getElementById('statusFilter');
                 const typeFilter = document.getElementById('typeFilter');
                 const priceFilter = document.getElementById('priceFilter');
@@ -1386,6 +1457,7 @@
                 searchBtn.addEventListener('click', () => this.performLocationSearch());
                 locationBtn.addEventListener('click', () => this.useCurrentLocation());
                 homeBtn.addEventListener('click', () => this.resetToHomeView());
+                basemapBtn.addEventListener('click', () => this.toggleBasemap());
                 
                 statusFilter.addEventListener('change', () => this.applyFilters());
                 typeFilter.addEventListener('change', () => this.applyFilters());
@@ -1623,7 +1695,8 @@
                 let response = `<h4>💰 Investment Analysis for ${property.name}</h4><br>`;
                 
                 response += `<strong>Current Price:</strong> ${property.price}<br>`;
-                response += `<strong>Price per m²:</strong> ${Math.round(priceValue * 1000000 / parseInt(property.area))} RWF/m²<br><br>`;
+                const areaNum = parseInt(property.area);
+                response += `<strong>Price per m²:</strong> ${areaNum ? Math.round(priceValue * 1000000 / areaNum) + ' RWF/m²' : 'N/A'}<br><br>`;
                 
                 let investmentScore = 60;
                 if (property.district === 'Gasabo') investmentScore += 15;
@@ -1646,10 +1719,10 @@
                 response += `• ${this.nearbySchools.length} schools nearby<br>`;
                 response += `• ${this.nearbyHospitals.length} health facilities<br>`;
                 response += `• ${property.district} district location<br>`;
-                response += `• Built in ${property.yearBuilt} (${2025 - property.yearBuilt} years old)`;
+                response += `• Built in ${property.yearBuilt} (${new Date().getFullYear() - property.yearBuilt} years old)`;
                 
                 return response;
-            }
+           }
             
             generateFamilyResponse(property) {
                 let response = `<h4>👨‍👩‍👧‍👦 Family Suitability Analysis</h4><br>`;
