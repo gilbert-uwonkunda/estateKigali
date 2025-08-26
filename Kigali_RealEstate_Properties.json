@@ -1,166 +1,1757 @@
-{
-  "displayFieldName" : "",
-  "fieldAliases" : {
-    "OBJECTID" : "OBJECTID",
-    "OBJECTID_1" : "OBJECTID_1",
-    "Property_Plot_ID" : "Property_Plot_ID",
-    "Property_Plot_Name" : "Property_Plot_Name",
-    "Category__Property_Plot_" : "Category__Property_Plot_",
-    "Property_Type" : "Property_Type",
-    "Price" : "Price",
-    "Status__Sale_Rent_" : "Status__Sale_Rent_",
-    "Number_of_Bedrooms" : "Number_of_Bedrooms",
-    "Number_of_Bathrooms" : "Number_of_Bathrooms",
-    "Area_Plot_Size" : "Area_Plot_Size",
-    "Area_in_Square_Meters" : "Area_in_Square_Meters",
-    "Year_Built" : "Year_Built",
-    "District" : "District",
-    "Sector_Neighborhood" : "Sector_Neighborhood",
-    "Zoning_Classification" : "Zoning_Classification",
-    "Amenities_Features" : "Amenities_Features",
-    "Price_per_Square_Meter" : "Price_per_Square_Meter",
-    "Contact_Information" : "Contact_Information",
-    "Description" : "Description",
-    "Last_Updated" : "Last_Updated",
-    "lat" : "lat",
-    "long" : "long"
-  },
-  "geometryType" : "esriGeometryPoint",
-  "spatialReference" : {
-    "wkid" : 4326,
-    "latestWkid" : 4326
-  },
-  "fields" : [
-    {
-      "name" : "OBJECTID",
-      "type" : "esriFieldTypeOID",
-      "alias" : "OBJECTID"
-    },
-    {
-      "name" : "OBJECTID_1",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "OBJECTID_1"
-    },
-    {
-      "name" : "Property_Plot_ID",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "Property_Plot_ID"
-    },
-    {
-      "name" : "Property_Plot_Name",
-      "type" : "esriFieldTypeString",
-      "alias" : "Property_Plot_Name",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Category__Property_Plot_",
-      "type" : "esriFieldTypeString",
-      "alias" : "Category__Property_Plot_",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Property_Type",
-      "type" : "esriFieldTypeString",
-      "alias" : "Property_Type",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Price",
-      "type" : "esriFieldTypeString",
-      "alias" : "Price",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Status__Sale_Rent_",
-      "type" : "esriFieldTypeString",
-      "alias" : "Status__Sale_Rent_",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Number_of_Bedrooms",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "Number_of_Bedrooms"
-    },
-    {
-      "name" : "Number_of_Bathrooms",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "Number_of_Bathrooms"
-    },
-    {
-      "name" : "Area_Plot_Size",
-      "type" : "esriFieldTypeString",
-      "alias" : "Area_Plot_Size",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Area_in_Square_Meters",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "Area_in_Square_Meters"
-    },
-    {
-      "name" : "Year_Built",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "Year_Built"
-    },
-    {
-      "name" : "District",
-      "type" : "esriFieldTypeString",
-      "alias" : "District",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Sector_Neighborhood",
-      "type" : "esriFieldTypeString",
-      "alias" : "Sector_Neighborhood",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Zoning_Classification",
-      "type" : "esriFieldTypeString",
-      "alias" : "Zoning_Classification",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Amenities_Features",
-      "type" : "esriFieldTypeString",
-      "alias" : "Amenities_Features",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Price_per_Square_Meter",
-      "type" : "esriFieldTypeDouble",
-      "alias" : "Price_per_Square_Meter"
-    },
-    {
-      "name" : "Contact_Information",
-      "type" : "esriFieldTypeString",
-      "alias" : "Contact_Information",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Description",
-      "type" : "esriFieldTypeString",
-      "alias" : "Description",
-      "length" : 2000000000
-    },
-    {
-      "name" : "Last_Updated",
-      "type" : "esriFieldTypeString",
-      "alias" : "Last_Updated",
-      "length" : 2000000000
-    },
-    {
-      "name" : "lat",
-      "type" : "esriFieldTypeString",
-      "alias" : "lat",
-      "length" : 2000000000
-    },
-    {
-      "name" : "long",
-      "type" : "esriFieldTypeString",
-      "alias" : "long",
-      "length" : 2000000000
-    }
-  ],
-  "features" : [{"attributes":{"OBJECTID":1,"OBJECTID_1":1,"Property_Plot_ID":1,"Property_Plot_Name":"City Center Luxury Apartment","Category__Property_Plot_":"Property","Property_Type":"Luxury Apartment","Price":"180M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":3,"Number_of_Bathrooms":3,"Area_Plot_Size":"180m²","Area_in_Square_Meters":180,"Year_Built":2022,"District":"Nyarugenge","Sector_Neighborhood":"City Center","Zoning_Classification":"Commercial","Amenities_Features":"Pool, Gym, Security, Parking","Price_per_Square_Meter":1000000,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.94921788","long":"30.06792867"},"geometry":{"x":30.067928674000029,"y":-1.9492178809999245}},{"attributes":{"OBJECTID":2,"OBJECTID_1":2,"Property_Plot_ID":2,"Property_Plot_Name":"Business District Condo","Category__Property_Plot_":"Property","Property_Type":"Apartment","Price":"65M RWF","Status__Sale_Rent_":"rent","Number_of_Bedrooms":2,"Number_of_Bathrooms":2,"Area_Plot_Size":"110m²","Area_in_Square_Meters":110,"Year_Built":2019,"District":"Nyarugenge","Sector_Neighborhood":"Business District","Zoning_Classification":"Commercial","Amenities_Features":"Security, Parking","Price_per_Square_Meter":590909,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.95162317","long":"30.0646314"},"geometry":{"x":30.064631403000078,"y":-1.9516231729999731}},{"attributes":{"OBJECTID":3,"OBJECTID_1":3,"Property_Plot_ID":3,"Property_Plot_Name":"Kimihurura Sunset Villa","Category__Property_Plot_":"Property","Property_Type":"Villa","Price":"320M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":5,"Number_of_Bathrooms":4,"Area_Plot_Size":"450m²","Area_in_Square_Meters":450,"Year_Built":2021,"District":"Gasabo","Sector_Neighborhood":"Kimihurura","Zoning_Classification":"R1","Amenities_Features":"Garden, Pool, Security, Garage","Price_per_Square_Meter":711111,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.95322821","long":"30.08118012"},"geometry":{"x":30.081180116000041,"y":-1.9532282139999779}},{"attributes":{"OBJECTID":4,"OBJECTID_1":4,"Property_Plot_ID":4,"Property_Plot_Name":"Kimihurura Family House","Category__Property_Plot_":"Property","Property_Type":"House","Price":"150M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":4,"Number_of_Bathrooms":3,"Area_Plot_Size":"280m²","Area_in_Square_Meters":280,"Year_Built":2018,"District":"Gasabo","Sector_Neighborhood":"Kimihurura","Zoning_Classification":"R1","Amenities_Features":"Garden, Parking","Price_per_Square_Meter":535714,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.9591914","long":"30.06781328"},"geometry":{"x":30.067813275000049,"y":-1.9591913969999268}},{"attributes":{"OBJECTID":5,"OBJECTID_1":5,"Property_Plot_ID":5,"Property_Plot_Name":"Kimihurura Modern Apartment","Category__Property_Plot_":"Property","Property_Type":"Apartment","Price":"45M RWF","Status__Sale_Rent_":"rent","Number_of_Bedrooms":2,"Number_of_Bathrooms":2,"Area_Plot_Size":"95m²","Area_in_Square_Meters":95,"Year_Built":2020,"District":"Gasabo","Sector_Neighborhood":"Kimihurura","Zoning_Classification":"R2","Amenities_Features":"Security, Balcony","Price_per_Square_Meter":473684,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.95761974","long":"30.06506117"},"geometry":{"x":30.065061171000025,"y":-1.9576197449999313}},{"attributes":{"OBJECTID":6,"OBJECTID_1":6,"Property_Plot_ID":21,"Property_Plot_Name":"City Lights Villa - Kiyovu","Category__Property_Plot_":"Property","Property_Type":"Luxury Villa","Price":"1029M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":4,"Number_of_Bathrooms":6,"Area_Plot_Size":"530m²","Area_in_Square_Meters":530,"Year_Built":2024,"District":"Nyarugenge","Sector_Neighborhood":"Kiyovu","Zoning_Classification":"R1","Amenities_Features":"Rooftop Views, Luxury Finishes, Security, Parking","Price_per_Square_Meter":1941509,"Contact_Information":"Prince - Quick Homes","Description":"","Last_Updated":null,"lat":"-1.96016904","long":"30.06576843"},"geometry":{"x":30.065768427000023,"y":-1.9601690359999679}},{"attributes":{"OBJECTID":7,"OBJECTID_1":7,"Property_Plot_ID":22,"Property_Plot_Name":"Evergreen Apartments - Kiyovu","Category__Property_Plot_":"Property","Property_Type":"Apartment","Price":"405M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":4,"Number_of_Bathrooms":4,"Area_Plot_Size":"236m²","Area_in_Square_Meters":236,"Year_Built":2023,"District":"Nyarugenge","Sector_Neighborhood":"Kiyovu","Zoning_Classification":"R2","Amenities_Features":"Modern Living, Security, Central Location","Price_per_Square_Meter":1715254,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.95305478","long":"30.06878423"},"geometry":{"x":30.068784231000052,"y":-1.9530547759999308}},{"attributes":{"OBJECTID":8,"OBJECTID_1":8,"Property_Plot_ID":23,"Property_Plot_Name":"Kibagabaga Family Villa","Category__Property_Plot_":"Property","Property_Type":"Villa","Price":"420M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":4,"Number_of_Bathrooms":4,"Area_Plot_Size":"400m²","Area_in_Square_Meters":400,"Year_Built":2022,"District":"Gasabo","Sector_Neighborhood":"Kibagabaga","Zoning_Classification":"R1","Amenities_Features":"Garden, Security, Modern Design","Price_per_Square_Meter":1050000,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.93394455","long":"30.10939853"},"geometry":{"x":30.109398525000074,"y":-1.9339445549999255}},{"attributes":{"OBJECTID":9,"OBJECTID_1":9,"Property_Plot_ID":24,"Property_Plot_Name":"Spacious Kimironko House","Category__Property_Plot_":"Property","Property_Type":"House","Price":"180M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":4,"Number_of_Bathrooms":3,"Area_Plot_Size":"600m²","Area_in_Square_Meters":600,"Year_Built":2020,"District":"Gasabo","Sector_Neighborhood":"Kimironko","Zoning_Classification":"R1","Amenities_Features":"Large Compound, Garden, Parking","Price_per_Square_Meter":300000,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.93261021","long":"30.13307335"},"geometry":{"x":30.133073348000039,"y":-1.9326102149999542}},{"attributes":{"OBJECTID":10,"OBJECTID_1":10,"Property_Plot_ID":25,"Property_Plot_Name":"Kanombe Beautiful Home","Category__Property_Plot_":"Property","Property_Type":"House","Price":"120M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":4,"Number_of_Bathrooms":3,"Area_Plot_Size":"426m²","Area_in_Square_Meters":426,"Year_Built":2019,"District":"Kicukiro","Sector_Neighborhood":"Kanombe","Zoning_Classification":"R1","Amenities_Features":"Spacious, Security, Good Location","Price_per_Square_Meter":281690,"Contact_Information":"","Description":"","Last_Updated":null,"lat":"-1.965","long":"30.095"},"geometry":{"x":30.095000000000027,"y":-1.964999999999975}},{"attributes":{"OBJECTID":11,"OBJECTID_1":11,"Property_Plot_ID":101,"Property_Plot_Name":"Gisozi Prime Residential Plot","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"110M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"811m²","Area_in_Square_Meters":811,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Gisozi","Zoning_Classification":"R1","Amenities_Features":"Prime Location, Residential Zoning","Price_per_Square_Meter":135635,"Contact_Information":"","Description":"Prime residential opportunity in Gisozi","Last_Updated":null,"lat":"-1.928","long":"30.092"},"geometry":{"x":30.092000000000041,"y":-1.9279999999999404}},{"attributes":{"OBJECTID":12,"OBJECTID_1":12,"Property_Plot_ID":102,"Property_Plot_Name":"Gahanga Spacious Plot","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"330M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"2247m²","Area_in_Square_Meters":2247,"Year_Built":null,"District":"Kicukiro","Sector_Neighborhood":"Gahanga","Zoning_Classification":"R1","Amenities_Features":"Large Plot, Development Potential","Price_per_Square_Meter":146884,"Contact_Information":"","Description":"Spacious plot ideal for development","Last_Updated":null,"lat":"-1.968","long":"30.108"},"geometry":{"x":30.108000000000061,"y":-1.9679999999999609}},{"attributes":{"OBJECTID":13,"OBJECTID_1":13,"Property_Plot_ID":103,"Property_Plot_Name":"Kinyinya Beautiful Land","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"85M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"575m²","Area_in_Square_Meters":575,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Kinyinya","Zoning_Classification":"R2","Amenities_Features":"Future Home Site, Good Access","Price_per_Square_Meter":147826,"Contact_Information":"","Description":"Beautiful residential land for future home","Last_Updated":null,"lat":"-1.932","long":"30.115"},"geometry":{"x":30.115000000000066,"y":-1.9319999999999595}},{"attributes":{"OBJECTID":14,"OBJECTID_1":14,"Property_Plot_ID":104,"Property_Plot_Name":"Nyarutarama KG 10 Ave Plot","Category__Property_Plot_":"Plot","Property_Type":"Premium Land","Price":"154M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"328m²","Area_in_Square_Meters":328,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Nyarutarama","Zoning_Classification":"R1","Amenities_Features":"Premium Location, Golf Course Area","Price_per_Square_Meter":469512,"Contact_Information":"","Description":"Premium plot in exclusive Nyarutarama","Last_Updated":null,"lat":"-1.938","long":"30.122"},"geometry":{"x":30.122000000000071,"y":-1.9379999999999313}},{"attributes":{"OBJECTID":15,"OBJECTID_1":15,"Property_Plot_ID":105,"Property_Plot_Name":"Kicukiro Kagarama Plot","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"45M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"300m²","Area_in_Square_Meters":300,"Year_Built":null,"District":"Kicukiro","Sector_Neighborhood":"Kagarama","Zoning_Classification":"R1A","Amenities_Features":"Affordable, Good Location","Price_per_Square_Meter":150000,"Contact_Information":"","Description":"Prime residential plot in Kagarama","Last_Updated":null,"lat":"-1.97","long":"30.085"},"geometry":{"x":30.085000000000036,"y":-1.9699999999999704}},{"attributes":{"OBJECTID":16,"OBJECTID_1":16,"Property_Plot_ID":106,"Property_Plot_Name":"Kacyiru Prime Plot","Category__Property_Plot_":"Plot","Property_Type":"Commercial Land","Price":"550M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"1937m²","Area_in_Square_Meters":1937,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Kacyiru","Zoning_Classification":"Commercial","Amenities_Features":"Large Plot, Commercial Potential","Price_per_Square_Meter":283943,"Contact_Information":"","Description":"Prime commercial plot in Kacyiru","Last_Updated":null,"lat":"-1.962","long":"30.102"},"geometry":{"x":30.102000000000032,"y":-1.9619999999999322}},{"attributes":{"OBJECTID":17,"OBJECTID_1":17,"Property_Plot_ID":107,"Property_Plot_Name":"Kimironko Commercial Plot","Category__Property_Plot_":"Plot","Property_Type":"Commercial Land","Price":"300M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"646m²","Area_in_Square_Meters":646,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Kimironko","Zoning_Classification":"Commercial","Amenities_Features":"Commercial Zoning, High Traffic Area","Price_per_Square_Meter":464551,"Contact_Information":"","Description":"Incredible commercial plot in Kimironko","Last_Updated":null,"lat":"-1.942","long":"30.118"},"geometry":{"x":30.118000000000052,"y":-1.9419999999999504}},{"attributes":{"OBJECTID":18,"OBJECTID_1":18,"Property_Plot_ID":108,"Property_Plot_Name":"Kabeza Large Development Plot","Category__Property_Plot_":"Plot","Property_Type":"Development Land","Price":"450M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"3022m²","Area_in_Square_Meters":3022,"Year_Built":null,"District":"Kicukiro","Sector_Neighborhood":"Kabeza","Zoning_Classification":"R1A","Amenities_Features":"Subdivision Potential, 8-10 Plot Capacity","Price_per_Square_Meter":148908,"Contact_Information":"Kamaro - Kwanda Real Estate","Description":"Large plot suitable for subdivision into 8-10 plots","Last_Updated":null,"lat":"-1.965","long":"30.105"},"geometry":{"x":30.105000000000075,"y":-1.964999999999975}},{"attributes":{"OBJECTID":19,"OBJECTID_1":19,"Property_Plot_ID":109,"Property_Plot_Name":"Kanombe Busanza Plot","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"35M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"329m²","Area_in_Square_Meters":329,"Year_Built":null,"District":"Kicukiro","Sector_Neighborhood":"Kanombe","Zoning_Classification":"R1","Amenities_Features":"Affordable, Good Access Roads","Price_per_Square_Meter":106383,"Contact_Information":"","Description":"Affordable plot in up-and-coming Busanza area","Last_Updated":null,"lat":"-1.967","long":"30.098"},"geometry":{"x":30.09800000000007,"y":-1.9669999999999277}},{"attributes":{"OBJECTID":20,"OBJECTID_1":20,"Property_Plot_ID":110,"Property_Plot_Name":"Kagugu Development Land","Category__Property_Plot_":"Plot","Property_Type":"Development Land","Price":"280M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"2200m²","Area_in_Square_Meters":2200,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Kagugu","Zoning_Classification":"R3","Amenities_Features":"Medium Density Zoning, Main Road Access","Price_per_Square_Meter":127273,"Contact_Information":"","Description":"Spacious land with captivating views in Kagugu","Last_Updated":null,"lat":"-1.929","long":"30.095"},"geometry":{"x":30.095000000000027,"y":-1.9289999999999736}},{"attributes":{"OBJECTID":21,"OBJECTID_1":21,"Property_Plot_ID":111,"Property_Plot_Name":"Kinyinya Large Plot","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"380M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"3170m²","Area_in_Square_Meters":3170,"Year_Built":null,"District":"Gasabo","Sector_Neighborhood":"Kinyinya","Zoning_Classification":"R2","Amenities_Features":"Large Size, Green City Proximity","Price_per_Square_Meter":119874,"Contact_Information":"","Description":"Large plot close to green city development","Last_Updated":null,"lat":"-1.935","long":"30.118"},"geometry":{"x":30.118000000000052,"y":-1.9349999999999454}},{"attributes":{"OBJECTID":22,"OBJECTID_1":22,"Property_Plot_ID":112,"Property_Plot_Name":"Kicukiro Budget Plot","Category__Property_Plot_":"Plot","Property_Type":"Residential Land","Price":"12M RWF","Status__Sale_Rent_":"sale","Number_of_Bedrooms":null,"Number_of_Bathrooms":null,"Area_Plot_Size":"250m²","Area_in_Square_Meters":250,"Year_Built":null,"District":"Kicukiro","Sector_Neighborhood":"Nyanza","Zoning_Classification":"R1A","Amenities_Features":"Budget Friendly, Near Facilities","Price_per_Square_Meter":48000,"Contact_Information":"+250 788 651 421","Description":"Affordable plot near shops and schools","Last_Updated":null,"lat":"-1.972","long":"30.082"},"geometry":{"x":30.08200000000005,"y":-1.97199999999998}}]
-}
+
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropertyIntel Kigali - Location Intelligence</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --education: #8b5cf6;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --glass: rgba(15, 23, 42, 0.95);
+            --glass-light: rgba(255, 255, 255, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .main-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .chat-container {
+            width: 400px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-light);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .chat-container.collapsed {
+            width: 60px;
+            overflow: hidden;
+        }
+        
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+        }
+        
+        .app-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-bottom: 1px solid var(--glass-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .app-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .toggle-chat-btn {
+            background: rgba(255, 255, 255, 0.25);
+            border: none;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
+        }
+        
+        .filter-section {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--glass-light);
+            background: rgba(15, 23, 42, 0.8);
+        }
+        
+        .filter-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .filter-select {
+            padding: 8px 12px;
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        .filter-select option {
+            background: var(--dark);
+            color: #fff;
+        }
+        
+        .filter-summary {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+        
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.4);
+            min-height: 150px;
+            max-height: calc(100vh - 300px);
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.ai .message-content {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px 16px 16px 4px;
+            padding: 16px 18px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .message.user .message-content {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px 16px 4px 16px;
+            padding: 16px 18px;
+            font-size: 0.9rem;
+            margin-left: auto;
+            max-width: 85%;
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            border-top: 1px solid var(--glass-light);
+        }
+        
+        .chat-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 0.9rem;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+            max-height: 100px;
+        }
+        
+        .chat-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .send-btn {
+            margin-top: 10px;
+            padding: 12px 24px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .map-search-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-box {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            min-width: 300px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            color: #333;
+            font-size: 15px;
+            outline: none;
+        }
+        
+        .search-btn {
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .location-btn, .home-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 14px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .location-btn:hover, .home-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .data-panels {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .data-panel {
+            background: var(--glass);
+            border: 1px solid var(--glass-light);
+            border-radius: 10px;
+            padding: 12px 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+            min-width: 140px;
+            max-width: 200px;
+        }
+        
+        .panel-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .panel-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .panel-subtitle {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+        }
+        
+        .panel-breakdown {
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+        
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            padding: 2px 0;
+        }
+        
+        .breakdown-sale {
+            color: var(--danger);
+            font-weight: 600;
+        }
+        
+        .breakdown-rent {
+            color: var(--success);
+            font-weight: 600;
+        }
+        
+        .breakdown-type {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+        
+        .properties-panel .panel-title {
+            color: var(--primary);
+        }
+        
+        .hospitals-panel .panel-title {
+            color: var(--success);
+        }
+        
+        .property-marker {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+            text-align: center;
+            opacity: 0.85;
+            width: 60px !important;
+            height: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+        }
+        
+        .property-marker:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            opacity: 1;
+            z-index: 1000;
+        }
+        
+        .property-marker.selected {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+            opacity: 1;
+            z-index: 1001;
+        }
+        
+        .property-marker.sale {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        
+        .property-marker.sale.selected {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .property-marker.sale::after {
+            content: 'SALE';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--danger);
+            color: white;
+            font-size: 7px;
+            font-weight: 800;
+            padding: 1px 3px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+        
+        .property-marker.rent {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        
+        .property-marker.rent.selected {
+            background: var(--success);
+            color: white;
+        }
+        
+        .property-marker.rent::after {
+            content: 'RENT';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--success);
+            color: white;
+            font-size: 7px;
+            font-weight: 800;
+            padding: 1px 3px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+        
+        .property-marker.luxury {
+            border-color: var(--warning);
+            color: var(--warning);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            background: linear-gradient(135deg, #fff, #fffbeb);
+        }
+        
+        .property-marker.luxury.selected {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .property-marker.luxury::before {
+            content: '⭐';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            background: var(--warning);
+            color: white;
+            font-size: 8px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        
+        .school-marker {
+            width: 28px !important;
+            height: 28px !important;
+            background: var(--education);
+            border: 3px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 14px;
+            box-sizing: border-box !important;
+        }
+        
+        .school-marker:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 25px rgba(139, 92, 246, 0.6);
+        }
+        
+        .hospital-marker {
+            width: 28px !important;
+            height: 28px !important;
+            background: var(--success);
+            border: 3px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 14px;
+            box-sizing: border-box !important;
+        }
+        
+        .hospital-marker:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+        }
+        
+        .property-info {
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .proximity-info {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08));
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 4px solid var(--success);
+        }
+        
+        .education-info {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(124, 58, 237, 0.08));
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 4px solid var(--education);
+        }
+        
+        .facility-list {
+            margin-top: 12px;
+        }
+        
+        .facility-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 6px 0;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .facility-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(4px);
+        }
+        
+        .facility-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .facility-distance {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .leaflet-tooltip.compact-tooltip {
+            background: var(--glass) !important;
+            border: 1px solid var(--glass-light) !important;
+            border-radius: 6px !important;
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 500 !important;
+            padding: 6px 8px !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            max-width: 200px !important;
+        }
+        
+        .leaflet-tooltip {
+            background: var(--glass) !important;
+            border: 1px solid var(--glass-light) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .chat-container {
+                width: 100%;
+                height: 45vh;
+                order: 2;
+                border-right: none;
+                border-top: 1px solid var(--glass-light);
+            }
+            
+            .chat-container.collapsed {
+                height: 60px;
+            }
+            
+            .map-container {
+                height: 55vh;
+                order: 1;
+            }
+            
+            .data-panels {
+                flex-direction: column;
+                bottom: 10px;
+                right: 10px;
+                gap: 6px;
+            }
+            
+            .data-panel {
+                padding: 10px 12px;
+                min-width: 120px;
+                max-width: 160px;
+            }
+            
+            .map-search-controls {
+                top: 10px;
+                right: 10px;
+                left: unset;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .search-box {
+                min-width: unset;
+            }
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 3px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        .welcome-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 10px 20px;
+            color: var(--primary);
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+        
+        .typing-indicator.show {
+            display: block;
+        }
+        
+        .typing-indicator::before {
+            content: 'AI analyzing';
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: 'AI analyzing'; }
+            40% { content: 'AI analyzing.'; }
+            60% { content: 'AI analyzing..'; }
+            80%, 100% { content: 'AI analyzing...'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="chat-container" id="chatContainer">
+            <div class="app-header">
+                <div class="app-title">PropertyIntel Kigali</div>
+                <button class="toggle-chat-btn" onclick="toggleChat()" aria-label="Toggle chat">
+                    <i class="fas fa-chevron-left" id="toggleIcon"></i>
+                </button>
+            </div>
+            
+            <div class="filter-section">
+                <div class="filter-title">
+                    <i class="fas fa-filter"></i> Property Filters
+                </div>
+                <div class="filter-grid">
+                    <select id="statusFilter" class="filter-select" aria-label="Filter by status">
+                        <option value="">All Status</option>
+                        <option value="sale">For Sale</option>
+                        <option value="rent">For Rent</option>
+                    </select>
+                    
+                    <select id="typeFilter" class="filter-select" aria-label="Filter by type">
+                        <option value="">All Types</option>
+                        <option value="villa">Villa</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="house">House</option>
+                        <option value="luxury">Luxury</option>
+                    </select>
+                    
+                    <select id="priceFilter" class="filter-select" aria-label="Filter by price">
+                        <option value="">All Prices</option>
+                        <option value="0-50">Under 50M RWF</option>
+                        <option value="50-100">50M - 100M RWF</option>
+                        <option value="100-200">100M - 200M RWF</option>
+                        <option value="200+">Above 200M RWF</option>
+                    </select>
+                </div>
+                
+                <div class="filter-summary" id="filterSummary">
+                    Showing all properties
+                </div>
+            </div>
+            
+            <div class="chat-section">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="welcome-title">Welcome to PropertyIntel!</div>
+                        Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typingIndicator"></div>
+                
+                <div class="chat-input-container">
+                    <textarea class="chat-input" id="chatInput" 
+                              placeholder="Select a property to start asking questions..." 
+                              rows="1" disabled aria-label="Ask about property"></textarea>
+                    <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div class="map-search-controls">
+                <div class="search-box">
+                    <input type="text" id="locationSearch" class="search-input" 
+                           placeholder="Search location in Kigali..." aria-label="Search location">
+                    <button id="searchBtn" class="search-btn" aria-label="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <button id="locationBtn" class="location-btn" aria-label="Use current location">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+                <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
+                    <i class="fas fa-home"></i>
+                </button>
+            </div>
+            
+            <div class="data-panels">
+                <div class="data-panel properties-panel">
+                    <div class="panel-title">
+                        <i class="fas fa-home"></i> Properties
+                    </div>
+                    <div class="panel-value" id="propertiesCount">20</div>
+                    <div class="panel-subtitle">Available listings</div>
+                    <div class="panel-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-sale">For Sale:</span>
+                            <span id="forSaleCount">0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-rent">For Rent:</span>
+                            <span id="forRentCount">0</span>
+                        </div>
+                        <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0; padding-top: 4px;">
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Apartments:</span>
+                                <span id="apartmentCount">0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Houses:</span>
+                                <span id="houseCount">0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Villas:</span>
+                                <span id="villaCount">0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Luxury:</span>
+                                <span id="luxuryCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="data-panel hospitals-panel">
+                    <div class="panel-title">
+                        <i class="fas fa-hospital"></i> Hospitals
+                    </div>
+                    <div class="panel-value" id="hospitalsCount">0</div>
+                    <div class="panel-subtitle">Health facilities</div>
+                </div>
+            </div>
+            
+            <div id="map"></div>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+
+        class PropertyIntelSystem {
+            constructor() {
+                this.map = null;
+                this.currentProperty = null;
+                this.selectedMarker = null;
+                this.facilities = [];
+                this.schools = [];
+                this.propertyMarkers = [];
+                this.hospitalMarkers = [];
+                this.schoolMarkers = [];
+                this.nearbyHospitals = [];
+                this.nearbySchools = [];
+                this.filteredProperties = [];
+                this.isSending = false;
+                
+                this.properties = [
+                    { id: 1, lat: -1.9441, lng: 30.0619, name: 'City Center Luxury Apartment', type: 'Luxury Apartment', price: '180M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '180m²', yearBuilt: 2022, district: 'Nyarugenge', amenities: ['Pool', 'Gym', 'Security', 'Parking'] },
+                    { id: 2, lat: -1.9506, lng: 30.0639, name: 'Business District Condo', type: 'Apartment', price: '65M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '110m²', yearBuilt: 2019, district: 'Nyarugenge', amenities: ['Security', 'Parking'] },
+                    { id: 3, lat: -1.9286, lng: 30.1044, name: 'Kimihurura Sunset Villa', type: 'Villa', price: '320M RWF', status: 'sale', bedrooms: 5, bathrooms: 4, area: '450m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Garden', 'Pool', 'Security', 'Garage'] },
+                    { id: 4, lat: -1.9356, lng: 30.1074, name: 'Kimihurura Family House', type: 'House', price: '150M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '280m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
+                    { id: 5, lat: -1.9416, lng: 30.1014, name: 'Kimihurura Modern Apartment', type: 'Apartment', price: '45M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '95m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Security', 'Balcony'] },
+                    { id: 6, lat: -1.9634, lng: 30.0929, name: 'Kacyiru Green Hills House', type: 'House', price: '95M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '220m²', yearBuilt: 2017, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
+                    { id: 7, lat: -1.9604, lng: 30.0959, name: 'Kacyiru Executive Villa', type: 'Villa', price: '280M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '380m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Pool', 'Garden', 'Security', 'Smart Home'] },
+                    { id: 8, lat: -1.9564, lng: 30.0899, name: 'Kacyiru Riverside Apartment', type: 'Apartment', price: '38M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '65m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['River View', 'Security'] },
+                    { id: 9, lat: -1.9456, lng: 30.1212, name: 'Remera Shopping District House', type: 'House', price: '120M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '200m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Parking', 'Security'] },
+                    { id: 10, lat: -1.9486, lng: 30.1242, name: 'Remera Premium Apartment', type: 'Apartment', price: '55M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '130m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Gym', 'Security', 'Parking'] },
+                    { id: 11, lat: -1.9756, lng: 30.0729, name: 'Gikondo Industrial Villa', type: 'Villa', price: '200M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '350m²', yearBuilt: 2019, district: 'Kicukiro', amenities: ['Garden', 'Security', 'Workshop'] },
+                    { id: 12, lat: -1.9686, lng: 30.0759, name: 'Gikondo Worker Housing', type: 'House', price: '75M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '160m²', yearBuilt: 2016, district: 'Kicukiro', amenities: ['Parking'] },
+                    { id: 13, lat: -1.9606, lng: 30.0529, name: 'Nyamirambo Cultural House', type: 'House', price: '85M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '190m²', yearBuilt: 2018, district: 'Nyarugenge', amenities: ['Garden', 'Traditional Design'] },
+                    { id: 14, lat: -1.9536, lng: 30.0499, name: 'Nyamirambo Traditional Villa', type: 'Villa', price: '140M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '260m²', yearBuilt: 2017, district: 'Nyarugenge', amenities: ['Garden', 'Cultural Features'] },
+                    { id: 15, lat: -1.9256, lng: 30.0919, name: 'Kigali Heights Luxury Villa', type: 'Luxury Villa', price: '450M RWF', status: 'sale', bedrooms: 6, bathrooms: 5, area: '600m²', yearBuilt: 2024, district: 'Gasabo', amenities: ['Pool', 'Gym', 'Cinema', 'Smart Home', 'Wine Cellar'] },
+                    { id: 16, lat: -1.9186, lng: 30.0889, name: 'Kigali Heights Executive House', type: 'House', price: '220M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '320m²', yearBuilt: 2022, district: 'Gasabo', amenities: ['View', 'Security', 'Garden'] },
+                    { id: 17, lat: -1.9706, lng: 30.1059, name: 'Kibagabaga Student Apartment', type: 'Apartment', price: '35M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '55m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Study Area', 'Internet'] },
+                    { id: 18, lat: -1.9636, lng: 30.1029, name: 'Kibagabaga Family House', type: 'House', price: '110M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '210m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
+                    { id: 19, lat: -1.9356, lng: 30.1112, name: 'Nyarutarama Golf Course Villa', type: 'Luxury Villa', price: '520M RWF', status: 'sale', bedrooms: 7, bathrooms: 6, area: '700m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Golf Access', 'Pool', 'Tennis Court', 'Spa'] },
+                    { id: 20, lat: -1.9286, lng: 30.1082, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Golf View', 'Security', 'Gym'] }
+                ];
+                
+                this.init();
+            }
+            
+            async init() {
+                await this.loadFacilities();
+                await this.loadSchools();
+                this.initializeMap();
+                this.setupEventListeners();
+                this.updateStats();
+            }
+            
+            async loadFacilities() {
+                try {
+                    const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Kigali_Health.json');
+                    const data = await response.json();
+                    
+                    if (data.features && Array.isArray(data.features)) {
+                        this.facilities = data.features.filter(feature => 
+                            feature.attributes && 
+                            feature.attributes.lat && 
+                            feature.attributes.long
+                        ).map(feature => ({
+                            facility_name: feature.attributes.facility_name || 'Unknown',
+                            facility_type: feature.attributes.facility_type || 'Unknown',
+                            lat: feature.attributes.lat,
+                            long: feature.attributes.long,
+                            district: feature.attributes.district || 'N/A',
+                            sector: feature.attributes.sector || 'N/A',
+                            ownership: feature.attributes.ownership || 'N/A'
+                        }));
+                        console.log('Loaded health facilities:', this.facilities.length);
+                    }
+                } catch (error) {
+                    console.error('Failed to load facilities:', error);
+                    this.facilities = [
+                        { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, long: 30.0951, district: "Gasabo" },
+                        { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, long: 30.0604, district: "Nyarugenge" },
+                        { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
+                    ];
+                }
+                
+                document.getElementById('hospitalsCount').textContent = this.facilities.length;
+            }
+            
+            async loadSchools() {
+                try {
+                    const response = await fetch('https://gilbert-uwonkunda.github.io/estateKigali/Pre_Primary.json');
+                    const data = await response.json();
+                    
+                    if (data.features && Array.isArray(data.features)) {
+                        this.schools = data.features.filter(feature => 
+                            feature.attributes && 
+                            feature.attributes.latitude && 
+                            feature.attributes.longitude
+                        ).map(feature => ({
+                            school_name: feature.attributes.school_nam || 'Unknown School',
+                            school_type: feature.attributes.school_typ || 'Unknown',
+                            school_category: feature.attributes.school_cat || 'PRE_PRIMARY',
+                            school_status: feature.attributes.school_sta || 'Unknown',
+                            curriculum: feature.attributes.curriculum || 'National',
+                            lat: feature.attributes.latitude,
+                            lng: feature.attributes.longitude,
+                            established: feature.attributes.establishm || 'N/A'
+                        }));
+                        console.log('Loaded schools:', this.schools.length);
+                    }
+                } catch (error) {
+                    console.error('Failed to load schools:', error);
+                    this.schools = [
+                        { school_name: "ITETERO NURSERY SCHOOL", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9489, lng: 30.0000, established: 2009 },
+                        { school_name: "Green Hills Academy", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "INTERNATIONAL", lat: -1.9556, lng: 30.1044, established: 2006 },
+                        { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
+                    ];
+                }
+            }
+            
+            initializeMap() {
+                this.map = L.map('map').setView([-1.9441, 30.0619], 11);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(this.map);
+                
+                setTimeout(() => {
+                    this.map.invalidateSize();
+                }, 100);
+                
+                this.addProperties();
+                this.prepareHospitals();
+                this.prepareSchools();
+                
+                this.map.on('click', this.handleMapClick.bind(this));
+                
+                new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
+            }
+            
+            addProperties() {
+                this.propertyMarkers = [];
+                this.filteredProperties = [...this.properties];
+                
+                this.properties.forEach((prop) => {
+                    const isLuxury = prop.type.toLowerCase().includes('luxury');
+                    const markerClass = `property-marker ${prop.status} ${isLuxury ? 'luxury' : ''}`;
+                    const markerIcon = prop.type.toLowerCase().includes('apartment') ? '🏢' : '🏠';
+                    
+                    const priceLabel = prop.price.replace(' RWF', '').replace('M', '');
+                    
+                    const marker = L.marker([prop.lat, prop.lng], {
+                        icon: L.divIcon({
+                            className: markerClass,
+                            html: `${markerIcon} ${priceLabel}`,
+                            iconSize: [60, 24],
+                            iconAnchor: [30, 24],
+                            popupAnchor: [0, -24]
+                        })
+                    });
+                    
+                    const tooltipContent = `
+                        <div style="font-weight: 600; margin-bottom: 4px; font-size: 13px;">${prop.name}</div>
+                        <div style="margin-bottom: 2px; font-size: 12px;">📍 ${prop.district} • ${prop.bedrooms}BR</div>
+                        <div style="font-weight: 600; color: #6366f1; font-size: 13px;">💰 ${prop.price}</div>
+                    `;
+                    
+                    marker.bindTooltip(tooltipContent, { 
+                        direction: 'top', 
+                        offset: [0, -24],
+                        permanent: false,
+                        sticky: false,
+                        className: 'compact-tooltip'
+                    });
+                    
+                    marker.on('click', () => this.selectProperty(prop, marker));
+                    marker.addTo(this.map);
+                    
+                    this.propertyMarkers.push({
+                        marker: marker,
+                        property: prop,
+                        visible: true
+                    });
+                });
+                
+                this.updateFilterSummary();
+            }
+            
+            prepareHospitals() {
+                this.hospitalMarkers = [];
+                this.facilities.forEach(facility => {
+                    const marker = L.marker([facility.lat, facility.long], {
+                        icon: L.divIcon({
+                            className: 'hospital-marker',
+                            html: '🏥',
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14],
+                            popupAnchor: [0, -14]
+                        })
+                    });
+                    
+                    const tooltipContent = `
+                        <div style="font-weight: 600; margin-bottom: 4px;">🏥 ${facility.facility_name}</div>
+                        <div style="margin-bottom: 2px;">📋 ${facility.facility_type}</div>
+                        <div>📍 ${facility.district}</div>
+                    `;
+                    
+                    marker.bindTooltip(tooltipContent, { 
+                        direction: 'top', 
+                        offset: [0, -15],
+                        permanent: false,
+                        sticky: true
+                    });
+                    
+                    this.hospitalMarkers.push(marker);
+                });
+            }
+            
+            prepareSchools() {
+                this.schoolMarkers = [];
+                this.schools.forEach(school => {
+                    const marker = L.marker([school.lat, school.lng], {
+                        icon: L.divIcon({
+                            className: 'school-marker',
+                            html: '🎓',
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14],
+                            popupAnchor: [0, -14]
+                        })
+                    });
+                    
+                    const tooltipContent = `
+                        <div style="font-weight: 600; margin-bottom: 4px;">🎓 ${school.school_name}</div>
+                        <div style="margin-bottom: 2px;">📚 ${school.school_status} School</div>
+                        <div style="margin-bottom: 2px;">📖 ${school.curriculum} Curriculum</div>
+                        <div>📅 Est. ${school.established}</div>
+                    `;
+                    
+                    marker.bindTooltip(tooltipContent, { 
+                        direction: 'top', 
+                        offset: [0, -15],
+                        permanent: false,
+                        sticky: true
+                    });
+                    
+                    this.schoolMarkers.push(marker);
+                });
+            }
+            
+            selectProperty(property, marker) {
+                if (this.selectedMarker) {
+                    const prevElement = this.selectedMarker.getElement();
+                    if (prevElement) {
+                        prevElement.classList.remove('selected');
+                    }
+                }
+                
+                this.currentProperty = property;
+                this.selectedMarker = marker;
+                
+                const markerElement = marker.getElement();
+                if (markerElement) {
+                    markerElement.classList.add('selected');
+                }
+                
+                document.getElementById('chatInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
+                
+                this.analyzeProperty(property);
+                this.map.setView([property.lat, property.lng], 15);
+            }
+            
+            analyzeProperty(property) {
+                this.clearNearbyMarkers();
+                this.analyzeProximity(property);
+                this.displayPropertyAnalysis(property);
+                this.showNearbyFacilities(property);
+            }
+            
+            clearNearbyMarkers() {
+                this.hospitalMarkers.forEach(marker => {
+                    if (this.map.hasLayer(marker)) {
+                        this.map.removeLayer(marker);
+                    }
+                });
+                
+                this.schoolMarkers.forEach(marker => {
+                    if (this.map.hasLayer(marker)) {
+                        this.map.removeLayer(marker);
+                    }
+                });
+            }
+            
+            showNearbyFacilities(property) {
+                this.nearbyHospitals.forEach(hospital => {
+                    const marker = this.hospitalMarkers.find(m => {
+                        const markerLatLng = m.getLatLng();
+                        return Math.abs(markerLatLng.lat - hospital.lat) < 0.0001 && 
+                               Math.abs(markerLatLng.lng - hospital.long) < 0.0001;
+                    });
+                    if (marker) {
+                        marker.addTo(this.map);
+                    }
+                });
+                
+                this.nearbySchools.forEach(school => {
+                    const marker = this.schoolMarkers.find(m => {
+                        const markerLatLng = m.getLatLng();
+                        return Math.abs(markerLatLng.lat - school.lat) < 0.0001 && 
+                               Math.abs(markerLatLng.lng - school.lng) < 0.0001;
+                    });
+                    if (marker) {
+                        marker.addTo(this.map);
+                    }
+                });
+            }
+            
+            analyzeProximity(property) {
+                this.nearbyHospitals = [];
+                this.facilities.forEach(facility => {
+                    const distance = L.latLng(property.lat, property.lng)
+                        .distanceTo([facility.lat, facility.long]) / 1000;
+                    
+                    if (distance <= 3) {
+                        this.nearbyHospitals.push({
+                            ...facility,
+                            distance: distance
+                        });
+                    }
+                });
+                this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
+                
+                this.nearbySchools = [];
+                this.schools.forEach(school => {
+                    const distance = L.latLng(property.lat, property.lng)
+                        .distanceTo([school.lat, school.lng]) / 1000;
+                    
+                    if (distance <= 2) {
+                        this.nearbySchools.push({
+                            ...school,
+                            distance: distance
+                        });
+                    }
+                });
+                this.nearbySchools.sort((a, b) => a.distance - b.distance);
+            }
+            
+            displayPropertyAnalysis(property) {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = '';
+                
+                let propertyHtml = `
+                    <div class="property-info">
+                        <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
+                        <div style="margin-bottom: 6px;"><strong>Type:</strong> ${property.type}</div>
+                        <div style="margin-bottom: 6px;"><strong>Price:</strong> ${property.price}</div>
+                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}</div>
+                        <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt}</div>
+                        <div style="margin-bottom: 6px;"><strong>District:</strong> ${property.district}</div>
+                        <div><strong>Amenities:</strong> ${property.amenities ? property.amenities.join(', ') : 'Standard'}</div>
+                    </div>`;
+                
+                messagesContainer.innerHTML += propertyHtml;
+                
+                if (this.nearbySchools.length > 0) {
+                    let schoolHtml = `
+                        <div class="education-info">
+                            <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
+                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 2km</p>
+                            <div class="facility-list">`;
+                    
+                    this.nearbySchools.slice(0, 5).forEach(school => {
+                        schoolHtml += `
+                            <div class="facility-item" onclick="propertyIntel.focusLocation(${school.lat}, ${school.lng})">
+                                <div class="facility-name">${school.school_name}</div>
+                                <div class="facility-distance">${(school.distance * 1000).toFixed(0)}m</div>
+                            </div>`;
+                    });
+                    
+                    schoolHtml += `</div></div>`;
+                    messagesContainer.innerHTML += schoolHtml;
+                } else {
+                    messagesContainer.innerHTML += `
+                        <div class="education-info">
+                            <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
+                            <p>No schools within 2km walking distance. Consider transportation needs for school-age children.</p>
+                        </div>`;
+                }
+                
+                if (this.nearbyHospitals.length > 0) {
+                    let hospitalHtml = `
+                        <div class="proximity-info">
+                            <h4 style="margin-bottom: 8px;">🏥 Healthcare Access</h4>
+                            <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 3km</p>
+                            <div class="facility-list">`;
+                    
+                    this.nearbyHospitals.slice(0, 5).forEach(hospital => {
+                        hospitalHtml += `
+                            <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.long})">
+                                <div class="facility-name">${hospital.facility_name}</div>
+                                <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
+                            </div>`;
+                    });
+                    
+                    hospitalHtml += `</div></div>`;
+                    messagesContainer.innerHTML += hospitalHtml;
+                } else {
+                    messagesContainer.innerHTML += `
+                        <div class="proximity-info">
+                            <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
+                            <p>No hospitals within 3km radius. Emergency services may take longer to reach this location.</p>
+                        </div>`;
+                }
+                
+                this.scrollToBottom();
+            }
+            
+            focusLocation(lat, lng) {
+                this.map.setView([lat, lng], 16);
+            }
+            
+            resetToHomeView() {
+                this.map.setView([-1.9441, 30.0619], 11);
+            }
+            
+            handleMapClick(e) {
+                this.clearNearbyMarkers();
+                
+                if (!this.currentProperty) {
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML = `
+                        <div class="welcome-message">
+                            <div class="welcome-title">Welcome to PropertyIntel!</div>
+                            Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                        </div>`;
+                }
+            }
+            
+            setupEventListeners() {
+                const chatInput = document.getElementById('chatInput');
+                const sendBtn = document.getElementById('sendBtn');
+                const locationSearch = document.getElementById('locationSearch');
+                const searchBtn = document.getElementById('searchBtn');
+                const locationBtn = document.getElementById('locationBtn');
+                const homeBtn = document.getElementById('homeBtn');
+                const statusFilter = document.getElementById('statusFilter');
+                const typeFilter = document.getElementById('typeFilter');
+                const priceFilter = document.getElementById('priceFilter');
+                
+                chatInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+                });
+                
+                chatInput.addEventListener('keypress', e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                
+                sendBtn.addEventListener('click', () => this.sendMessage());
+                
+                locationSearch.addEventListener('keypress', e => {
+                    if (e.key === 'Enter') this.performLocationSearch();
+                });
+                
+                searchBtn.addEventListener('click', () => this.performLocationSearch());
+                locationBtn.addEventListener('click', () => this.useCurrentLocation());
+                homeBtn.addEventListener('click', () => this.resetToHomeView());
+                
+                statusFilter.addEventListener('change', () => this.applyFilters());
+                typeFilter.addEventListener('change', () => this.applyFilters());
+                priceFilter.addEventListener('change', () => this.applyFilters());
+            }
+            
+            async performLocationSearch() {
+                const locationSearch = document.getElementById('locationSearch');
+                const location = locationSearch.value.trim();
+                if (!location) return;
+                
+                try {
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location + ', Kigali, Rwanda')}&limit=1`);
+                    const results = await response.json();
+                    
+                    if (results.length > 0) {
+                        const { lat, lon } = results[0];
+                        this.map.setView([lat, lon], 16);
+                    } else {
+                        alert('Location not found in Kigali');
+                    }
+                } catch (error) {
+                    console.error('Search failed:', error);
+                    alert('Search failed. Please try again.');
+                }
+            }
+            
+            useCurrentLocation() {
+                if (!navigator.geolocation) {
+                    alert('Geolocation not supported by this browser');
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude: lat, longitude: lng } = position.coords;
+                        this.map.setView([lat, lng], 15);
+                    },
+                    error => {
+                        alert('Unable to get your location');
+                    }
+                );
+            }
+            
+            applyFilters() {
+                const statusFilter = document.getElementById('statusFilter').value;
+                const typeFilter = document.getElementById('typeFilter').value;
+                const priceFilter = document.getElementById('priceFilter').value;
+                
+                this.filteredProperties = this.properties.filter(property => {
+                    if (statusFilter && property.status !== statusFilter) return false;
+                    
+                    if (typeFilter) {
+                        const propType = property.type.toLowerCase();
+                        if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
+                        if (typeFilter === 'villa' && !propType.includes('villa')) return false;
+                        if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
+                        if (typeFilter === 'house' && !propType.includes('house')) return false;
+                    }
+                    
+                    if (priceFilter) {
+                        const price = parseInt(property.price.replace(/[^0-9]/g, ''));
+                        if (priceFilter === '0-50' && price >= 50) return false;
+                        if (priceFilter === '50-100' && (price < 50 || price >= 100)) return false;
+                        if (priceFilter === '100-200' && (price < 100 || price >= 200)) return false;
+                        if (priceFilter === '200+' && price < 200) return false;
+                    }
+                    
+                    return true;
+                });
+                
+                this.updatePropertyVisibility();
+                this.updateFilterSummary();
+                this.updateStats();
+            }
+            
+            updatePropertyVisibility() {
+                this.propertyMarkers.forEach(item => {
+                    const isVisible = this.filteredProperties.includes(item.property);
+                    if (isVisible && !item.visible) {
+                        item.marker.addTo(this.map);
+                        item.visible = true;
+                    } else if (!isVisible && item.visible) {
+                        this.map.removeLayer(item.marker);
+                        item.visible = false;
+                    }
+                });
+            }
+            
+            updateFilterSummary() {
+                const filterSummary = document.getElementById('filterSummary');
+                const total = this.properties.length;
+                const shown = this.filteredProperties.length;
+                
+                filterSummary.textContent = shown === total ? 
+                    `Showing all ${total} properties` : 
+                    `Showing ${shown} of ${total} properties`;
+            }
+            
+            updateStats() {
+                const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
+                const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
+                
+                const apartments = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('apartment')).length;
+                const houses = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('house')).length;
+                const villas = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('villa') && !p.type.toLowerCase().includes('luxury')).length;
+                const luxury = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('luxury')).length;
+                
+                document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
+                document.getElementById('forSaleCount').textContent = forSale;
+                document.getElementById('forRentCount').textContent = forRent;
+                document.getElementById('apartmentCount').textContent = apartments;
+                document.getElementById('houseCount').textContent = houses;
+                document.getElementById('villaCount').textContent = villas;
+                document.getElementById('luxuryCount').textContent = luxury;
+            }
+            
+            sendMessage() {
+                if (this.isSending) return;
+                this.isSending = true;
+                
+                const chatInput = document.getElementById('chatInput');
+                const message = chatInput.value.trim();
+                if (!message || !this.currentProperty) {
+                    this.isSending = false;
+                    return;
+                }
+                
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML += `
+                    <div class="message user">
+                        <div class="message-content">${this.sanitizeHTML(message)}</div>
+                    </div>`;
+                
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                
+                this.showTyping();
+                setTimeout(() => {
+                    this.hideTyping();
+                    this.generateAIResponse(message, this.currentProperty);
+                    this.isSending = false;
+                }, 1500);
+                
+                this.scrollToBottom();
+            }
+            
+            generateAIResponse(question, property) {
+                const messagesContainer = document.getElementById('chatMessages');
+                let response = '';
+                
+                const lowerQuestion = question.toLowerCase();
+                
+                if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
+                    response = this.generateSchoolResponse(property);
+                } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
+                    response = this.generateHealthResponse(property);
+                } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('investment')) {
+                    response = this.generatePriceResponse(property);
+                } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
+                    response = this.generateFamilyResponse(property);
+                } else {
+                    response = this.generateGeneralResponse(property);
+                }
+                
+                messagesContainer.innerHTML += `
+                    <div class="message ai">
+                        <div class="message-content">${response}</div>
+                    </div>`;
+                
+                this.scrollToBottom();
+            }
+            
+            generateSchoolResponse(property) {
+                this.clearNearbyMarkers();
+                this.showNearbyFacilities(property);
+                
+                let response = `<h4>🎓 Education Analysis for ${property.name}</h4><br>`;
+                
+                if (this.nearbySchools.length > 0) {
+                    response += `Great news for families! Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
+                    
+                    this.nearbySchools.slice(0, 3).forEach(school => {
+                        const walkTime = Math.round(school.distance * 12);
+                        response += `📚 <strong>${school.school_name}</strong><br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Type: ${school.school_status} (${school.curriculum})<br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
+                    });
+                    
+                    response += `This property offers excellent educational access for families with children!`;
+                } else {
+                    response += `No schools found within 2km of this property.<br><br>`;
+                    response += `<strong>Recommendations:</strong><br>`;
+                    response += `• Consider school transport services<br>`;
+                    response += `• Look into private school bus routes<br>`;
+                    response += `• Factor in daily commute time for school runs`;
+                }
+                
+                return response;
+            }
+            
+            generateHealthResponse(property) {
+                this.clearNearbyMarkers();
+                this.showNearbyFacilities(property);
+                
+                let response = `<h4>🏥 Healthcare Analysis for ${property.name}</h4><br>`;
+                
+                if (this.nearbyHospitals.length > 0) {
+                    response += `Excellent healthcare coverage! <strong>${this.nearbyHospitals.length} health facilities</strong> within 3km:<br><br>`;
+                    
+                    this.nearbyHospitals.slice(0, 3).forEach(hospital => {
+                        response += `🏥 <strong>${hospital.facility_name}</strong><br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Type: ${hospital.facility_type}<br>`;
+                        response += `&nbsp;&nbsp;&nbsp;• Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
+                    });
+                    
+                    response += `Emergency response time: approximately 5-15 minutes depending on traffic.`;
+                } else {
+                    response += `Limited healthcare access - no major facilities within 3km.<br><br>`;
+                    response += `<strong>Important considerations:</strong><br>`;
+                    response += `• Emergency response may take 20+ minutes<br>`;
+                    response += `• Consider proximity to main roads for ambulance access<br>`;
+                    response += `• Keep emergency contact numbers and first aid supplies ready`;
+                }
+                
+                return response;
+            }
+            
+            generatePriceResponse(property) {
+                const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
+                let response = `<h4>💰 Investment Analysis for ${property.name}</h4><br>`;
+                
+                response += `<strong>Current Price:</strong> ${property.price}<br>`;
+                response += `<strong>Price per m²:</strong> ${Math.round(priceValue * 1000000 / parseInt(property.area))} RWF/m²<br><br>`;
+                
+                let investmentScore = 60;
+                if (property.district === 'Gasabo') investmentScore += 15;
+                else if (property.district === 'Nyarugenge') investmentScore += 10;
+                else investmentScore += 5;
+                
+                investmentScore += Math.min(this.nearbySchools.length * 5, 15);
+                investmentScore += Math.min(this.nearbyHospitals.length * 3, 10);
+                
+                response += `<strong>Investment Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
+                
+                if (property.status === 'sale') {
+                    const estimatedRent = Math.round(priceValue * 0.5);
+                    response += `<strong>Rental Potential:</strong><br>`;
+                    response += `• Estimated monthly rent: ${estimatedRent}K RWF<br>`;
+                    response += `• Annual yield: ~6%<br><br>`;
+                }
+                
+                response += `<strong>Value Drivers:</strong><br>`;
+                response += `• ${this.nearbySchools.length} schools nearby<br>`;
+                response += `• ${this.nearbyHospitals.length} health facilities<br>`;
+                response += `• ${property.district} district location<br>`;
+                response += `• Built in ${property.yearBuilt} (${2025 - property.yearBuilt} years old)`;
+                
+                return response;
+            }
+            
+            generateFamilyResponse(property) {
+                let response = `<h4>👨‍👩‍👧‍👦 Family Suitability Analysis</h4><br>`;
+                
+                let familyScore = 50;
+                
+                if (property.bedrooms >= 4) familyScore += 20;
+                else if (property.bedrooms >= 3) familyScore += 15;
+                else if (property.bedrooms >= 2) familyScore += 10;
+                
+                if (this.nearbySchools.length >= 3) familyScore += 20;
+                else if (this.nearbySchools.length >= 1) familyScore += 10;
+                
+                if (this.nearbyHospitals.length >= 2) familyScore += 10;
+                else if (this.nearbyHospitals.length >= 1) familyScore += 5;
+                
+                response += `<strong>Family Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
+                
+                response += `<strong>Space Assessment:</strong><br>`;
+                response += `• ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
+                response += `• Total area: ${property.area}<br>`;
+                response += `• Suitable for ${property.bedrooms <= 2 ? 'small families' : property.bedrooms <= 4 ? 'medium families' : 'large families'}<br><br>`;
+                
+                response += `<strong>Child-Friendly Features:</strong><br>`;
+                response += `• Education: ${this.nearbySchools.length} schools within 2km<br>`;
+                response += `• Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
+                response += `• Safety: ${property.amenities && property.amenities.includes('Security') ? 'Secured compound' : 'Check security measures'}<br>`;
+                response += `• Recreation: ${property.amenities && property.amenities.includes('Garden') ? 'Garden space available' : 'Limited outdoor space'}<br><br>`;
+                
+                if (familyScore >= 80) {
+                    response += `<strong>Verdict:</strong> 🏆 Excellent choice for families with children!`;
+                } else if (familyScore >= 60) {
+                    response += `<strong>Verdict:</strong> 👍 Good option for families with some planning.`;
+                } else {
+                    response += `<strong>Verdict:</strong> 💼 Better suited for professionals or couples without children.`;
+                }
+                
+                return response;
+            }
+            
+            generateGeneralResponse(property) {
+                let response = `<h4>🏠 Complete Property Overview</h4><br>`;
+                
+                response += `I can provide detailed insights about <strong>${property.name}</strong>:<br><br>`;
+                
+                response += `<strong>Available Analysis:</strong><br>`;
+                response += `• 🎓 <strong>Education:</strong> ${this.nearbySchools.length} schools within 2km<br>`;
+                response += `• 🏥 <strong>Healthcare:</strong> ${this.nearbyHospitals.length} health facilities within 3km<br>`;
+                response += `• 💰 <strong>Investment potential</strong> and pricing analysis<br>`;
+                response += `• 👨‍👩‍👧‍👦 <strong>Family suitability</strong> assessment<br>`;
+                response += `• 🚗 <strong>Transportation</strong> and accessibility<br><br>`;
+                
+                response += `<strong>Quick Facts:</strong><br>`;
+                response += `• Location: ${property.district} District<br>`;
+                response += `• Size: ${property.bedrooms}BR, ${property.bathrooms}BA, ${property.area}<br>`;
+                response += `• Year Built: ${property.yearBuilt}<br>`;
+                response += `• Status: ${property.status === 'sale' ? 'For Sale' : 'For Rent'}<br><br>`;
+                
+                response += `What specific aspect would you like me to analyze in detail?`;
+                
+                return response;
+            }
+            
+            showTyping() {
+                document.getElementById('typingIndicator').classList.add('show');
+            }
+            
+            hideTyping() {
+                document.getElementById('typingIndicator').classList.remove('show');
+            }
+            
+            scrollToBottom() {
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            sanitizeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+        }
+        
+        let propertyIntel = null;
+        
+        function toggleChat() {
+            const chatContainer = document.getElementById('chatContainer');
+            const toggleIcon = document.getElementById('toggleIcon');
+            chatContainer.classList.toggle('collapsed');
+            
+            if (chatContainer.classList.contains('collapsed')) {
+                toggleIcon.className = 'fas fa-chevron-right';
+            } else {
+                toggleIcon.className = 'fas fa-chevron-left';
+            }
+            
+            if (propertyIntel) propertyIntel.map.invalidateSize();
+        }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            propertyIntel = new PropertyIntelSystem();
+        });
+    </script>
+</body>
+</html>
