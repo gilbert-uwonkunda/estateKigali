@@ -1,9 +1,50 @@
-<!DOCTYPE html>
+
+
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropertyIntel Kigali - Mobile Version</title>
+    <title>PropertyIntel Kigali - Location Intelligence</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -34,8 +75,30 @@
             overflow: hidden;
         }
         
-        .map-container {
+        .main-container {
+            display: flex;
             height: 100vh;
+            position: relative;
+        }
+        
+        .chat-container {
+            width: 400px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-light);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .chat-container.collapsed {
+            width: 60px;
+            overflow: hidden;
+        }
+        
+        .map-container {
+            flex: 1;
             position: relative;
         }
         
@@ -46,44 +109,83 @@
         }
         
         .app-header {
-            padding: 16px;
+            padding: 20px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-bottom: 1px solid var(--glass-light);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .app-title {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: 800;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         
         .toggle-chat-btn {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.25);
             border: none;
             color: #fff;
-            font-size: 1.2rem;
+            padding: 10px 14px;
+            border-radius: 20px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
         
-        .chat-container {
-            position: fixed;
-            top: 0;
-            left: -100%;
-            width: 85%;
-            max-width: 320px;
-            height: 70vh; /* Reduced height for mobile accessibility */
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
-            transition: left 0.3s ease;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
+        .toggle-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
         }
         
-        .chat-container.open {
-            left: 0;
+        .filter-section {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--glass-light);
+            background: rgba(15, 23, 42, 0.8);
+        }
+        
+        .filter-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .filter-select {
+            padding: 8px 12px;
+            border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+        
+        .filter-select option {
+            background: var(--dark);
+            color: #fff;
+        }
+        
+        .filter-summary {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            padding: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
         }
         
         .chat-section {
@@ -96,12 +198,14 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 12px;
+            padding: 15px;
             background: rgba(15, 23, 42, 0.4);
+            min-height: 150px;
+            max-height: calc(100vh - 300px);
         }
         
         .message {
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             animation: fadeIn 0.4s ease-out;
         }
         
@@ -114,48 +218,49 @@
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
             border: 2px solid rgba(99, 102, 241, 0.3);
             border-radius: 16px 16px 16px 4px;
-            padding: 12px 14px;
-            font-size: 0.85rem;
-            line-height: 1.5;
+            padding: 16px 18px;
+            font-size: 0.9rem;
+            line-height: 1.6;
         }
         
         .message.user .message-content {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
             border: 2px solid rgba(16, 185, 129, 0.3);
             border-radius: 16px 16px 4px 16px;
-            padding: 12px 14px;
-            font-size: 0.85rem;
+            padding: 16px 18px;
+            font-size: 0.9rem;
             margin-left: auto;
             max-width: 85%;
         }
         
         .chat-input-container {
-            padding: 12px;
+            padding: 20px;
             background: rgba(15, 23, 42, 0.9);
             border-top: 1px solid var(--glass-light);
         }
         
         .chat-input {
             width: 100%;
-            padding: 10px 14px;
+            padding: 14px 18px;
             border: 2px solid rgba(255,255,255,0.15);
             border-radius: 20px;
             background: rgba(255,255,255,0.08);
             color: #fff;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             resize: none;
             outline: none;
             transition: all 0.3s ease;
-            max-height: 80px;
+            max-height: 100px;
         }
         
         .chat-input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
         
         .send-btn {
-            margin-top: 8px;
-            padding: 10px 20px;
+            margin-top: 10px;
+            padding: 12px 24px;
             border-radius: 20px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: #fff;
@@ -163,6 +268,12 @@
             cursor: pointer;
             width: 100%;
             font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
         }
         
         .send-btn:disabled {
@@ -170,137 +281,156 @@
             cursor: not-allowed;
         }
         
-        .map-controls {
+        .map-search-controls {
             position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 20px;
+            right: 20px;
             z-index: 1000;
             display: flex;
-            gap: 8px;
-            width: calc(100% - 20px);
-            max-width: 300px;
+            gap: 10px;
         }
         
         .search-box {
-            flex: 1;
             background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             overflow: hidden;
             display: flex;
             align-items: center;
+            min-width: 300px;
         }
         
         .search-input {
             flex: 1;
-            padding: 10px 12px;
+            padding: 14px 16px;
             border: none;
             background: transparent;
             color: #333;
-            font-size: 14px;
+            font-size: 15px;
             outline: none;
         }
         
         .search-btn {
-            padding: 10px 12px;
+            padding: 14px 16px;
             border: none;
             background: transparent;
             color: var(--primary);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
+            transition: all 0.3s ease;
         }
         
-        .location-btn, .filter-btn {
+        .search-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .location-btn {
             background: var(--primary);
             border: none;
             color: white;
-            padding: 10px 12px;
-            border-radius: 8px;
+            padding: 14px 16px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
         }
         
-        .home-btn {
+        .location-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .data-panels {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--primary);
-            border: none;
-            color: white;
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             z-index: 1000;
         }
         
-        .filter-panel {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            width: 85%;
-            max-width: 280px;
-            height: 70vh; /* Reduced height for mobile accessibility */
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            box-shadow: -4px 0 20px rgba(0,0,0,0.3);
-            transition: right 0.3s ease;
-            z-index: 2000;
-            padding: 16px;
+        .facilities-panels {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
             display: flex;
             flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
         }
         
-        .filter-panel.open {
-            right: 0;
+        .data-panel {
+            background: var(--glass);
+            border: 1px solid var(--glass-light);
+            border-radius: 10px;
+            padding: 12px 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+            min-width: 140px;
+            max-width: 200px;
         }
         
-        .filter-header {
+        .panel-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .panel-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .panel-subtitle {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+        }
+        
+        .panel-breakdown {
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+        
+        .breakdown-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+            margin: 3px 0;
+            padding: 2px 0;
         }
         
-        .filter-title {
-            font-size: 1.2rem;
+        .breakdown-sale {
+            color: var(--danger);
             font-weight: 600;
         }
         
-        .filter-close-btn {
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-        
-        .filter-option {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        
-        .filter-option input {
-            margin-right: 8px;
-        }
-        
-        .filter-option label {
-            font-size: 0.9rem;
-        }
-        
-        .apply-filter-btn {
-            margin-top: auto;
-            padding: 10px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+        .breakdown-rent {
+            color: var(--success);
             font-weight: 600;
+        }
+        
+        .breakdown-type {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+        
+        .properties-panel .panel-title {
+            color: var(--primary);
+        }
+        
+        .schools-panel .panel-title {
+            color: var(--education);
+        }
+        
+        .hospitals-panel .panel-title {
+            color: var(--success);
         }
         
         .property-marker {
@@ -313,6 +443,7 @@
             color: var(--primary);
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
             position: relative;
             white-space: nowrap;
             text-align: center;
@@ -327,7 +458,18 @@
         
         .property-marker:hover {
             transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
             opacity: 1;
+            z-index: 1000;
+        }
+        
+        .property-marker.selected {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+            opacity: 1;
+            z-index: 1001;
         }
         
         .property-marker.sale {
@@ -335,23 +477,87 @@
             color: var(--danger);
         }
         
+        .property-marker.sale.selected {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .property-marker.sale::after {
+            content: 'SALE';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--danger);
+            color: white;
+            font-size: 7px;
+            font-weight: 800;
+            padding: 1px 3px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+        
         .property-marker.rent {
             border-color: var(--success);
             color: var(--success);
         }
         
+        .property-marker.rent.selected {
+            background: var(--success);
+            color: white;
+        }
+        
+        .property-marker.rent::after {
+            content: 'RENT';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--success);
+            color: white;
+            font-size: 7px;
+            font-weight: 800;
+            padding: 1px 3px;
+            border-radius: 3px;
+            line-height: 1;
+        }
+        
         .property-marker.luxury {
             border-color: var(--warning);
             color: var(--warning);
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            background: linear-gradient(135deg, #fff, #fffbeb);
         }
         
-        .school-marker, .hospital-marker {
+        .property-marker.luxury.selected {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .property-marker.luxury::before {
+            content: '⭐';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            background: var(--warning);
+            color: white;
+            font-size: 8px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        
+        .school-marker {
             width: 28px !important;
             height: 28px !important;
+            background: var(--education);
             border: 3px solid white;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -359,72 +565,201 @@
             box-sizing: border-box !important;
         }
         
-        .school-marker {
-            background: var(--education);
+        .school-marker:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 25px rgba(139, 92, 246, 0.6);
         }
         
         .hospital-marker {
+            width: 28px !important;
+            height: 28px !important;
             background: var(--success);
+            border: 3px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 14px;
+            box-sizing: border-box !important;
         }
         
-        .proximity-info, .education-info {
+        .hospital-marker:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+        }
+        
+        .property-info {
             background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.08));
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
             border-left: 4px solid var(--primary);
         }
         
+        .proximity-info {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08));
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 4px solid var(--success);
+        }
+        
+        .education-info {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(124, 58, 237, 0.08));
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 4px solid var(--education);
+        }
+        
         .facility-list {
-            margin-top: 8px;
+            margin-top: 12px;
         }
         
         .facility-item {
             display: flex;
             justify-content: space-between;
-            padding: 6px 8px;
-            margin: 4px 0;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 6px 0;
             background: rgba(255,255,255,0.05);
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .facility-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(4px);
         }
         
         .facility-name {
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
         
         .facility-distance {
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.8rem;
+            font-weight: 500;
         }
         
-        .leaflet-popup-content {
-            font-size: 0.85rem;
-            line-height: 1.4;
+        .leaflet-tooltip.compact-tooltip {
+            background: var(--glass) !important;
+            border: 1px solid var(--glass-light) !important;
+            border-radius: 6px !important;
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 500 !important;
+            padding: 6px 8px !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            max-width: 200px !important;
         }
         
-        .leaflet-popup-content p {
-            margin: 4px 0;
+        .leaflet-tooltip {
+            background: var(--glass) !important;
+            border: 1px solid var(--glass-light) !important;
+            border-radius: 8px !important;
+            color: #ffffff !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            padding: 8px 12px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
         }
         
-        .leaflet-popup-content button {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .chat-container {
+                width: 100%;
+                height: 45vh;
+                order: 2;
+                border-right: none;
+                border-top: 1px solid var(--glass-light);
+            }
+            
+            .chat-container.collapsed {
+                height: 60px;
+            }
+            
+            .map-container {
+                height: 55vh;
+                order: 1;
+            }
+            
+            .data-panels {
+                flex-direction: column;
+                bottom: 10px;
+                left: 10px;
+                gap: 6px;
+            }
+            
+            .facilities-panels {
+                flex-direction: column;
+                bottom: 10px;
+                right: 10px;
+                gap: 6px;
+            }
+            
+            .data-panel {
+                padding: 10px 12px;
+                min-width: 120px;
+                max-width: 160px;
+            }
+            
+            .map-search-controls {
+                top: 10px;
+                right: 10px;
+                left: unset;
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .search-box {
+                min-width: unset;
+            }
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 3px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        .welcome-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
         }
         
         .typing-indicator {
             display: none;
-            padding: 8px 12px;
+            padding: 10px 20px;
             color: var(--primary);
             font-style: italic;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
         
         .typing-indicator.show {
@@ -442,190 +777,152 @@
             60% { content: 'AI analyzing..'; }
             80%, 100% { content: 'AI analyzing...'; }
         }
-        
-        .chat-messages::-webkit-scrollbar {
-            width: 4px;
-        }
-        
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 2px;
-        }
-        
-        .flash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            text-align: center;
-            padding: 20px;
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-        
-        .flash-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .flash-screen h1 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-        }
-        
-        .flash-screen p {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            line-height: 1.5;
-        }
-        
-        .flash-screen button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
-    <div class="flash-screen" id="flashScreen">
-        <h1>Welcome to PropertyIntel Kigali</h1>
-        <p>Explore properties in Kigali with ease.</p>
-        <p>Use the search bar to find locations, tap markers to view property details, or use the filter button to narrow down by type and price.</p>
-        <p>Click "Ask more questions" on a property to chat with our AI for insights!</p>
-        <button onclick="hideFlashScreen()">Get Started</button>
-    </div>
-    
-    <div class="map-container">
-        <div class="map-controls">
-            <div class="search-box">
-                <input type="text" id="locationSearch" class="search-input" 
-                       placeholder="Search in Kigali..." aria-label="Search location">
-                <button id="searchBtn" class="search-btn" aria-label="Search">
-                    <i class="fas fa-search"></i>
+    <div class="main-container">
+        <div class="chat-container" id="chatContainer">
+            <div class="app-header">
+                <div class="app-title">PropertyIntel Kigali</div>
+                <button class="toggle-chat-btn" onclick="toggleChat()" aria-label="Toggle chat">
+                    <i class="fas fa-chevron-left" id="toggleIcon"></i>
                 </button>
             </div>
-            <button id="locationBtn" class="location-btn" aria-label="Current location">
-                <i class="fas fa-crosshairs"></i>
-            </button>
-            <button id="filterBtn" class="filter-btn" aria-label="Filter properties">
-                <i class="fas fa-filter"></i>
-            </button>
-        </div>
-        
-        <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
-            <i class="fas fa-home"></i>
-        </button>
-        
-        <div id="map"></div>
-    </div>
-    
-    <div class="chat-container" id="chatContainer">
-        <div class="app-header">
-            <div class="app-title">PropertyIntel Kigali</div>
-            <button class="toggle-chat-btn" onclick="closeChat()" aria-label="Close chat">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="chat-section">
-            <div class="chat-messages" id="chatMessages"></div>
-            <div class="typing-indicator" id="typingIndicator"></div>
             
-            <div class="chat-input-container">
-                <textarea class="chat-input" id="chatInput" 
-                          placeholder="Ask about this property..." 
-                          rows="1" aria-label="Ask about property"></textarea>
-                <button class="send-btn" id="sendBtn" aria-label="Send message">
-                    <i class="fas fa-paper-plane"></i> Send
-                </button>
+            <div class="filter-section">
+                <div class="filter-title">
+                    <i class="fas fa-filter"></i> Property Filters
+                </div>
+                <div class="filter-grid">
+                    <select id="statusFilter" class="filter-select" aria-label="Filter by status">
+                        <option value="">All Status</option>
+                        <option value="sale">For Sale</option>
+                        <option value="rent">For Rent</option>
+                    </select>
+                    
+                    <select id="typeFilter" class="filter-select" aria-label="Filter by type">
+                        <option value="">All Types</option>
+                        <option value="villa">Villa</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="house">House</option>
+                        <option value="luxury">Luxury</option>
+                    </select>
+                    
+                    <select id="priceFilter" class="filter-select" aria-label="Filter by price">
+                        <option value="">All Prices</option>
+                        <option value="0-50">Under 50M RWF</option>
+                        <option value="50-100">50M - 100M RWF</option>
+                        <option value="100-200">100M - 200M RWF</option>
+                        <option value="200+">Above 200M RWF</option>
+                    </select>
+                </div>
+                
+                <div class="filter-summary" id="filterSummary">
+                    Showing all properties
+                </div>
+            </div>
+            
+            <div class="chat-section">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="welcome-title">Welcome to PropertyIntel!</div>
+                        Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typingIndicator"></div>
+                
+                <div class="chat-input-container">
+                    <textarea class="chat-input" id="chatInput" 
+                              placeholder="Select a property to start asking questions..." 
+                              rows="1" disabled aria-label="Ask about property"></textarea>
+                    <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="filter-panel" id="filterPanel">
-        <div class="filter-header">
-            <div class="filter-title">Filter Properties</div>
-            <button class="filter-close-btn" onclick="closeFilterPanel()" aria-label="Close filter">
-                <i class="fas fa-times"></i>
-            </button>
+        
+        <div class="map-container">
+            <div class="map-search-controls">
+                <div class="search-box">
+                    <input type="text" id="locationSearch" class="search-input" 
+                           placeholder="Search location in Kigali..." aria-label="Search location">
+                    <button id="searchBtn" class="search-btn" aria-label="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <button id="locationBtn" class="location-btn" aria-label="Use current location">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+            </div>
+            
+            <div class="data-panels">
+                <div class="data-panel properties-panel">
+                    <div class="panel-title">
+                        <i class="fas fa-home"></i> Properties
+                    </div>
+                    <div class="panel-value" id="propertiesCount">20</div>
+                    <div class="panel-subtitle">Available listings</div>
+                    <div class="panel-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-sale">For Sale:</span>
+                            <span id="forSaleCount">0</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-rent">For Rent:</span>
+                            <span id="forRentCount">0</span>
+                        </div>
+                        <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0; padding-top: 4px;">
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Apartments:</span>
+                                <span id="apartmentCount">0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Houses:</span>
+                                <span id="houseCount">0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Villas:</span>
+                                <span id="villaCount">0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span class="breakdown-type">Luxury:</span>
+                                <span id="luxuryCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="facilities-panels">
+                <div class="data-panel schools-panel">
+                    <div class="panel-title">
+                        <i class="fas fa-graduation-cap"></i> Schools
+                    </div>
+                    <div class="panel-value" id="schoolsCount">0</div>
+                    <div class="panel-subtitle">Educational facilities</div>
+                </div>
+                
+                <div class="data-panel hospitals-panel">
+                    <div class="panel-title">
+                        <i class="fas fa-hospital"></i> Hospitals
+                    </div>
+                    <div class="panel-value" id="hospitalsCount">0</div>
+                    <div class="panel-subtitle">Health facilities</div>
+                </div>
+            </div>
+            
+            <div id="map"></div>
         </div>
-        <div class="filter-option">
-            <input type="checkbox" id="saleFilter" checked>
-            <label for="saleFilter">For Sale</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="rentFilter" checked>
-            <label for="rentFilter">For Rent</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="luxuryFilter" checked>
-            <label for="luxuryFilter">Luxury</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="priceLowFilter" checked>
-            <label for="priceLowFilter">Under 50M RWF</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="priceMidFilter" checked>
-            <label for="priceMidFilter">50M - 150M RWF</label>
-        </div>
-        <div class="filter-option">
-            <input type="checkbox" id="priceHighFilter" checked>
-            <label for="priceHighFilter">Over 150M RWF</label>
-        </div>
-        <button class="apply-filter-btn" onclick="applyFilters()">Apply Filters</button>
     </div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-            return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-                try {
-                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                    var firstSheetName = workbook.SheetNames[0];
-                    var worksheet = workbook.Sheets[firstSheetName];
-                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                    var filteredData = jsonData.filter(row => row.some(filledCell));
-                    var headerRowIndex = filteredData.findIndex((row, index) =>
-                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                    );
-                    if (headerRowIndex === -1 || headerRowIndex > 25) {
-                        headerRowIndex = 0;
-                    }
-                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                    return csv;
-                } catch (e) {
-                    console.error(e);
-                    return "";
-                }
-            }
-            return gk_fileData[filename] || "";
-        }
-        
         class PropertyIntelSystem {
             constructor() {
                 this.map = null;
                 this.currentProperty = null;
+                this.selectedMarker = null;
                 this.facilities = [];
                 this.schools = [];
                 this.propertyMarkers = [];
@@ -633,6 +930,7 @@
                 this.schoolMarkers = [];
                 this.nearbyHospitals = [];
                 this.nearbySchools = [];
+                this.filteredProperties = [];
                 this.isSending = false;
                 
                 this.properties = [
@@ -666,7 +964,7 @@
                 await this.loadSchools();
                 this.initializeMap();
                 this.setupEventListeners();
-                this.showFlashScreen();
+                this.updateStats();
             }
             
             async loadFacilities() {
@@ -688,6 +986,7 @@
                             sector: feature.attributes.sector || 'N/A',
                             ownership: feature.attributes.ownership || 'N/A'
                         }));
+                        console.log('Loaded health facilities:', this.facilities.length);
                     }
                 } catch (error) {
                     console.error('Failed to load facilities:', error);
@@ -697,6 +996,8 @@
                         { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
                     ];
                 }
+                
+                document.getElementById('hospitalsCount').textContent = this.facilities.length;
             }
             
             async loadSchools() {
@@ -719,6 +1020,7 @@
                             lng: feature.attributes.longitude,
                             established: feature.attributes.establishm || 'N/A'
                         }));
+                        console.log('Loaded schools:', this.schools.length);
                     }
                 } catch (error) {
                     console.error('Failed to load schools:', error);
@@ -728,6 +1030,8 @@
                         { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
                     ];
                 }
+                
+                document.getElementById('schoolsCount').textContent = this.schools.length;
             }
             
             initializeMap() {
@@ -753,6 +1057,7 @@
             
             addProperties() {
                 this.propertyMarkers = [];
+                this.filteredProperties = [...this.properties];
                 
                 this.properties.forEach((prop) => {
                     const isLuxury = prop.type.toLowerCase().includes('luxury');
@@ -764,39 +1069,42 @@
                         icon: L.divIcon({
                             className: markerClass,
                             html: priceLabel,
-                            iconSize: [60, 24],
-                            iconAnchor: [30, 12],
-                            popupAnchor: [0, -12]
+                            iconSize: [60, 24], // Fixed size for consistency
+                            iconAnchor: [30, 24], // Anchor at bottom center to prevent shifting
+                            popupAnchor: [0, -24] // Position popup above marker
                         })
                     });
                     
-                    const popupContent = `
-                        <div>
-                            <h3>${prop.name}</h3>
-                            <p><strong>Type:</strong> ${prop.type}</p>
-                            <p><strong>Price:</strong> ${prop.price}</p>
-                            <p><strong>Bedrooms:</strong> ${prop.bedrooms}</p>
-                            <p><strong>Bathrooms:</strong> ${prop.bathrooms}</p>
-                            <p><strong>Area:</strong> ${prop.area}</p>
-                            <p><strong>District:</strong> ${prop.district}</p>
-                            <p><strong>Amenities:</strong> ${prop.amenities.join(', ')}</p>
-                            <button onclick="propertyIntel.openChat(${prop.id})">Ask more questions</button>
-                        </div>
+                    const tooltipContent = `
+                        <div style="font-weight: 600; margin-bottom: 4px; font-size: 13px;">${prop.name}</div>
+                        <div style="margin-bottom: 2px; font-size: 12px;">📍 ${prop.district} • ${prop.bedrooms}BR</div>
+                        <div style="font-weight: 600; color: #6366f1; font-size: 13px;">💰 ${prop.price}</div>
                     `;
                     
-                    marker.bindPopup(popupContent);
+                    marker.bindTooltip(tooltipContent, { 
+                        direction: 'top', 
+                        offset: [0, -24], // Align tooltip above marker
+                        permanent: false,
+                        sticky: false,
+                        className: 'compact-tooltip'
+                    });
                     
+                    marker.on('click', () => this.selectProperty(prop, marker));
                     marker.addTo(this.map);
                     
                     this.propertyMarkers.push({
                         marker: marker,
-                        property: prop
+                        property: prop,
+                        visible: true
                     });
                 });
+                
+                this.updateFilterSummary();
             }
             
             prepareHospitals() {
-                this.hospitalMarkers = this.facilities.map(facility => {
+                this.hospitalMarkers = [];
+                this.facilities.forEach(facility => {
                     const marker = L.marker([facility.lat, facility.long], {
                         icon: L.divIcon({
                             className: 'hospital-marker',
@@ -820,12 +1128,13 @@
                         sticky: true
                     });
                     
-                    return marker;
+                    this.hospitalMarkers.push(marker);
                 });
             }
             
             prepareSchools() {
-                this.schoolMarkers = this.schools.map(school => {
+                this.schoolMarkers = [];
+                this.schools.forEach(school => {
                     const marker = L.marker([school.lat, school.lng], {
                         icon: L.divIcon({
                             className: 'school-marker',
@@ -850,67 +1159,131 @@
                         sticky: true
                     });
                     
-                    return marker;
+                    this.schoolMarkers.push(marker);
                 });
             }
             
-            showFlashScreen() {
-                const flashScreen = document.getElementById('flashScreen');
-                setTimeout(() => {
-                    flashScreen.classList.add('hidden');
-                }, 15000);
+            selectProperty(property, marker) {
+                if (this.selectedMarker) {
+                    const prevElement = this.selectedMarker.getElement();
+                    if (prevElement) {
+                        prevElement.classList.remove('selected');
+                    }
+                }
+                
+                this.currentProperty = property;
+                this.selectedMarker = marker;
+                
+                const markerElement = marker.getElement();
+                if (markerElement) {
+                    markerElement.classList.add('selected');
+                }
+                
+                document.getElementById('chatInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('chatInput').placeholder = `Ask about ${property.name}...`;
+                
+                this.analyzeProperty(property);
+                this.map.setView([property.lat, property.lng], 15);
             }
             
-            openChat(id) {
-                const prop = this.properties.find(p => p.id === id);
-                if (!prop) return;
+            analyzeProperty(property) {
+                this.clearNearbyMarkers();
+                this.analyzeProximity(property);
+                this.displayPropertyAnalysis(property);
+                this.showNearbyFacilities(property);
+            }
+            
+            clearNearbyMarkers() {
+                this.hospitalMarkers.forEach(marker => {
+                    if (this.map.hasLayer(marker)) {
+                        this.map.removeLayer(marker);
+                    }
+                });
                 
-                this.currentProperty = prop;
-                this.analyzeProximity(prop);
-                this.map.closePopup();
-                this.map.setView([prop.lat, prop.lng], 15);
+                this.schoolMarkers.forEach(marker => {
+                    if (this.map.hasLayer(marker)) {
+                        this.map.removeLayer(marker);
+                    }
+                });
+            }
+            
+            showNearbyFacilities(property) {
+                this.nearbyHospitals.forEach(hospital => {
+                    const marker = this.hospitalMarkers.find(m => {
+                        const markerLatLng = m.getLatLng();
+                        return Math.abs(markerLatLng.lat - hospital.lat) < 0.0001 && 
+                               Math.abs(markerLatLng.lng - hospital.long) < 0.0001;
+                    });
+                    if (marker) {
+                        marker.addTo(this.map);
+                    }
+                });
                 
-                const chatContainer = document.getElementById('chatContainer');
-                chatContainer.classList.add('open');
-                
-                const chatInput = document.getElementById('chatInput');
-                const sendBtn = document.getElementById('sendBtn');
-                chatInput.disabled = false;
-                sendBtn.disabled = false;
-                chatInput.placeholder = `Ask about ${prop.name}...`;
-                chatInput.focus();
-                
-                // Show initial proximity analysis
-                this.displayProximityAnalysis(prop);
+                this.nearbySchools.forEach(school => {
+                    const marker = this.schoolMarkers.find(m => {
+                        const markerLatLng = m.getLatLng();
+                        return Math.abs(markerLatLng.lat - school.lat) < 0.0001 && 
+                               Math.abs(markerLatLng.lng - school.lng) < 0.0001;
+                    });
+                    if (marker) {
+                        marker.addTo(this.map);
+                    }
+                });
             }
             
             analyzeProximity(property) {
-                this.nearbyHospitals = this.facilities
-                    .map(facility => ({
-                        ...facility,
-                        distance: L.latLng(property.lat, property.lng).distanceTo([facility.lat, facility.long]) / 1000
-                    }))
-                    .filter(f => f.distance <= 2) // Reduced to 2km for health facilities
-                    .sort((a, b) => a.distance - b.distance);
+                this.nearbyHospitals = [];
+                this.facilities.forEach(facility => {
+                    const distance = L.latLng(property.lat, property.lng)
+                        .distanceTo([facility.lat, facility.long]) / 1000;
+                    
+                    if (distance <= 3) {
+                        this.nearbyHospitals.push({
+                            ...facility,
+                            distance: distance
+                        });
+                    }
+                });
+                this.nearbyHospitals.sort((a, b) => a.distance - b.distance);
                 
-                this.nearbySchools = this.schools
-                    .map(school => ({
-                        ...school,
-                        distance: L.latLng(property.lat, property.lng).distanceTo([school.lat, school.lng]) / 1000
-                    }))
-                    .filter(s => s.distance <= 1.5) // Reduced to 1.5km for schools
-                    .sort((a, b) => a.distance - b.distance);
+                this.nearbySchools = [];
+                this.schools.forEach(school => {
+                    const distance = L.latLng(property.lat, property.lng)
+                        .distanceTo([school.lat, school.lng]) / 1000;
+                    
+                    if (distance <= 2) {
+                        this.nearbySchools.push({
+                            ...school,
+                            distance: distance
+                        });
+                    }
+                });
+                this.nearbySchools.sort((a, b) => a.distance - b.distance);
             }
             
-            displayProximityAnalysis(property) {
+            displayPropertyAnalysis(property) {
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.innerHTML = '';
+                
+                let propertyHtml = `
+                    <div class="property-info">
+                        <h3 style="margin-bottom: 8px; color: #6366f1;">${property.name}</h3>
+                        <div style="margin-bottom: 6px;"><strong>Type:</strong> ${property.type}</div>
+                        <div style="margin-bottom: 6px;"><strong>Price:</strong> ${property.price}</div>
+                        <div style="margin-bottom: 6px;"><strong>Size:</strong> ${property.bedrooms}BR • ${property.bathrooms}BA • ${property.area}</div>
+                        <div style="margin-bottom: 6px;"><strong>Built:</strong> ${property.yearBuilt}</div>
+                        <div style="margin-bottom: 6px;"><strong>District:</strong> ${property.district}</div>
+                        <div><strong>Amenities:</strong> ${property.amenities ? property.amenities.join(', ') : 'Standard'}</div>
+                    </div>`;
+                
+                messagesContainer.innerHTML += propertyHtml;
                 
                 if (this.nearbySchools.length > 0) {
                     let schoolHtml = `
                         <div class="education-info">
                             <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 1.5km</p>
+                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 2km</p>
                             <div class="facility-list">`;
                     
                     this.nearbySchools.slice(0, 5).forEach(school => {
@@ -927,7 +1300,7 @@
                     messagesContainer.innerHTML += `
                         <div class="education-info">
                             <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
-                            <p>No schools within 1.5km walking distance.</p>
+                            <p>No schools within 2km walking distance. Consider transportation needs for school-age children.</p>
                         </div>`;
                 }
                 
@@ -935,7 +1308,7 @@
                     let hospitalHtml = `
                         <div class="proximity-info">
                             <h4 style="margin-bottom: 8px;">🏥 Healthcare Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 2km</p>
+                            <p style="margin-bottom: 8px;">${this.nearbyHospitals.length} health facilities within 3km</p>
                             <div class="facility-list">`;
                     
                     this.nearbyHospitals.slice(0, 5).forEach(hospital => {
@@ -952,79 +1325,28 @@
                     messagesContainer.innerHTML += `
                         <div class="proximity-info">
                             <h4 style="margin-bottom: 8px;">⚠️ Healthcare Access</h4>
-                            <p>No hospitals within 2km radius.</p>
+                            <p>No hospitals within 3km radius. Emergency services may take longer to reach this location.</p>
                         </div>`;
                 }
                 
                 this.scrollToBottom();
             }
             
-            clearNearbyMarkers() {
-                this.hospitalMarkers.forEach(marker => {
-                    if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
-                });
-                this.schoolMarkers.forEach(marker => {
-                    if (this.map.hasLayer(marker)) this.map.removeLayer(marker);
-                });
-            }
-            
-            showNearbyFacilities(property) {
-                this.nearbyHospitals.forEach((hospital, index) => {
-                    this.hospitalMarkers[index].addTo(this.map);
-                });
-                this.nearbySchools.forEach((school, index) => {
-                    this.schoolMarkers[index].addTo(this.map);
-                });
-            }
-            
             focusLocation(lat, lng) {
                 this.map.setView([lat, lng], 16);
-                document.getElementById('chatContainer').classList.remove('open');
             }
             
             handleMapClick(e) {
                 this.clearNearbyMarkers();
-                document.getElementById('filterPanel').classList.remove('open');
-            }
-            
-            resetMapView() {
-                this.map.setView([-1.9441, 30.0619], 11);
-                this.clearNearbyMarkers();
-                this.applyFilters();
-            }
-            
-            applyFilters() {
-                const saleFilter = document.getElementById('saleFilter').checked;
-                const rentFilter = document.getElementById('rentFilter').checked;
-                const luxuryFilter = document.getElementById('luxuryFilter').checked;
-                const priceLowFilter = document.getElementById('priceLowFilter').checked;
-                const priceMidFilter = document.getElementById('priceMidFilter').checked;
-                const priceHighFilter = document.getElementById('priceHighFilter').checked;
                 
-                this.propertyMarkers.forEach(({ marker, property }) => {
-                    const isLuxury = property.type.toLowerCase().includes('luxury');
-                    const priceValue = parseInt(property.price.replace(/[^0-9]/g, '')) * 1000000;
-                    
-                    const showByType = 
-                        (saleFilter && property.status === 'sale' && !isLuxury) ||
-                        (rentFilter && property.status === 'rent' && !isLuxury) ||
-                        (luxuryFilter && isLuxury);
-                    
-                    const showByPrice = 
-                        (priceLowFilter && priceValue < 50000000) ||
-                        (priceMidFilter && priceValue >= 50000000 && priceValue <= 150000000) ||
-                        (priceHighFilter && priceValue > 150000000);
-                    
-                    const showMarker = showByType && showByPrice;
-                    
-                    if (showMarker && !this.map.hasLayer(marker)) {
-                        marker.addTo(this.map);
-                    } else if (!showMarker && this.map.hasLayer(marker)) {
-                        this.map.removeLayer(marker);
-                    }
-                });
-                
-                document.getElementById('filterPanel').classList.remove('open');
+                if (!this.currentProperty) {
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.innerHTML = `
+                        <div class="welcome-message">
+                            <div class="welcome-title">Welcome to PropertyIntel!</div>
+                            Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                        </div>`;
+                }
             }
             
             setupEventListeners() {
@@ -1033,12 +1355,13 @@
                 const locationSearch = document.getElementById('locationSearch');
                 const searchBtn = document.getElementById('searchBtn');
                 const locationBtn = document.getElementById('locationBtn');
-                const homeBtn = document.getElementById('homeBtn');
-                const filterBtn = document.getElementById('filterBtn');
+                const statusFilter = document.getElementById('statusFilter');
+                const typeFilter = document.getElementById('typeFilter');
+                const priceFilter = document.getElementById('priceFilter');
                 
                 chatInput.addEventListener('input', function() {
                     this.style.height = 'auto';
-                    this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+                    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
                 });
                 
                 chatInput.addEventListener('keypress', e => {
@@ -1056,10 +1379,10 @@
                 
                 searchBtn.addEventListener('click', () => this.performLocationSearch());
                 locationBtn.addEventListener('click', () => this.useCurrentLocation());
-                homeBtn.addEventListener('click', () => this.resetMapView());
-                filterBtn.addEventListener('click', () => {
-                    document.getElementById('filterPanel').classList.toggle('open');
-                });
+                
+                statusFilter.addEventListener('change', () => this.applyFilters());
+                typeFilter.addEventListener('change', () => this.applyFilters());
+                priceFilter.addEventListener('change', () => this.applyFilters());
             }
             
             async performLocationSearch() {
@@ -1078,13 +1401,14 @@
                         alert('Location not found in Kigali');
                     }
                 } catch (error) {
+                    console.error('Search failed:', error);
                     alert('Search failed. Please try again.');
                 }
             }
             
             useCurrentLocation() {
                 if (!navigator.geolocation) {
-                    alert('Geolocation not supported');
+                    alert('Geolocation not supported by this browser');
                     return;
                 }
                 
@@ -1094,18 +1418,95 @@
                         this.map.setView([lat, lng], 15);
                     },
                     error => {
-                        alert('Unable to get location');
+                        alert('Unable to get your location');
                     }
                 );
             }
             
+            applyFilters() {
+                const statusFilter = document.getElementById('statusFilter').value;
+                const typeFilter = document.getElementById('typeFilter').value;
+                const priceFilter = document.getElementById('priceFilter').value;
+                
+                this.filteredProperties = this.properties.filter(property => {
+                    if (statusFilter && property.status !== statusFilter) return false;
+                    
+                    if (typeFilter) {
+                        const propType = property.type.toLowerCase();
+                        if (typeFilter === 'luxury' && !propType.includes('luxury')) return false;
+                        if (typeFilter === 'villa' && !propType.includes('villa')) return false;
+                        if (typeFilter === 'apartment' && !propType.includes('apartment')) return false;
+                        if (typeFilter === 'house' && !propType.includes('house')) return false;
+                    }
+                    
+                    if (priceFilter) {
+                        const price = parseInt(property.price.replace(/[^0-9]/g, ''));
+                        if (priceFilter === '0-50' && price >= 50) return false;
+                        if (priceFilter === '50-100' && (price < 50 || price >= 100)) return false;
+                        if (priceFilter === '100-200' && (price < 100 || price >= 200)) return false;
+                        if (priceFilter === '200+' && price < 200) return false;
+                    }
+                    
+                    return true;
+                });
+                
+                this.updatePropertyVisibility();
+                this.updateFilterSummary();
+                this.updateStats();
+            }
+            
+            updatePropertyVisibility() {
+                this.propertyMarkers.forEach(item => {
+                    const isVisible = this.filteredProperties.includes(item.property);
+                    if (isVisible && !item.visible) {
+                        item.marker.addTo(this.map);
+                        item.visible = true;
+                    } else if (!isVisible && item.visible) {
+                        this.map.removeLayer(item.marker);
+                        item.visible = false;
+                    }
+                });
+            }
+            
+            updateFilterSummary() {
+                const filterSummary = document.getElementById('filterSummary');
+                const total = this.properties.length;
+                const shown = this.filteredProperties.length;
+                
+                filterSummary.textContent = shown === total ? 
+                    `Showing all ${total} properties` : 
+                    `Showing ${shown} of ${total} properties`;
+            }
+            
+            updateStats() {
+                const forSale = this.filteredProperties.filter(p => p.status === 'sale').length;
+                const forRent = this.filteredProperties.filter(p => p.status === 'rent').length;
+                
+                const apartments = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('apartment')).length;
+                const houses = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('house')).length;
+                const villas = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('villa') && !p.type.toLowerCase().includes('luxury')).length;
+                const luxury = this.filteredProperties.filter(p => 
+                    p.type.toLowerCase().includes('luxury')).length;
+                
+                document.getElementById('propertiesCount').textContent = this.filteredProperties.length;
+                document.getElementById('forSaleCount').textContent = forSale;
+                document.getElementById('forRentCount').textContent = forRent;
+                document.getElementById('apartmentCount').textContent = apartments;
+                document.getElementById('houseCount').textContent = houses;
+                document.getElementById('villaCount').textContent = villas;
+                document.getElementById('luxuryCount').textContent = luxury;
+            }
+            
             sendMessage() {
-                if (this.isSending || !this.currentProperty) return;
+                if (this.isSending) return;
                 this.isSending = true;
                 
                 const chatInput = document.getElementById('chatInput');
                 const message = chatInput.value.trim();
-                if (!message) {
+                if (!message || !this.currentProperty) {
                     this.isSending = false;
                     return;
                 }
@@ -1162,7 +1563,7 @@
                 let response = `<h4>🎓 Education Analysis for ${property.name}</h4><br>`;
                 
                 if (this.nearbySchools.length > 0) {
-                    response += `Found <strong>${this.nearbySchools.length} schools</strong> within 1.5km:<br><br>`;
+                    response += `Great news for families! Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
                     
                     this.nearbySchools.slice(0, 3).forEach(school => {
                         const walkTime = Math.round(school.distance * 12);
@@ -1170,9 +1571,14 @@
                         response += `&nbsp;&nbsp;&nbsp;• Type: ${school.school_status} (${school.curriculum})<br>`;
                         response += `&nbsp;&nbsp;&nbsp;• Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
                     });
+                    
+                    response += `This property offers excellent educational access for families with children!`;
                 } else {
-                    response += `No schools within 1.5km.<br><br>`;
-                    response += `<strong>Recommendations:</strong><br>• Consider transport for school.`;
+                    response += `No schools found within 2km of this property.<br><br>`;
+                    response += `<strong>Recommendations:</strong><br>`;
+                    response += `• Consider school transport services<br>`;
+                    response += `• Look into private school bus routes<br>`;
+                    response += `• Factor in daily commute time for school runs`;
                 }
                 
                 return response;
@@ -1185,16 +1591,21 @@
                 let response = `<h4>🏥 Healthcare Analysis for ${property.name}</h4><br>`;
                 
                 if (this.nearbyHospitals.length > 0) {
-                    response += `<strong>${this.nearbyHospitals.length} facilities</strong> within 2km:<br><br>`;
+                    response += `Excellent healthcare coverage! <strong>${this.nearbyHospitals.length} health facilities</strong> within 3km:<br><br>`;
                     
                     this.nearbyHospitals.slice(0, 3).forEach(hospital => {
                         response += `🏥 <strong>${hospital.facility_name}</strong><br>`;
                         response += `&nbsp;&nbsp;&nbsp;• Type: ${hospital.facility_type}<br>`;
                         response += `&nbsp;&nbsp;&nbsp;• Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
                     });
+                    
+                    response += `Emergency response time: approximately 5-15 minutes depending on traffic.`;
                 } else {
-                    response += `No facilities within 2km.<br><br>`;
-                    response += `<strong>Considerations:</strong><br>• Emergency response may be slower.`;
+                    response += `Limited healthcare access - no major facilities within 3km.<br><br>`;
+                    response += `<strong>Important considerations:</strong><br>`;
+                    response += `• Emergency response may take 20+ minutes<br>`;
+                    response += `• Consider proximity to main roads for ambulance access<br>`;
+                    response += `• Keep emergency contact numbers and first aid supplies ready`;
                 }
                 
                 return response;
@@ -1202,40 +1613,95 @@
             
             generatePriceResponse(property) {
                 const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
-                let response = `<h4>💰 Investment Analysis</h4><br>`;
+                let response = `<h4>💰 Investment Analysis for ${property.name}</h4><br>`;
                 
-                response += `<strong>Price:</strong> ${property.price}<br>`;
-                response += `<strong>Per m²:</strong> ${Math.round(priceValue * 1000000 / parseInt(property.area))} RWF/m²<br><br>`;
+                response += `<strong>Current Price:</strong> ${property.price}<br>`;
+                response += `<strong>Price per m²:</strong> ${Math.round(priceValue * 1000000 / parseInt(property.area))} RWF/m²<br><br>`;
                 
-                let investmentScore = 60 + Math.min(this.nearbySchools.length * 5, 15) + Math.min(this.nearbyHospitals.length * 3, 10);
-                response += `<strong>Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
+                let investmentScore = 60;
+                if (property.district === 'Gasabo') investmentScore += 15;
+                else if (property.district === 'Nyarugenge') investmentScore += 10;
+                else investmentScore += 5;
+                
+                investmentScore += Math.min(this.nearbySchools.length * 5, 15);
+                investmentScore += Math.min(this.nearbyHospitals.length * 3, 10);
+                
+                response += `<strong>Investment Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
                 
                 if (property.status === 'sale') {
                     const estimatedRent = Math.round(priceValue * 0.5);
-                    response += `Estimated monthly rent: ${estimatedRent}K RWF<br>`;
+                    response += `<strong>Rental Potential:</strong><br>`;
+                    response += `• Estimated monthly rent: ${estimatedRent}K RWF<br>`;
+                    response += `• Annual yield: ~6%<br><br>`;
                 }
+                
+                response += `<strong>Value Drivers:</strong><br>`;
+                response += `• ${this.nearbySchools.length} schools nearby<br>`;
+                response += `• ${this.nearbyHospitals.length} health facilities<br>`;
+                response += `• ${property.district} district location<br>`;
+                response += `• Built in ${property.yearBuilt} (${2025 - property.yearBuilt} years old)`;
                 
                 return response;
             }
             
             generateFamilyResponse(property) {
-                let response = `<h4>👨‍👩‍👧‍👦 Family Suitability</h4><br>`;
+                let response = `<h4>👨‍👩‍👧‍👦 Family Suitability Analysis</h4><br>`;
                 
-                let familyScore = 50 + (property.bedrooms >= 3 ? 15 : 10) + (this.nearbySchools.length >= 1 ? 10 : 0) + (this.nearbyHospitals.length >= 1 ? 5 : 0);
-                response += `<strong>Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
+                let familyScore = 50;
                 
-                response += `Space: ${property.bedrooms}BR, ${property.area}<br>`;
-                response += `Schools: ${this.nearbySchools.length} nearby<br>`;
-                response += `Health: ${this.nearbyHospitals.length} facilities<br>`;
+                if (property.bedrooms >= 4) familyScore += 20;
+                else if (property.bedrooms >= 3) familyScore += 15;
+                else if (property.bedrooms >= 2) familyScore += 10;
+                
+                if (this.nearbySchools.length >= 3) familyScore += 20;
+                else if (this.nearbySchools.length >= 1) familyScore += 10;
+                
+                if (this.nearbyHospitals.length >= 2) familyScore += 10;
+                else if (this.nearbyHospitals.length >= 1) familyScore += 5;
+                
+                response += `<strong>Family Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
+                
+                response += `<strong>Space Assessment:</strong><br>`;
+                response += `• ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
+                response += `• Total area: ${property.area}<br>`;
+                response += `• Suitable for ${property.bedrooms <= 2 ? 'small families' : property.bedrooms <= 4 ? 'medium families' : 'large families'}<br><br>`;
+                
+                response += `<strong>Child-Friendly Features:</strong><br>`;
+                response += `• Education: ${this.nearbySchools.length} schools within 2km<br>`;
+                response += `• Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
+                response += `• Safety: ${property.amenities && property.amenities.includes('Security') ? 'Secured compound' : 'Check security measures'}<br>`;
+                response += `• Recreation: ${property.amenities && property.amenities.includes('Garden') ? 'Garden space available' : 'Limited outdoor space'}<br><br>`;
+                
+                if (familyScore >= 80) {
+                    response += `<strong>Verdict:</strong> 🏆 Excellent choice for families with children!`;
+                } else if (familyScore >= 60) {
+                    response += `<strong>Verdict:</strong> 👍 Good option for families with some planning.`;
+                } else {
+                    response += `<strong>Verdict:</strong> 💼 Better suited for professionals or couples without children.`;
+                }
                 
                 return response;
             }
             
             generateGeneralResponse(property) {
-                let response = `<h4>🏠 Overview</h4><br>`;
+                let response = `<h4>🏠 Complete Property Overview</h4><br>`;
                 
-                response += `Ask about: education, healthcare, price, or family suitability.<br><br>`;
-                response += `Quick Facts:<br>• Location: ${property.district}<br>• Built: ${property.yearBuilt}`;
+                response += `I can provide detailed insights about <strong>${property.name}</strong>:<br><br>`;
+                
+                response += `<strong>Available Analysis:</strong><br>`;
+                response += `• 🎓 <strong>Education:</strong> ${this.nearbySchools.length} schools within 2km<br>`;
+                response += `• 🏥 <strong>Healthcare:</strong> ${this.nearbyHospitals.length} health facilities within 3km<br>`;
+                response += `• 💰 <strong>Investment potential</strong> and pricing analysis<br>`;
+                response += `• 👨‍👩‍👧‍👦 <strong>Family suitability</strong> assessment<br>`;
+                response += `• 🚗 <strong>Transportation</strong> and accessibility<br><br>`;
+                
+                response += `<strong>Quick Facts:</strong><br>`;
+                response += `• Location: ${property.district} District<br>`;
+                response += `• Size: ${property.bedrooms}BR, ${property.bathrooms}BA, ${property.area}<br>`;
+                response += `• Year Built: ${property.yearBuilt}<br>`;
+                response += `• Status: ${property.status === 'sale' ? 'For Sale' : 'For Rent'}<br><br>`;
+                
+                response += `What specific aspect would you like me to analyze in detail?`;
                 
                 return response;
             }
@@ -1262,23 +1728,18 @@
         
         let propertyIntel = null;
         
-        function closeChat() {
-            document.getElementById('chatContainer').classList.remove('open');
-            document.getElementById('chatInput').disabled = true;
-            document.getElementById('sendBtn').disabled = true;
-            propertyIntel.clearNearbyMarkers();
-        }
-        
-        function closeFilterPanel() {
-            document.getElementById('filterPanel').classList.remove('open');
-        }
-        
-        function applyFilters() {
-            propertyIntel.applyFilters();
-        }
-        
-        function hideFlashScreen() {
-            document.getElementById('flashScreen').classList.add('hidden');
+        function toggleChat() {
+            const chatContainer = document.getElementById('chatContainer');
+            const toggleIcon = document.getElementById('toggleIcon');
+            chatContainer.classList.toggle('collapsed');
+            
+            if (chatContainer.classList.contains('collapsed')) {
+                toggleIcon.className = 'fas fa-chevron-right';
+            } else {
+                toggleIcon.className = 'fas fa-chevron-left';
+            }
+            
+            if (propertyIntel) propertyIntel.map.invalidateSize();
         }
         
         window.addEventListener('DOMContentLoaded', () => {
