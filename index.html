@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -713,6 +712,30 @@
             60% { content: 'AI analyzing..'; }
             80%, 100% { content: 'AI analyzing...'; }
         }
+        
+        .layer-selector {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .basemap-btn {
+            background: white;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
+            color: #333;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 8px 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .basemap-btn:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
@@ -793,9 +816,6 @@
                 <button id="homeBtn" class="home-btn" aria-label="Reset to home view">
                     <i class="fas fa-home"></i>
                 </button>
-                <button id="basemapBtn" class="basemap-btn" aria-label="Toggle basemap">
-                    <i class="fas fa-globe"></i>
-                </button>
             </div>
             
             <div class="data-panels">
@@ -836,43 +856,16 @@
                 </div>
             </div>
             
+            <div class="layer-selector">
+                <button id="basemapBtn" aria-label="Toggle basemap">Map</button>
+            </div>
+            
             <div id="map"></div>
         </div>
     </div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-                try {
-                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                    var firstSheetName = workbook.SheetNames[0];
-                    var worksheet = workbook.Sheets[firstSheetName];
-                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                    var filteredData = jsonData.filter(row => row.some(filledCell));
-                    var headerRowIndex = filteredData.findIndex((row, index) =>
-                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                    );
-                    if (headerRowIndex === -1 || headerRowIndex > 25) {
-                        headerRowIndex = 0;
-                    }
-                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
-                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                    return csv;
-                } catch (e) {
-                    console.error(e);
-                    return "";
-                }
-            }
-            return gk_fileData[filename] || "";
-        }
-
         class PropertyIntelSystem {
             constructor() {
                 this.map = null;
@@ -890,6 +883,8 @@
                 this.properties = [];
                 this.baseLayers = {};
                 this.currentBaseLayer = 'street';
+                this.bufferCircle = null;
+                this.tempLine = null;
                 
                 this.init();
             }
@@ -943,47 +938,93 @@
                             district: property.district || 'Unknown',
                             amenities: property.amenities ? property.amenities.split(',').map(item => item.trim()) : []
                         };
-                    }).filter(prop => prop.lat !== 0 && prop.lng !== 0); // Filter out invalid coordinates
+                    }).filter(prop => {
+                        const valid = prop.lat !== 0 && prop.lng !== 0 && !isNaN(prop.lat) && !isNaN(prop.lng);
+                        if (!valid) {
+                            console.warn(`Invalid coordinates for property ${prop.name}: lat=${prop.lat}, lng=${prop.lng}`);
+                        }
+                        return valid;
+                    });
                     
-                    this.filteredProperties = [...this.properties];
                     console.log('Processed properties:', this.properties.length, this.properties);
                     
+                    // Fallback to sample data if no properties are loaded
                     if (this.properties.length === 0) {
-                        console.warn('No valid properties loaded from API, using fallback data');
-                        this.loadFallbackProperties();
+                        console.warn('No properties loaded from API, using fallback data');
+                        this.properties = [
+                            {
+                                id: 'sample1',
+                                lat: -1.9441,
+                                lng: 30.0619,
+                                name: 'Sample Villa',
+                                type: 'Villa',
+                                price: '100M RWF',
+                                status: 'sale',
+                                bedrooms: 4,
+                                bathrooms: 3,
+                                area: '200m²',
+                                yearBuilt: 2015,
+                                district: 'Gasabo',
+                                amenities: ['Garden', 'Security']
+                            },
+                            {
+                                id: 'sample2',
+                                lat: -1.9556,
+                                lng: 30.1044,
+                                name: 'Sample Apartment',
+                                type: 'Apartment',
+                                price: '50M RWF',
+                                status: 'rent',
+                                bedrooms: 2,
+                                bathrooms: 1,
+                                area: '100m²',
+                                yearBuilt: 2018,
+                                district: 'Nyarugenge',
+                                amenities: ['Parking']
+                            }
+                        ];
                     }
+                    
+                    this.filteredProperties = [...this.properties];
+                    
                 } catch (error) {
                     console.error('Failed to load properties:', error);
-                    this.loadFallbackProperties();
+                    // Fallback to sample data
+                    this.properties = [
+                        {
+                            id: 'sample1',
+                            lat: -1.9441,
+                            lng: 30.0619,
+                            name: 'Sample Villa',
+                            type: 'Villa',
+                            price: '100M RWF',
+                            status: 'sale',
+                            bedrooms: 4,
+                            bathrooms: 3,
+                            area: '200m²',
+                            yearBuilt: 2015,
+                            district: 'Gasabo',
+                            amenities: ['Garden', 'Security']
+                        },
+                        {
+                            id: 'sample2',
+                            lat: -1.9556,
+                            lng: 30.1044,
+                            name: 'Sample Apartment',
+                            type: 'Apartment',
+                            price: '50M RWF',
+                            status: 'rent',
+                            bedrooms: 2,
+                            bathrooms: 1,
+                            area: '100m²',
+                            yearBuilt: 2018,
+                            district: 'Nyarugenge',
+                            amenities: ['Parking']
+                        }
+                    ];
+                    this.filteredProperties = [...this.properties];
+                    console.log('Using fallback properties:', this.properties);
                 }
-            }
-            
-            loadFallbackProperties() {
-                // Fallback data in case API fails
-                this.properties = [
-                    { id: 1, lat: -1.9441, lng: 30.0619, name: 'City Center Luxury Apartment', type: 'Luxury Apartment', price: '180M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '180m²', yearBuilt: 2022, district: 'Nyarugenge', amenities: ['Pool', 'Gym', 'Security', 'Parking'] },
-                    { id: 2, lat: -1.9506, lng: 30.0639, name: 'Business District Condo', type: 'Apartment', price: '65M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '110m²', yearBuilt: 2019, district: 'Nyarugenge', amenities: ['Security', 'Parking'] },
-                    { id: 3, lat: -1.9286, lng: 30.1044, name: 'Kimihurura Sunset Villa', type: 'Villa', price: '320M RWF', status: 'sale', bedrooms: 5, bathrooms: 4, area: '450m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Garden', 'Pool', 'Security', 'Garage'] },
-                    { id: 4, lat: -1.9356, lng: 30.1074, name: 'Kimihurura Family House', type: 'House', price: '150M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '280m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
-                    { id: 5, lat: -1.9416, lng: 30.1014, name: 'Kimihurura Modern Apartment', type: 'Apartment', price: '45M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '95m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Security', 'Balcony'] },
-                    { id: 6, lat: -1.9634, lng: 30.0929, name: 'Kacyiru Green Hills House', type: 'House', price: '95M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '220m²', yearBuilt: 2017, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
-                    { id: 7, lat: -1.9604, lng: 30.0959, name: 'Kacyiru Executive Villa', type: 'Villa', price: '280M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '380m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Pool', 'Garden', 'Security', 'Smart Home'] },
-                    { id: 8, lat: -1.9564, lng: 30.0899, name: 'Kacyiru Riverside Apartment', type: 'Apartment', price: '38M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '65m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['River View', 'Security'] },
-                    { id: 9, lat: -1.9456, lng: 30.1212, name: 'Remera Shopping District House', type: 'House', price: '120M RWF', status: 'sale', bedrooms: 3, bathrooms: 3, area: '200m²', yearBuilt: 2020, district: 'Gasabo', amenities: ['Parking', 'Security'] },
-                    { id: 10, lat: -1.9486, lng: 30.1242, name: 'Remera Premium Apartment', type: 'Apartment', price: '55M RWF', status: 'rent', bedrooms: 2, bathrooms: 2, area: '130m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Gym', 'Security', 'Parking'] },
-                    { id: 11, lat: -1.9756, lng: 30.0729, name: 'Gikondo Industrial Villa', type: 'Villa', price: '200M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '350m²', yearBuilt: 2019, district: 'Kicukiro', amenities: ['Garden', 'Security', 'Workshop'] },
-                    { id: 12, lat: -1.9686, lng: 30.0759, name: 'Gikondo Worker Housing', type: 'House', price: '75M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '160m²', yearBuilt: 2016, district: 'Kicukiro', amenities: ['Parking'] },
-                    { id: 13, lat: -1.9606, lng: 30.0529, name: 'Nyamirambo Cultural House', type: 'House', price: '85M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '190m²', yearBuilt: 2018, district: 'Nyarugenge', amenities: ['Garden', 'Traditional Design'] },
-                    { id: 14, lat: -1.9536, lng: 30.0499, name: 'Nyamirambo Traditional Villa', type: 'Villa', price: '140M RWF', status: 'sale', bedrooms: 4, bathrooms: 3, area: '260m²', yearBuilt: 2017, district: 'Nyarugenge', amenities: ['Garden', 'Cultural Features'] },
-                    { id: 15, lat: -1.9256, lng: 30.0919, name: 'Kigali Heights Luxury Villa', type: 'Luxury Villa', price: '450M RWF', status: 'sale', bedrooms: 6, bathrooms: 5, area: '600m²', yearBuilt: 2024, district: 'Gasabo', amenities: ['Pool', 'Gym', 'Cinema', 'Smart Home', 'Wine Cellar'] },
-                    { id: 16, lat: -1.9186, lng: 30.0889, name: 'Kigali Heights Executive House', type: 'House', price: '220M RWF', status: 'sale', bedrooms: 4, bathrooms: 4, area: '320m²', yearBuilt: 2022, district: 'Gasabo', amenities: ['View', 'Security', 'Garden'] },
-                    { id: 17, lat: -1.9706, lng: 30.1059, name: 'Kibagabaga Student Apartment', type: 'Apartment', price: '35M RWF', status: 'rent', bedrooms: 1, bathrooms: 1, area: '55m²', yearBuilt: 2018, district: 'Gasabo', amenities: ['Study Area', 'Internet'] },
-                    { id: 18, lat: -1.9636, lng: 30.1029, name: 'Kibagabaga Family House', type: 'House', price: '110M RWF', status: 'sale', bedrooms: 3, bathrooms: 2, area: '210m²', yearBuilt: 2019, district: 'Gasabo', amenities: ['Garden', 'Parking'] },
-                    { id: 19, lat: -1.9356, lng: 30.1112, name: 'Nyarutarama Golf Course Villa', type: 'Luxury Villa', price: '520M RWF', status: 'sale', bedrooms: 7, bathrooms: 6, area: '700m²', yearBuilt: 2023, district: 'Gasabo', amenities: ['Golf Access', 'Pool', 'Tennis Court', 'Spa'] },
-                    { id: 20, lat: -1.9286, lng: 30.1082, name: 'Nyarutarama Executive Apartment', type: 'Apartment', price: '75M RWF', status: 'rent', bedrooms: 3, bathrooms: 2, area: '150m²', yearBuilt: 2021, district: 'Gasabo', amenities: ['Golf View', 'Security', 'Gym'] }
-                ];
-                this.filteredProperties = [...this.properties];
-                console.log('Loaded fallback properties:', this.properties.length);
             }
             
             normalizePropertyType(type) {
@@ -1018,7 +1059,7 @@
                             facility_name: feature.attributes.facility_name || 'Unknown',
                             facility_type: feature.attributes.facility_type || 'Unknown',
                             lat: feature.attributes.lat,
-                            long: feature.attributes.long,
+                            lng: feature.attributes.long,
                             district: feature.attributes.district || 'N/A',
                             sector: feature.attributes.sector || 'N/A',
                             ownership: feature.attributes.ownership || 'N/A'
@@ -1028,10 +1069,11 @@
                 } catch (error) {
                     console.error('Failed to load facilities:', error);
                     this.facilities = [
-                        { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, long: 30.0951, district: "Gasabo" },
-                        { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, long: 30.0604, district: "Nyarugenge" },
-                        { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, long: 30.1678, district: "Kicukiro" }
+                        { facility_name: "King Faisal Hospital", facility_type: "Referral Hospital", lat: -1.9439, lng: 30.0951, district: "Gasabo" },
+                        { facility_name: "CHUK", facility_type: "Referral Hospital", lat: -1.9565, lng: 30.0604, district: "Nyarugenge" },
+                        { facility_name: "Rwanda Military Hospital", facility_type: "Referral Hospital", lat: -1.9787, lng: 30.1678, district: "Kicukiro" }
                     ];
+                    console.log('Using fallback facilities:', this.facilities);
                 }
             }
             
@@ -1064,6 +1106,7 @@
                         { school_name: "Green Hills Academy", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "INTERNATIONAL", lat: -1.9556, lng: 30.1044, established: 2006 },
                         { school_name: "Kigali Parents School", school_type: "MIXED", school_category: "PRE_PRIMARY", school_status: "PRIVATE", curriculum: "NATIONAL", lat: -1.9386, lng: 30.0619, established: 2010 }
                     ];
+                    console.log('Using fallback schools:', this.schools);
                 }
             }
             
@@ -1087,6 +1130,7 @@
                 
                 setTimeout(() => {
                     this.map.invalidateSize();
+                    console.log('Map initialized and refreshed');
                 }, 100);
                 
                 this.addProperties();
@@ -1095,24 +1139,31 @@
                 
                 this.map.on('click', this.handleMapClick.bind(this));
                 
-                new ResizeObserver(() => this.map.invalidateSize()).observe(document.getElementById('map'));
+                new ResizeObserver(() => {
+                    this.map.invalidateSize();
+                    console.log('Map resized');
+                }).observe(document.getElementById('map'));
             }
             
             toggleBasemap() {
+                const basemapBtn = document.getElementById('basemapBtn');
                 if (this.currentBaseLayer === 'street') {
                     this.map.removeLayer(this.baseLayers.street);
                     this.baseLayers.satellite.addTo(this.map);
                     this.currentBaseLayer = 'satellite';
-                    document.getElementById('basemapBtn').innerHTML = '<i class="fas fa-map"></i>';
+                    basemapBtn.textContent = 'Satellite';
                 } else {
                     this.map.removeLayer(this.baseLayers.satellite);
                     this.baseLayers.street.addTo(this.map);
                     this.currentBaseLayer = 'street';
-                    document.getElementById('basemapBtn').innerHTML = '<i class="fas fa-globe"></i>';
+                    basemapBtn.textContent = 'Map';
                 }
+                this.map.invalidateSize();
             }
             
             addProperties() {
+                console.log('Adding properties to map:', this.filteredProperties.length);
+                
                 // Clear existing markers
                 this.propertyMarkers.forEach(item => {
                     if (this.map.hasLayer(item.marker)) {
@@ -1123,8 +1174,8 @@
                 
                 // Add new markers
                 this.filteredProperties.forEach((prop) => {
-                    if (!prop.lat || !prop.lng) {
-                        console.warn(`Skipping property ${prop.name} due to invalid coordinates`);
+                    if (!prop.lat || !prop.lng || isNaN(prop.lat) || isNaN(prop.lng)) {
+                        console.warn(`Skipping property ${prop.name} due to invalid coordinates: lat=${prop.lat}, lng=${prop.lng}`);
                         return;
                     }
                     
@@ -1166,17 +1217,25 @@
                         property: prop,
                         visible: true
                     });
+                    
+                    console.log(`Added marker for ${prop.name} at [${prop.lat}, ${prop.lng}]`);
                 });
                 
-                console.log('Added markers for properties:', this.propertyMarkers.length);
+                console.log('Total markers added:', this.propertyMarkers.length);
                 this.updateStats();
                 this.updateFilterSummary();
+                this.map.invalidateSize();
             }
             
             prepareHospitals() {
                 this.hospitalMarkers = [];
                 this.facilities.forEach(facility => {
-                    const marker = L.marker([facility.lat, facility.long], {
+                    if (!facility.lat || !facility.lng || isNaN(facility.lat) || isNaN(facility.lng)) {
+                        console.warn(`Skipping hospital ${facility.facility_name} due to invalid coordinates`);
+                        return;
+                    }
+                    
+                    const marker = L.marker([facility.lat, facility.lng], {
                         icon: L.divIcon({
                             className: 'hospital-marker',
                             html: '🏥',
@@ -1201,11 +1260,17 @@
                     
                     this.hospitalMarkers.push(marker);
                 });
+                console.log('Prepared hospital markers:', this.hospitalMarkers.length);
             }
             
             prepareSchools() {
                 this.schoolMarkers = [];
                 this.schools.forEach(school => {
+                    if (!school.lat || !school.lng || isNaN(school.lat) || isNaN(school.lng)) {
+                        console.warn(`Skipping school ${school.school_name} due to invalid coordinates`);
+                        return;
+                    }
+                    
                     const marker = L.marker([school.lat, school.lng], {
                         icon: L.divIcon({
                             className: 'school-marker',
@@ -1232,6 +1297,7 @@
                     
                     this.schoolMarkers.push(marker);
                 });
+                console.log('Prepared school markers:', this.schoolMarkers.length);
             }
             
             selectProperty(property, marker) {
@@ -1260,9 +1326,63 @@
             
             analyzeProperty(property) {
                 this.clearNearbyMarkers();
+                this.removeBuffer();
+                this.removeTempLine();
                 this.analyzeProximity(property);
                 this.displayPropertyAnalysis(property);
+                this.addBuffer(property);
                 this.showNearbyFacilities(property);
+            }
+            
+            addBuffer(property) {
+                this.bufferCircle = L.circle([property.lat, property.lng], {
+                    color: '#6366f1',
+                    fillColor: '#6366f1',
+                    fillOpacity: 0.1,
+                    radius: 3000
+                }).addTo(this.map);
+            }
+            
+            removeBuffer() {
+                if (this.bufferCircle) {
+                    this.map.removeLayer(this.bufferCircle);
+                    this.bufferCircle = null;
+                }
+            }
+            
+            showConnectionLine(origin, dest, distance, name) {
+                this.removeTempLine();
+                
+                this.tempLine = L.polyline([[origin.lat, origin.lng], [dest.lat, dest.lng]], {
+                    color: '#6366f1',
+                    weight: 3,
+                    dashArray: '5, 5'
+                }).addTo(this.map);
+                
+                const walkingSpeed = 5; // km/h
+                const drivingSpeed = 30; // km/h
+                const timeWalk = Math.round((distance / walkingSpeed) * 60);
+                const timeDrive = Math.round((distance / drivingSpeed) * 60);
+                
+                const tooltipContent = `
+                    ${name}<br>
+                    Distance: ${distance.toFixed(1)} km<br>
+                    Walking: ~${timeWalk} min<br>
+                    Driving: ~${timeDrive} min
+                `;
+                
+                this.tempLine.bindTooltip(tooltipContent, {
+                    direction: 'right',
+                    sticky: true,
+                    permanent: false
+                }).openTooltip();
+            }
+            
+            removeTempLine() {
+                if (this.tempLine) {
+                    this.map.removeLayer(this.tempLine);
+                    this.tempLine = null;
+                }
             }
             
             clearNearbyMarkers() {
@@ -1284,10 +1404,16 @@
                     const marker = this.hospitalMarkers.find(m => {
                         const markerLatLng = m.getLatLng();
                         return Math.abs(markerLatLng.lat - hospital.lat) < 0.0001 && 
-                               Math.abs(markerLatLng.lng - hospital.long) < 0.0001;
+                               Math.abs(markerLatLng.lng - hospital.lng) < 0.0001;
                     });
                     if (marker) {
                         marker.addTo(this.map);
+                        marker.on('mouseover', () => {
+                            this.showConnectionLine(property, hospital, hospital.distance, `🏥 ${hospital.facility_name}`);
+                        });
+                        marker.on('mouseout', () => {
+                            this.removeTempLine();
+                        });
                     }
                 });
                 
@@ -1299,6 +1425,12 @@
                     });
                     if (marker) {
                         marker.addTo(this.map);
+                        marker.on('mouseover', () => {
+                            this.showConnectionLine(property, school, school.distance, `🎓 ${school.school_name}`);
+                        });
+                        marker.on('mouseout', () => {
+                            this.removeTempLine();
+                        });
                     }
                 });
             }
@@ -1307,7 +1439,7 @@
                 this.nearbyHospitals = [];
                 this.facilities.forEach(facility => {
                     const distance = L.latLng(property.lat, property.lng)
-                        .distanceTo([facility.lat, facility.long]) / 1000;
+                        .distanceTo([facility.lat, facility.lng]) / 1000;
                     
                     if (distance <= 3) {
                         this.nearbyHospitals.push({
@@ -1323,7 +1455,7 @@
                     const distance = L.latLng(property.lat, property.lng)
                         .distanceTo([school.lat, school.lng]) / 1000;
                     
-                    if (distance <= 2) {
+                    if (distance <= 3) {
                         this.nearbySchools.push({
                             ...school,
                             distance: distance
@@ -1354,7 +1486,7 @@
                     let schoolHtml = `
                         <div class="education-info">
                             <h4 style="margin-bottom: 8px;">🎓 Education Access</h4>
-                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 2km</p>
+                            <p style="margin-bottom: 8px;">${this.nearbySchools.length} schools within 3km</p>
                             <div class="facility-list">`;
                     
                     this.nearbySchools.slice(0, 5).forEach(school => {
@@ -1371,7 +1503,7 @@
                     messagesContainer.innerHTML += `
                         <div class="education-info">
                             <h4 style="margin-bottom: 8px;">⚠️ Education Access</h4>
-                            <p>No schools within 2km walking distance. Consider transportation needs for school-age children.</p>
+                            <p>No schools within 3km walking distance. Consider transportation needs for school-age children.</p>
                         </div>`;
                 }
                 
@@ -1384,7 +1516,7 @@
                     
                     this.nearbyHospitals.slice(0, 5).forEach(hospital => {
                         hospitalHtml += `
-                            <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.long})">
+                            <div class="facility-item" onclick="propertyIntel.focusLocation(${hospital.lat}, ${hospital.lng})">
                                 <div class="facility-name">${hospital.facility_name}</div>
                                 <div class="facility-distance">${hospital.distance.toFixed(1)}km</div>
                             </div>`;
@@ -1413,15 +1545,28 @@
             
             handleMapClick(e) {
                 this.clearNearbyMarkers();
+                this.removeBuffer();
+                this.removeTempLine();
                 
-                if (!this.currentProperty) {
-                    const messagesContainer = document.getElementById('chatMessages');
-                    messagesContainer.innerHTML = `
-                        <div class="welcome-message">
-                            <div class="welcome-title">Welcome to PropertyIntel!</div>
-                            Click on any property marker to see detailed analysis including nearby schools and hospitals.
-                        </div>`;
+                if (this.selectedMarker) {
+                    const prevElement = this.selectedMarker.getElement();
+                    if (prevElement) {
+                        prevElement.classList.remove('selected');
+                    }
+                    this.selectedMarker = null;
                 }
+                
+                this.currentProperty = null;
+                document.getElementById('chatInput').disabled = true;
+                document.getElementById('sendBtn').disabled = true;
+                document.getElementById('chatInput').placeholder = "Select a property to start asking questions...";
+                
+                const messagesContainer = document.getElementById('chatMessages');
+                messagesContainer.innerHTML = `
+                    <div class="welcome-message">
+                        <div class="welcome-title">Welcome to PropertyIntel!</div>
+                        Click on any property marker to see detailed analysis including nearby schools and hospitals.
+                    </div>`;
             }
             
             setupEventListeners() {
@@ -1529,6 +1674,7 @@
                     return true;
                 });
                 
+                console.log('Filtered properties:', this.filteredProperties.length);
                 this.updatePropertyVisibility();
                 this.updateFilterSummary();
                 this.updateStats();
@@ -1540,9 +1686,11 @@
                     if (isVisible && !item.visible) {
                         item.marker.addTo(this.map);
                         item.visible = true;
+                        console.log(`Showing marker for ${item.property.name}`);
                     } else if (!isVisible && item.visible) {
                         this.map.removeLayer(item.marker);
                         item.visible = false;
+                        console.log(`Hiding marker for ${item.property.name}`);
                     }
                 });
             }
@@ -1636,13 +1784,10 @@
             }
             
             generateSchoolResponse(property) {
-                this.clearNearbyMarkers();
-                this.showNearbyFacilities(property);
-                
                 let response = `<h4>🎓 Education Analysis for ${property.name}</h4><br>`;
                 
                 if (this.nearbySchools.length > 0) {
-                    response += `Great news for families! Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
+                    response += `Great news for families! Found <strong>${this.nearbySchools.length} schools</strong> within 3km:<br><br>`;
                     
                     this.nearbySchools.slice(0, 3).forEach(school => {
                         const walkTime = Math.round(school.distance * 12);
@@ -1651,9 +1796,9 @@
                         response += `&nbsp;&nbsp;&nbsp;• Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
                     });
                     
-                    response += `This property offers excellent educational access for families with children!`;
+                    response += `This property offers excellent educational access for families with children!<br><br>Hover over school markers on the map to see connection lines and estimated travel times.`;
                 } else {
-                    response += `No schools found within 2km of this property.<br><br>`;
+                    response += `No schools found within 3km of this property.<br><br>`;
                     response += `<strong>Recommendations:</strong><br>`;
                     response += `• Consider school transport services<br>`;
                     response += `• Look into private school bus routes<br>`;
@@ -1664,9 +1809,6 @@
             }
             
             generateHealthResponse(property) {
-                this.clearNearbyMarkers();
-                this.showNearbyFacilities(property);
-                
                 let response = `<h4>🏥 Healthcare Analysis for ${property.name}</h4><br>`;
                 
                 if (this.nearbyHospitals.length > 0) {
@@ -1678,7 +1820,7 @@
                         response += `&nbsp;&nbsp;&nbsp;• Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
                     });
                     
-                    response += `Emergency response time: approximately 5-15 minutes depending on traffic.`;
+                    response += `Emergency response time: approximately 5-15 minutes depending on traffic.<br><br>Hover over hospital markers on the map to see connection lines and estimated travel times.`;
                 } else {
                     response += `Limited healthcare access - no major facilities within 3km.<br><br>`;
                     response += `<strong>Important considerations:</strong><br>`;
@@ -1719,10 +1861,10 @@
                 response += `• ${this.nearbySchools.length} schools nearby<br>`;
                 response += `• ${this.nearbyHospitals.length} health facilities<br>`;
                 response += `• ${property.district} district location<br>`;
-                response += `• Built in ${property.yearBuilt} (${new Date().getFullYear() - property.yearBuilt} years old)`;
+                response += `• Built in ${property.yearBuilt} (${new Date().getFullYear() - parseInt(property.yearBuilt)} years old)`;
                 
                 return response;
-           }
+            }
             
             generateFamilyResponse(property) {
                 let response = `<h4>👨‍👩‍👧‍👦 Family Suitability Analysis</h4><br>`;
