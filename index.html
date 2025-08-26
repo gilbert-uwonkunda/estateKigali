@@ -907,231 +907,142 @@
             }
             
             async loadProperties() {
-    try {
-        const response = await fetch('http://localhost:3001/api/properties', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('API Response:', data);
-        
-        this.properties = data.map(property => {
-            const normalizedType = this.normalizePropertyType(property.type);
-            return {
-                id: property.id || Math.random().toString(36).substr(2, 9),
-                lat: parseFloat(property.latitude) || 0,
-                lng: parseFloat(property.longitude) || 0,
-                name: property.name || 'Unnamed Property',
-                type: normalizedType,
-                price: this.formatPrice(property.price),
-                status: (property.status || 'sale').toLowerCase(),
-                bedrooms: parseInt(property.bedrooms) || 0,
-                bathrooms: parseInt(property.bathrooms) || 0,
-                area: property.area ? `${parseInt(property.area)}m²` : 'N/A',
-                yearBuilt: property.year_built || 'N/A',
-                district: property.district || 'Unknown',
-                amenities: property.amenities ? property.amenities.split(',').map(item => item.trim()) : []
-            };
-        }).filter(prop => {
-            const valid = prop.lat !== 0 && prop.lng !== 0 && !isNaN(prop.lat) && !isNaN(prop.lng);
-            if (!valid) {
-                console.warn(`Invalid coordinates for property ${prop.name}: lat=${prop.lat}, lng=${prop.lng}`);
-            }
-            return valid;
-        });
-        
-        console.log('Processed properties:', this.properties.length, this.properties);
-        
-        // Fallback to sample data if no properties are loaded
-        if (this.properties.length === 0) {
-            console.warn('No properties loaded from API, using fallback data');
-            this.properties = [
-                {
-                    id: '1',
-                    lat: -1.9454393203203149,
-                    lng: 30.090843600629185,
-                    name: 'Kacyiru Executive Apartments',
-                    type: 'Apartment',
-                    price: '400K RWF',
-                    status: 'sale',
-                    bedrooms: 4,
-                    bathrooms: 3,
-                    area: '200m²',
-                    yearBuilt: 2015,
-                    district: 'Gasabo',
-                    amenities: ['Garden', 'Security']
-                },
-                {
-                    id: '2',
-                    lat: -1.94278564698374,
-                    lng: 30.090095476955412,
-                    name: 'Pedro Apartments',
-                    type: 'Apartment',
-                    price: '350K RWF',
-                    status: 'rent',
-                    bedrooms: 2,
-                    bathrooms: 1,
-                    area: '100m²',
-                    yearBuilt: 2018,
-                    district: 'Gasabo',
-                    amenities: ['Parking']
-                },
-                {
-                    id: '3',
-                    lat: -1.9515638960060595,
-                    lng: 30.059049686506583,
-                    name: 'Altis Apartments',
-                    type: 'Apartment',
-                    price: '500K RWF',
-                    status: 'rent',
-                    bedrooms: 2,
-                    bathrooms: 1,
-                    area: '100m²',
-                    yearBuilt: 2018,
-                    district: 'Nyarugenge',
-                    amenities: ['Parking']
-                },
-                {
-                    id: '4',
-                    lat: -1.9495749673401483,
-                    lng: 30.078914337931103,
-                    name: 'Rubangura Luxury Apartments',
-                    type: 'Luxury Apartment',
-                    price: '500K RWF',
-                    status: 'rent',
-                    bedrooms: 2,
-                    bathrooms: 1,
-                    area: '100m²',
-                    yearBuilt: 2018,
-                    district: 'Gasabo',
-                    amenities: ['Parking']
-                },
-                {
-                    id: '5',
-                    lat: -1.9582643574784928,
-                    lng: 30.095969639942403,
-                    name: 'Palm Apartments',
-                    type: 'Apartment',
-                    price: '500K RWF',
-                    status: 'rent',
-                    bedrooms: 2,
-                    bathrooms: 1,
-                    area: '100m²',
-                    yearBuilt: 2018,
-                    district: 'Gasabo',
-                    amenities: ['Parking']
-                }
-                
-            console.log('Fallback properties loaded:', this.properties.length, this.properties);
-        }
-        
-        this.filteredProperties = [...this.properties];
-        console.log('Initial filtered properties:', this.filteredProperties.length, this.filteredProperties);
-        
-    } catch (error) {
-        console.error('Failed to load properties:', error);
-        // Use fallback data
-        this.properties = [
-            {
-                id: '1',
-                lat: -1.9454393203203149,
-                lng: 30.090843600629185,
-                name: 'Kacyiru Executive Apartments',
-                type: 'Apartment',
-                price: '400K RWF',
-                status: 'sale',
-                bedrooms: 4,
-                bathrooms: 3,
-                area: '200m²',
-                yearBuilt: 2015,
-                district: 'Gasabo',
-                amenities: ['Garden', 'Security']
-            },
-            {
-                id: '2',
-                lat: -1.94278564698374,
-                lng: 30.090095476955412,
-                name: 'Pedro Apartments',
-                type: 'Apartment',
-                price: '350K RWF',
-                status: 'rent',
-                bedrooms: 2,
-                bathrooms: 1,
-                area: '100m²',
-                yearBuilt: 2018,
-                district: 'Gasabo',
-                amenities: ['Parking']
-            },
-            {
-                id: '3',
-                lat: -1.9515638960060595,
-                lng: 30.059049686506583,
-                name: 'Altis Apartments',
-                type: 'Apartment',
-                price: '500K RWF',
-                status: 'rent',
-                bedrooms: 2,
-                bathrooms: 1,
-                area: '100m²',
-                yearBuilt: 2018,
-                district: 'Nyarugenge',
-                amenities: ['Parking']
-            },
-            {
-                id: '4',
-                lat: -1.9495749673401483,
-                lng: 30.078914337931103,
-                name: 'Rubangura Luxury Apartments',
-                type: 'Luxury Apartment',
-                price: '500K RWF',
-                status: 'rent',
-                bedrooms: 2,
-                bathrooms: 1,
-                area: '100m²',
-                yearBuilt: 2018,
-                district: 'Gasabo',
-                amenities: ['Parking']
-            },
-            {
-                id: '5',
-                lat: -1.9582643574784928,
-                lng: 30.095969639942403,
-                name: 'Palm Apartments',
-                type: 'Apartment',
-                price: '500K RWF',
-                status: 'rent',
-                bedrooms: 2,
-                bathrooms: 1,
-                area: '100m²',
-                yearBuilt: 2018,
-                district: 'Gasabo',
-                amenities: ['Parking']
-            }
-        ];
-        console.log('Error fallback properties loaded:', this.properties.length, this.properties);
-        this.filteredProperties = [...this.properties];
-        console.log('Error filtered properties:', this.filteredProperties.length, this.filteredProperties);
-    }
-}
+                try {
+                    const response = await fetch('http://localhost:3001/api/properties', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('API Response:', data);
+                    
+                    // Transform API data to match frontend format
+                    this.properties = data.map(property => {
+                        const normalizedType = this.normalizePropertyType(property.type);
+                        return {
+                            id: property.id || Math.random().toString(36).substr(2, 9),
+                            lat: parseFloat(property.latitude) || 0,
+                            lng: parseFloat(property.longitude) || 0,
+                            name: property.name || 'Unnamed Property',
+                            type: normalizedType,
+                            price: this.formatPrice(property.price),
+                            status: (property.status || 'sale').toLowerCase(),
+                            bedrooms: parseInt(property.bedrooms) || 0,
+                            bathrooms: parseInt(property.bathrooms) || 0,
+                            area: property.area ? `${parseInt(property.area)}m²` : 'N/A',
+                            yearBuilt: property.year_built || 'N/A',
+                            district: property.district || 'Unknown',
+                            amenities: property.amenities ? property.amenities.split(',').map(item => item.trim()) : []
+                        };
+                    }).filter(prop => {
+                        const valid = prop.lat !== 0 && prop.lng !== 0 && !isNaN(prop.lat) && !isNaN(prop.lng);
+                        if (!valid) {
+                            console.warn(`Invalid coordinates for property ${prop.name}: lat=${prop.lat}, lng=${prop.lng}`);
+                        }
+                        return valid;
+                    });
+                    
+                    console.log('Processed properties:', this.properties.length, this.properties);
+                    
+                    // Fallback to provided sample data if no properties are loaded
+                    if (this.properties.length === 0) {
+                        console.warn('No properties loaded from API, using fallback data');
+                        this.properties = [
+                            {
+                                id: '1',
+                                lat: -1.9454393203203149,
+                                lng: 30.090843600629185,
+                                name: 'Kacyiru Executive Apartments',
+                                type: 'Apartment',
+                                price: '400K RWF',
+                                status: 'sale',
+                                bedrooms: 4,
+                                bathrooms: 3,
+                                area: '200m²',
+                                yearBuilt: 2015,
+                                district: 'Gasabo',
+                                amenities: ['Garden', 'Security']
+                            },
+                            {
+                                id: '2',
+                                lat: -1.94278564698374,
+                                lng: 30.090095476955412,
+                                name: 'Pedro Apartments',
+                                type: 'Apartment',
+                                price: '350K RWF',
+                                status: 'rent',
+                                bedrooms: 2,
+                                bathrooms: 1,
+                                area: '100m²',
+                                yearBuilt: 2018,
+                                district: 'Gasabo',
+                                amenities: ['Parking']
+                            },
+                            {
+                                id: '3',
+                                lat: -1.9515638960060595,
+                                lng: 30.059049686506583,
+                                name: 'Altis Apartments',
+                                type: 'Apartment',
+                                price: '500K RWF',
+                                status: 'rent',
+                                bedrooms: 2,
+                                bathrooms: 1,
+                                area: '100m²',
+                                yearBuilt: 2018,
+                                district: 'Nyarugenge',
+                                amenities: ['Parking']
+                            },
+                            {
+                                id: '4',
+                                lat: -1.9495749673401483,
+                                lng: 30.078914337931103,
+                                name: 'Rubangura Luxury Apartments',
+                                type: 'Luxury Apartment',
+                                price: '500K RWF',
+                                status: 'rent',
+                                bedrooms: 2,
+                                bathrooms: 1,
+                                area: '100m²',
+                                yearBuilt: 2018,
+                                district: 'Gasabo',
+                                amenities: ['Parking']
+                            },
+                            {
+                                id: '5',
+                                lat: -1.9582643574784928,
+                                lng: 30.095969639942403,
+                                name: 'Palm Apartments',
+                                type: 'Apartment',
+                                price: '500K RWF',
+                                status: 'rent',
+                                bedrooms: 2,
+                                bathrooms: 1,
+                                area: '100m²',
+                                yearBuilt: 2018,
+                                district: 'Gasabo',
+                                amenities: ['Parking']
+                            }
+                        ];
+                    }
                     
                     this.filteredProperties = [...this.properties];
                     
                 } catch (error) {
                     console.error('Failed to load properties:', error);
-                    // Fallback to sample data
+                    // Fallback to provided sample data
                     this.properties = [
                         {
-                            id: 'sample1',
-                            lat: -1.9441,
-                            lng: 30.0619,
-                            name: 'Sample Villa',
-                            type: 'Villa',
-                            price: '100M RWF',
+                            id: '1',
+                            lat: -1.9454393203203149,
+                            lng: 30.090843600629185,
+                            name: 'Kacyiru Executive Apartments',
+                            type: 'Apartment',
+                            price: '400K RWF',
                             status: 'sale',
                             bedrooms: 4,
                             bathrooms: 3,
@@ -1141,18 +1052,63 @@
                             amenities: ['Garden', 'Security']
                         },
                         {
-                            id: 'sample2',
-                            lat: -1.9556,
-                            lng: 30.1044,
-                            name: 'Sample Apartment',
+                            id: '2',
+                            lat: -1.94278564698374,
+                            lng: 30.090095476955412,
+                            name: 'Pedro Apartments',
                             type: 'Apartment',
-                            price: '50M RWF',
+                            price: '350K RWF',
+                            status: 'rent',
+                            bedrooms: 2,
+                            bathrooms: 1,
+                            area: '100m²',
+                            yearBuilt: 2018,
+                            district: 'Gasabo',
+                            amenities: ['Parking']
+                        },
+                        {
+                            id: '3',
+                            lat: -1.9515638960060595,
+                            lng: 30.059049686506583,
+                            name: 'Altis Apartments',
+                            type: 'Apartment',
+                            price: '500K RWF',
                             status: 'rent',
                             bedrooms: 2,
                             bathrooms: 1,
                             area: '100m²',
                             yearBuilt: 2018,
                             district: 'Nyarugenge',
+                            amenities: ['Parking']
+                        },
+                        {
+                            id: '4',
+                            lat: -1.9495749673401483,
+                            lng: 30.078914337931103,
+                            name: 'Rubangura Luxury Apartments',
+                            type: 'Luxury Apartment',
+                            price: '500K RWF',
+                            status: 'rent',
+                            bedrooms: 2,
+                            bathrooms: 1,
+                            area: '100m²',
+                            yearBuilt: 2018,
+                            district: 'Gasabo',
+                            amenities: ['Parking']
+                        },
+                        {
+                            id: '5',
+                            lat: -1.9582643574784928,
+                            lng: 30.095969639942403,
+                            name: 'Palm Apartments',
+                            type: 'Apartment',
+                            price: '500K RWF',
+                            status: 'rent',
+                            bedrooms: 2,
+                            bathrooms: 1,
+                            area: '100m²',
+                            yearBuilt: 2018,
+                            district: 'Gasabo',
                             amenities: ['Parking']
                         }
                     ];
@@ -1770,7 +1726,7 @@
                     return;
                 }
                 
-                navigator.geolocation.getCurrentPosition(
+                navigator.geolocation.getCurrentLocation(
                     position => {
                         const { latitude: lat, longitude: lng } = position.coords;
                         this.map.setView([lat, lng], 15);
@@ -1972,7 +1928,7 @@
                 
                 response += `<strong>Current Price:</strong> ${property.price}<br>`;
                 const areaNum = parseInt(property.area);
-                response += `<strong>Price per m²:</strong> ${areaNum ? Math.round(priceValue * 1000000 / areaNum) + ' RWF/m²' : 'N/A'}<br><br>`;
+                response += `<strong>Price per m²:</strong> ${areaNum ? Math.round(priceValue * 1000 / areaNum) + ' RWF/m²' : 'N/A'}<br><br>`;
                 
                 let investmentScore = 60;
                 if (property.district === 'Gasabo') investmentScore += 15;
@@ -2020,23 +1976,7 @@
                 response += `<strong>Space Assessment:</strong><br>`;
                 response += `• ${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
                 response += `• Total area: ${property.area}<br>`;
-                response += `• Suitable for ${property.bedrooms <= 2 ? 'small families' : property.bedrooms <= 4 ? 'medium families' : 'large families'}<br><br>`;
-                
-                response += `<strong>Child-Friendly Features:</strong><br>`;
-                response += `• Education: ${this.nearbySchools.length} schools within 2km<br>`;
-                response += `• Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
-                response += `• Safety: ${property.amenities && property.amenities.includes('Security') ? 'Secured compound' : 'Check security measures'}<br>`;
-                response += `• Recreation: ${property.amenities && property.amenities.includes('Garden') ? 'Garden space available' : 'Limited outdoor space'}<br><br>`;
-                
-                if (familyScore >= 80) {
-                    response += `<strong>Verdict:</strong> 🏆 Excellent choice for families with children!`;
-                } else if (familyScore >= 60) {
-                    response += `<strong>Verdict:</strong> 👍 Good option for families with some planning.`;
-                } else {
-                    response += `<strong>Verdict:</strong> 💼 Better suited for professionals or couples without children.`;
-                }
-                
-                return response;
+                response
             }
             
             generateGeneralResponse(property) {
