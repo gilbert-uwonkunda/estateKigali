@@ -7,6 +7,7 @@
     <title>PropertyIntel Kigali - Location Intelligence</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.5/purify.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -736,6 +737,34 @@
         .basemap-btn:hover {
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
+        .message.ai .message-content h2,
+.message.ai .message-content h3 {
+    margin-bottom: 10px;
+    color: var(--primary);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.message.ai .message-content p {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.message.ai .message-content ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    margin-bottom: 8px;
+}
+
+.message.ai .message-content li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+}
+
+.message.ai .message-content strong {
+    font-weight: 700;
+    color: #fff;
+}
     </style>
 </head>
 <body>
@@ -1740,7 +1769,7 @@
         document.getElementById('luxuryCount').textContent = luxury;
     }
     
-    sendMessage() {
+    async sendMessage() {
         if (this.isSending) return;
         this.isSending = true;
         
@@ -1760,20 +1789,82 @@
         chatInput.value = '';
         chatInput.style.height = 'auto';
         
-        this.showTyping();
-        setTimeout(() => {
-            this.hideTyping();
-            this.generateAIResponse(message, this.currentProperty);
-            this.isSending = false;
-        }, 1500);
-        
         this.scrollToBottom();
+        
+        this.showTyping();
+        
+        try {
+            await this.generateAIResponse(message, this.currentProperty);
+        } finally {
+            this.hideTyping();
+            this.scrollToBottom();
+            this.isSending = false;
+        }
+    }
+    
+    async typeMessage(message, element) {
+        element.innerHTML = '';
+        let index = 0;
+        const typingSpeed = 30; // Milliseconds per character
+        
+        const sanitizedHTML = DOMPurify.sanitize(message, {
+            ALLOWED_TAGS: ['h2', 'h3', 'strong', 'br', 'ul', 'li', 'p'],
+            ALLOWED_ATTR: ['style']
+        });
+        const tempContainer = document.createElement('div');
+        tempContainer.innerHTML = sanitizedHTML;
+
+        // Get all text content for typing effect
+        const textNodes = [];
+        const walkNodes = (node) => {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                textNodes.push({ text: node.textContent, parent: node.parentNode });
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                for (let child of node.childNodes) {
+                    walkNodes(child);
+                }
+            }
+        };
+        walkNodes(tempContainer);
+
+        // Type out each text node while preserving HTML structure
+        const typeNextNode = async () => {
+            if (index < textNodes.length) {
+                const { text, parent } = textNodes[index];
+                const span = document.createElement('span');
+                parent.appendChild(span);
+                element.innerHTML = tempContainer.innerHTML;
+
+                for (let char of text) {
+                    span.innerHTML += char;
+                    element.innerHTML = tempContainer.innerHTML;
+                    await new Promise(resolve => setTimeout(resolve, typingSpeed));
+                    this.scrollToBottom();
+                }
+
+                index++;
+                await typeNextNode();
+            }
+        };
+
+        await typeNextNode();
     }
     
     async generateAIResponse(question, property) {
     const messagesContainer = document.getElementById('chatMessages');
     
+    // Create a container for the AI response
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message ai';
+    const contentElement = document.createElement('div');
+    contentElement.className = 'message-content';
+    messageElement.appendChild(contentElement);
+    messagesContainer.appendChild(messageElement);
+    
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
         // Prepare data for Claude API
         const requestData = {
             message: question,
@@ -1801,8 +1892,11 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1811,18 +1905,12 @@
         const data = await response.json();
         
         if (data.success) {
-            // Display Claude's response
-            messagesContainer.innerHTML += `
-                <div class="message ai">
-                    <div class="message-content">${data.response}</div>
-                </div>`;
+            // Type out Claude's response
+            await this.typeMessage(data.response, contentElement);
         } else if (data.fallback) {
             // Fallback to original mock responses if Claude API fails
             const fallbackResponse = this.generateFallbackResponse(question, property);
-            messagesContainer.innerHTML += `
-                <div class="message ai">
-                    <div class="message-content">${fallbackResponse}</div>
-                </div>`;
+            await this.typeMessage(fallbackResponse, contentElement);
         } else {
             throw new Error(data.error || 'Unknown error');
         }
@@ -1830,18 +1918,20 @@
     } catch (error) {
         console.error('AI Response Error:', error);
         
+        let errorMessage = 'Unable to connect to AI assistant.';
+        if (error.name === 'AbortError') {
+            errorMessage = 'Response taking too long.';
+        }
+        
         // Show error message to user
-        messagesContainer.innerHTML += `
-            <div class="message ai">
-                <div class="message-content" style="color: #ef4444;">
-                    <strong>Connection Error</strong><br>
-                    Unable to connect to AI assistant. Using basic analysis instead.<br><br>
-                    ${this.generateFallbackResponse(question, property)}
-                </div>
-            </div>`;
+        const errorResponse = `
+            <strong>Connection Error</strong><br>
+            ${errorMessage} Using basic analysis instead.<br><br>
+            ${this.generateFallbackResponse(question, property)}
+        `;
+        contentElement.style.color = '#ef4444';
+        await this.typeMessage(errorResponse, contentElement);
     }
-    
-    this.scrollToBottom();
 }
 
 generateFallbackResponse(question, property) {
@@ -1861,38 +1951,38 @@ generateFallbackResponse(question, property) {
 }
 
 generateGeneralResponse(property) {
-    return `This is a beautiful ${property.type} in ${property.district} priced at ${property.price}. It has ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms. Amenities include: ${property.amenities.join(', ') || 'standard features'}.`;
+    return `<p>This is a beautiful ${property.type} in ${property.district} priced at ${property.price}. It has ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms. Amenities include: ${property.amenities.join(', ') || 'standard features'}.</p>`;
 }
 
 generateSchoolResponse(property) {
     if (this.nearbySchools.length === 0) {
-        return 'No schools found within 2km. This location may require additional transportation for education.';
+        return '<p>No schools found within 2km. This location may require additional transportation for education.</p>';
     }
-    return `There are ${this.nearbySchools.length} schools within 2km. The closest is ${this.nearbySchools[0].school_name} at ${this.nearbySchools[0].distance.toFixed(1)}km, which is a ${this.nearbySchools[0].school_type} school established in ${this.nearbySchools[0].established}.`;
+    return `<p>There are ${this.nearbySchools.length} schools within 2km. The closest is ${this.nearbySchools[0].school_name} at ${this.nearbySchools[0].distance.toFixed(1)}km, which is a ${this.nearbySchools[0].school_type} school established in ${this.nearbySchools[0].established}.</p>`;
 }
 
 generateHealthResponse(property) {
     if (this.nearbyHospitals.length === 0) {
-        return 'No health facilities found within 3km. Consider this for healthcare accessibility.';
+        return '<p>No health facilities found within 3km. Consider this for healthcare accessibility.</p>';
     }
-    return `There are ${this.nearbyHospitals.length} health facilities within 3km. The closest is ${this.nearbyHospitals[0].facility_name} (${this.nearbyHospitals[0].facility_type}) at ${this.nearbyHospitals[0].distance.toFixed(1)}km in ${this.nearbyHospitals[0].district}.`;
+    return `<p>There are ${this.nearbyHospitals.length} health facilities within 3km. The closest is ${this.nearbyHospitals[0].facility_name} (${this.nearbyHospitals[0].facility_type}) at ${this.nearbyHospitals[0].distance.toFixed(1)}km in ${this.nearbyHospitals[0].district}.</p>`;
 }
 
 generatePriceResponse(property) {
-    return `The property is listed for ${property.price} in ${property.district}. Given its ${property.type} type with ${property.bedrooms} bedrooms and proximity to amenities, it represents a solid investment opportunity in Kigali's real estate market.`;
+    return `<p>The property is listed for ${property.price} in ${property.district}. Given its ${property.type} type with ${property.bedrooms} bedrooms and proximity to amenities, it represents a solid investment opportunity in Kigali's real estate market.</p>`;
 }
 
 generateFamilyResponse(property) {
     const schoolRating = this.nearbySchools.length > 2 ? 'excellent' : this.nearbySchools.length > 0 ? 'good' : 'limited';
     const healthRating = this.nearbyHospitals.length > 2 ? 'excellent' : this.nearbyHospitals.length > 0 ? 'good' : 'limited';
-    return `For families, this property offers ${schoolRating} access to education with ${this.nearbySchools.length} nearby schools and ${healthRating} healthcare access with ${this.nearbyHospitals.length} facilities. The ${property.bedrooms}-bedroom ${property.type} is well-suited for family living.`;
+    return `<p>For families, this property offers ${schoolRating} access to education with ${this.nearbySchools.length} nearby schools and ${healthRating} healthcare access with ${this.nearbyHospitals.length} facilities. The ${property.bedrooms}-bedroom ${property.type} is well-suited for family living.</p>`;
 }
    
     showTyping() {
         document.getElementById('typingIndicator').classList.add('show');
     }
     
-    showTyping() {
+    hideTyping() {
         document.getElementById('typingIndicator').classList.remove('show');
     }
     
