@@ -899,6 +899,7 @@
             this.setupEventListeners();
             this.updateStats();
             this.updateFilterSummary();
+            await this.checkClaudeStatus();
         } catch (error) {
             console.error('Failed to initialize PropertyIntel:', error);
             this.showErrorMessage('Failed to initialize application. Please check if the API server is running.');
@@ -1769,193 +1770,129 @@
         this.scrollToBottom();
     }
     
-    generateAIResponse(question, property) {
-        const messagesContainer = document.getElementById('chatMessages');
-        let response = '';
-        
-        const lowerQuestion = question.toLowerCase();
-        
-        if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
-            response = this.generateSchoolResponse(property);
-        } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
-            response = this.generateHealthResponse(property);
-        } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('investment')) {
-            response = this.generatePriceResponse(property);
-        } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
-            response = this.generateFamilyResponse(property);
-        } else {
-            response = this.generateGeneralResponse(property);
+    async generateAIResponse(question, property) {
+    const messagesContainer = document.getElementById('chatMessages');
+    
+    try {
+        // Prepare data for Claude API
+        const requestData = {
+            message: question,
+            propertyData: {
+                name: property.name,
+                type: property.type,
+                price: property.price,
+                bedrooms: property.bedrooms,
+                bathrooms: property.bathrooms,
+                area: property.area,
+                yearBuilt: property.yearBuilt,
+                district: property.district,
+                status: property.status,
+                amenities: property.amenities
+            },
+            nearbyData: {
+                schools: this.nearbySchools,
+                hospitals: this.nearbyHospitals
+            }
+        };
+
+        // Call your backend proxy
+        const response = await fetch(`${this.apiBaseUrl}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const data = await response.json();
         
+        if (data.success) {
+            // Display Claude's response
+            messagesContainer.innerHTML += `
+                <div class="message ai">
+                    <div class="message-content">${data.response}</div>
+                </div>`;
+        } else if (data.fallback) {
+            // Fallback to original mock responses if Claude API fails
+            const fallbackResponse = this.generateFallbackResponse(question, property);
+            messagesContainer.innerHTML += `
+                <div class="message ai">
+                    <div class="message-content">${fallbackResponse}</div>
+                </div>`;
+        } else {
+            throw new Error(data.error || 'Unknown error');
+        }
+
+    } catch (error) {
+        console.error('AI Response Error:', error);
+        
+        // Show error message to user
         messagesContainer.innerHTML += `
             <div class="message ai">
-                <div class="message-content">${response}</div>
+                <div class="message-content" style="color: #ef4444;">
+                    <strong>Connection Error</strong><br>
+                    Unable to connect to AI assistant. Using basic analysis instead.<br><br>
+                    ${this.generateFallbackResponse(question, property)}
+                </div>
             </div>`;
-        
-        this.scrollToBottom();
     }
     
-    generateSchoolResponse(property) {
-        let response = `<h4>Education Analysis for ${property.name}</h4><br>`;
-        
-        if (this.nearbySchools.length > 0) {
-            response += `Found <strong>${this.nearbySchools.length} schools</strong> within 2km:<br><br>`;
-            
-            this.nearbySchools.slice(0, 3).forEach(school => {
-                const walkTime = Math.round(school.distance * 12);
-                response += `<strong>${school.school_name}</strong><br>`;
-                response += `Type: ${school.school_status} (${school.curriculum})<br>`;
-                response += `Distance: ${(school.distance * 1000).toFixed(0)}m (~${walkTime} min walk)<br><br>`;
-            });
-            
-            response += `This property offers excellent educational access for families with children!<br><br>Hover over school markers on the map to see connection lines and travel times.`;
-        } else {
-            response += `No schools found within 2km of this property.<br><br>`;
-            response += `<strong>Recommendations:</strong><br>`;
-            response += `Consider school transport services<br>`;
-            response += `Look into private school bus routes<br>`;
-            response += `Factor in daily commute time for school runs`;
-        }
-        
-        return response;
-    }
+    this.scrollToBottom();
+}
+
+generateFallbackResponse(question, property) {
+    const lowerQuestion = question.toLowerCase();
     
-    generateHealthResponse(property) {
-        let response = `<h4>Healthcare Analysis for ${property.name}</h4><br>`;
-        
-        if (this.nearbyHospitals.length > 0) {
-            response += `<strong>${this.nearbyHospitals.length} health facilities</strong> within 3km:<br><br>`;
-            
-            this.nearbyHospitals.slice(0, 3).forEach(hospital => {
-                response += `<strong>${hospital.facility_name}</strong><br>`;
-                response += `Type: ${hospital.facility_type}<br>`;
-                response += `Distance: ${hospital.distance.toFixed(1)}km<br><br>`;
-            });
-            
-            response += `Emergency response time: approximately 5-15 minutes depending on traffic.<br><br>Hover over hospital markers on the map to see connection lines and travel times.`;
-        } else {
-            response += `Limited healthcare access - no major facilities within 3km.<br><br>`;
-            response += `<strong>Important considerations:</strong><br>`;
-            response += `Emergency response may take 20+ minutes<br>`;
-            response += `Consider proximity to main roads for ambulance access<br>`;
-            response += `Keep emergency contact numbers and first aid supplies ready`;
-        }
-        
-        return response;
+    if (lowerQuestion.includes('school') || lowerQuestion.includes('education')) {
+        return this.generateSchoolResponse(property);
+    } else if (lowerQuestion.includes('hospital') || lowerQuestion.includes('health') || lowerQuestion.includes('medical')) {
+        return this.generateHealthResponse(property);
+    } else if (lowerQuestion.includes('price') || lowerQuestion.includes('cost') || lowerQuestion.includes('investment')) {
+        return this.generatePriceResponse(property);
+    } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
+        return this.generateFamilyResponse(property);
+    } else {
+        return this.generateGeneralResponse(property);
     }
-    
-    generatePriceResponse(property) {
-        const priceValue = parseInt(property.price.replace(/[^0-9]/g, ''));
-        let response = `<h4>Investment Analysis for ${property.name}</h4><br>`;
-        
-        response += `<strong>Current Price:</strong> ${property.price}<br>`;
-        const areaNum = parseInt(property.area);
-        if (areaNum) {
-            response += `<strong>Price per m²:</strong> ${Math.round(priceValue * 1000000 / areaNum).toLocaleString()} RWF/m²<br><br>`;
-        }
-        
-        let investmentScore = 60;
-        if (property.district === 'Gasabo') investmentScore += 15;
-        else if (property.district === 'Nyarugenge') investmentScore += 10;
-        else investmentScore += 5;
-        
-        investmentScore += Math.min(this.nearbySchools.length * 5, 15);
-        investmentScore += Math.min(this.nearbyHospitals.length * 3, 10);
-        
-        response += `<strong>Investment Score: ${Math.min(investmentScore, 100)}/100</strong><br><br>`;
-        
-        if (property.status === 'sale') {
-            const estimatedRent = Math.round(priceValue * 0.5);
-            response += `<strong>Rental Potential:</strong><br>`;
-            response += `Estimated monthly rent: ${estimatedRent}K RWF<br>`;
-            response += `Annual yield: ~6%<br><br>`;
-        }
-        
-        response += `<strong>Value Drivers:</strong><br>`;
-        response += `${this.nearbySchools.length} schools nearby<br>`;
-        response += `${this.nearbyHospitals.length} health facilities<br>`;
-        response += `${property.district} district location<br>`;
-        response += `Built in ${property.yearBuilt}`;
-        
-        return response;
+}
+
+generateGeneralResponse(property) {
+    return `This is a beautiful ${property.type} in ${property.district} priced at ${property.price}. It has ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms. Amenities include: ${property.amenities.join(', ') || 'standard features'}.`;
+}
+
+generateSchoolResponse(property) {
+    if (this.nearbySchools.length === 0) {
+        return 'No schools found within 2km. This location may require additional transportation for education.';
     }
-    
-    generateFamilyResponse(property) {
-        let response = `<h4>Family Suitability Analysis</h4><br>`;
-        
-        let familyScore = 50;
-        
-        if (property.bedrooms >= 4) familyScore += 20;
-        else if (property.bedrooms >= 3) familyScore += 15;
-        else if (property.bedrooms >= 2) familyScore += 10;
-        
-        if (this.nearbySchools.length >= 3) familyScore += 20;
-        else if (this.nearbySchools.length >= 1) familyScore += 10;
-        
-        if (this.nearbyHospitals.length >= 2) familyScore += 10;
-        else if (this.nearbyHospitals.length >= 1) familyScore += 5;
-        
-        response += `<strong>Family Score: ${Math.min(familyScore, 100)}/100</strong><br><br>`;
-        
-        response += `<strong>Space Assessment:</strong><br>`;
-        response += `${property.bedrooms} bedrooms, ${property.bathrooms} bathrooms<br>`;
-        response += `Total area: ${property.area}<br>`;
-        
-        const sizeCategory = property.bedrooms <= 2 ? 'small families' : 
-                           property.bedrooms <= 4 ? 'medium families' : 'large families';
-        response += `Suitable for ${sizeCategory}<br><br>`;
-        
-        response += `<strong>Child-Friendly Features:</strong><br>`;
-        response += `Education: ${this.nearbySchools.length} schools within 2km<br>`;
-        response += `Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
-        
-        const hasSecurity = property.amenities && property.amenities.some(a => 
-            a.toLowerCase().includes('security'));
-        response += `Safety: ${hasSecurity ? 'Secured compound' : 'Check security measures'}<br>`;
-        
-        const hasGarden = property.amenities && property.amenities.some(a => 
-            a.toLowerCase().includes('garden'));
-        response += `Recreation: ${hasGarden ? 'Garden space available' : 'Limited outdoor space'}<br><br>`;
-        
-        if (familyScore >= 80) {
-            response += `<strong>Verdict:</strong> Excellent choice for families with children!`;
-        } else if (familyScore >= 60) {
-            response += `<strong>Verdict:</strong> Good option for families with some planning.`;
-        } else {
-            response += `<strong>Verdict:</strong> Better suited for professionals or couples without children.`;
-        }
-        
-        return response;
+    return `There are ${this.nearbySchools.length} schools within 2km. The closest is ${this.nearbySchools[0].school_name} at ${this.nearbySchools[0].distance.toFixed(1)}km, which is a ${this.nearbySchools[0].school_type} school established in ${this.nearbySchools[0].established}.`;
+}
+
+generateHealthResponse(property) {
+    if (this.nearbyHospitals.length === 0) {
+        return 'No health facilities found within 3km. Consider this for healthcare accessibility.';
     }
-    
-    generateGeneralResponse(property) {
-        let response = `<h4>Complete Property Overview</h4><br>`;
-        
-        response += `I can provide detailed insights about <strong>${property.name}</strong>:<br><br>`;
-        
-        response += `<strong>Available Analysis:</strong><br>`;
-        response += `Education: ${this.nearbySchools.length} schools within 2km<br>`;
-        response += `Healthcare: ${this.nearbyHospitals.length} health facilities within 3km<br>`;
-        response += `Investment potential and pricing analysis<br>`;
-        response += `Family suitability assessment<br>`;
-        response += `Transportation and accessibility<br><br>`;
-        
-        response += `<strong>Quick Facts:</strong><br>`;
-        response += `Location: ${property.district} District<br>`;
-        response += `Size: ${property.bedrooms}BR, ${property.bathrooms}BA, ${property.area}<br>`;
-        response += `Year Built: ${property.yearBuilt}<br>`;
-        response += `Status: ${property.status === 'sale' ? 'For Sale' : 'For Rent'}<br><br>`;
-        
-        response += `What specific aspect would you like me to analyze in detail?`;
-        
-        return response;
-    }
-    
+    return `There are ${this.nearbyHospitals.length} health facilities within 3km. The closest is ${this.nearbyHospitals[0].facility_name} (${this.nearbyHospitals[0].facility_type}) at ${this.nearbyHospitals[0].distance.toFixed(1)}km in ${this.nearbyHospitals[0].district}.`;
+}
+
+generatePriceResponse(property) {
+    return `The property is listed for ${property.price} in ${property.district}. Given its ${property.type} type with ${property.bedrooms} bedrooms and proximity to amenities, it represents a solid investment opportunity in Kigali's real estate market.`;
+}
+
+generateFamilyResponse(property) {
+    const schoolRating = this.nearbySchools.length > 2 ? 'excellent' : this.nearbySchools.length > 0 ? 'good' : 'limited';
+    const healthRating = this.nearbyHospitals.length > 2 ? 'excellent' : this.nearbyHospitals.length > 0 ? 'good' : 'limited';
+    return `For families, this property offers ${schoolRating} access to education with ${this.nearbySchools.length} nearby schools and ${healthRating} healthcare access with ${this.nearbyHospitals.length} facilities. The ${property.bedrooms}-bedroom ${property.type} is well-suited for family living.`;
+}
+   
     showTyping() {
         document.getElementById('typingIndicator').classList.add('show');
     }
     
-    hideTyping() {
+    showTyping() {
         document.getElementById('typingIndicator').classList.remove('show');
     }
     
@@ -1988,6 +1925,52 @@
                 </div>
             </div>`;
     }
+
+async checkClaudeStatus() {
+    try {
+        const response = await fetch(`${this.apiBaseUrl}/chat/health`);
+        const data = await response.json();
+        this.updateClaudeStatus(data.success);
+        return data.success;
+    } catch (error) {
+        console.error('Claude health check failed:', error);
+        this.updateClaudeStatus(false);
+        return false;
+    }
+}
+
+updateClaudeStatus(isConnected) {
+    const statusIndicator = this.createStatusIndicator(isConnected);
+    
+    // Add status to the chat header
+    const appHeader = document.querySelector('.app-header .app-title');
+    const existingStatus = document.querySelector('.claude-status');
+    if (existingStatus) existingStatus.remove();
+    
+    appHeader.insertAdjacentHTML('afterend', statusIndicator);
+}
+
+createStatusIndicator(isConnected) {
+    const status = isConnected ? 'connected' : 'disconnected';
+    const color = isConnected ? '#10b981' : '#ef4444';
+    const text = isConnected ? 'Connected' : 'Offline';
+    const icon = isConnected ? '' : '';
+    
+    return `
+        <div class="claude-status" style="
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: ${color};
+            margin-top: 4px;
+            font-weight: 500;
+        ">
+            <span>${icon}</span>
+            <span>${text}</span>
+        </div>
+    `;
+}
 }
 
 let propertyIntel = null;
