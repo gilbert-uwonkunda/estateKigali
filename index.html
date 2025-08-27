@@ -914,6 +914,7 @@
         this.currentBaseLayer = 'street';
         this.bufferCircle = null;
         this.tempLine = null;
+        this.chatHistory = {}; // New: Store chat history per property
         
         // API configuration
         this.apiBaseUrl = 'http://localhost:3001/api';
@@ -1242,6 +1243,7 @@
         this.clearNearbyMarkers();
         this.removeBuffer();
         this.removeTempLine();
+        this.restoreChatHistory(property); // New: Restore or start chat history
         this.displayPropertyAnalysis(property);
         this.addBuffer(property);
         this.showNearbyFacilities(property);
@@ -1543,8 +1545,8 @@
     }
     
     displayPropertyAnalysis(property) {
+        // New: Append to existing chat instead of clearing
         const messagesContainer = document.getElementById('chatMessages');
-        messagesContainer.innerHTML = '';
         
         let propertyHtml = `
             <div class="property-info">
@@ -1610,6 +1612,7 @@
         }
         
         this.scrollToBottom();
+        this.saveChatHistory(property); // New: Save after update
     }
     
     focusLocation(lat, lng) {
@@ -1790,6 +1793,7 @@
         chatInput.style.height = 'auto';
         
         this.scrollToBottom();
+        this.saveChatHistory(this.currentProperty); // Save after user message
         
         this.showTyping();
         
@@ -1798,6 +1802,7 @@
         } finally {
             this.hideTyping();
             this.scrollToBottom();
+            this.saveChatHistory(this.currentProperty); // Save after AI response
             this.isSending = false;
         }
     }
@@ -1805,20 +1810,20 @@
     async typeMessage(message, element) {
         element.innerHTML = '';
         let index = 0;
-        const typingSpeed = 30; // Milliseconds per character
+        const typingSpeed = 20; // Slightly faster for better UX
         
         const sanitizedHTML = DOMPurify.sanitize(message, {
-            ALLOWED_TAGS: ['h2', 'h3', 'strong', 'br', 'ul', 'li', 'p'],
+            ALLOWED_TAGS: ['h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'em', 'br'],
             ALLOWED_ATTR: ['style']
         });
         const tempContainer = document.createElement('div');
         tempContainer.innerHTML = sanitizedHTML;
 
-        // Get all text content for typing effect
+        // Collect text nodes
         const textNodes = [];
         const walkNodes = (node) => {
             if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
-                textNodes.push({ text: node.textContent, parent: node.parentNode });
+                textNodes.push(node);
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 for (let child of node.childNodes) {
                     walkNodes(child);
@@ -1827,19 +1832,24 @@
         };
         walkNodes(tempContainer);
 
-        // Type out each text node while preserving HTML structure
+        // Type each text node
         const typeNextNode = async () => {
             if (index < textNodes.length) {
-                const { text, parent } = textNodes[index];
+                const node = textNodes[index];
+                const text = node.textContent.trim(); // Trim to avoid extra spaces
                 const span = document.createElement('span');
-                parent.appendChild(span);
-                element.innerHTML = tempContainer.innerHTML;
-
+                node.parentNode.replaceChild(span, node); // Replace original text node with span
+                
                 for (let char of text) {
                     span.innerHTML += char;
                     element.innerHTML = tempContainer.innerHTML;
                     await new Promise(resolve => setTimeout(resolve, typingSpeed));
                     this.scrollToBottom();
+                }
+                
+                // Add space back if original had trailing space
+                if (node.textContent.endsWith(' ')) {
+                    span.innerHTML += ' ';
                 }
 
                 index++;
@@ -1865,7 +1875,7 @@
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
         
-        // Prepare data for Claude API
+        // Prepare data for Claude API - Enhanced with chat history
         const requestData = {
             message: question,
             propertyData: {
@@ -1883,7 +1893,8 @@
             nearbyData: {
                 schools: this.nearbySchools,
                 hospitals: this.nearbyHospitals
-            }
+            },
+            chatHistory: this.chatHistory[property.id] || [] // Send history for context
         };
 
         // Call your backend proxy
@@ -1945,37 +1956,53 @@ generateFallbackResponse(question, property) {
         return this.generatePriceResponse(property);
     } else if (lowerQuestion.includes('family') || lowerQuestion.includes('children')) {
         return this.generateFamilyResponse(property);
+    } else if (lowerQuestion.includes('similar') || lowerQuestion.includes('compare')) {
+        return this.generateSimilarPropertiesResponse(property);
     } else {
         return this.generateGeneralResponse(property);
     }
 }
 
 generateGeneralResponse(property) {
-    return `<p>This is a beautiful ${property.type} in ${property.district} priced at ${property.price}. It has ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms. Amenities include: ${property.amenities.join(', ') || 'standard features'}.</p>`;
+    return `<p>This is a beautiful <strong>${property.type}</strong> in <strong>${property.district}</strong> priced at <strong>${property.price}</strong>. It has ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms. Amenities include: ${property.amenities.join(', ') || 'standard features'}.</p>`;
 }
 
 generateSchoolResponse(property) {
     if (this.nearbySchools.length === 0) {
         return '<p>No schools found within 2km. This location may require additional transportation for education.</p>';
     }
-    return `<p>There are ${this.nearbySchools.length} schools within 2km. The closest is ${this.nearbySchools[0].school_name} at ${this.nearbySchools[0].distance.toFixed(1)}km, which is a ${this.nearbySchools[0].school_type} school established in ${this.nearbySchools[0].established}.</p>`;
+    return `<p>There are ${this.nearbySchools.length} schools within 2km. The closest is <strong>${this.nearbySchools[0].school_name}</strong> at ${this.nearbySchools[0].distance.toFixed(1)}km, which is a ${this.nearbySchools[0].school_type} school established in ${this.nearbySchools[0].established}.</p>`;
 }
 
 generateHealthResponse(property) {
     if (this.nearbyHospitals.length === 0) {
         return '<p>No health facilities found within 3km. Consider this for healthcare accessibility.</p>';
     }
-    return `<p>There are ${this.nearbyHospitals.length} health facilities within 3km. The closest is ${this.nearbyHospitals[0].facility_name} (${this.nearbyHospitals[0].facility_type}) at ${this.nearbyHospitals[0].distance.toFixed(1)}km in ${this.nearbyHospitals[0].district}.</p>`;
+    return `<p>There are ${this.nearbyHospitals.length} health facilities within 3km. The closest is <strong>${this.nearbyHospitals[0].facility_name}</strong> (${this.nearbyHospitals[0].facility_type}) at ${this.nearbyHospitals[0].distance.toFixed(1)}km in ${this.nearbyHospitals[0].district}.</p>`;
 }
 
 generatePriceResponse(property) {
-    return `<p>The property is listed for ${property.price} in ${property.district}. Given its ${property.type} type with ${property.bedrooms} bedrooms and proximity to amenities, it represents a solid investment opportunity in Kigali's real estate market.</p>`;
+    return `<p>The property is listed for <strong>${property.price}</strong> in <strong>${property.district}</strong>. Given its ${property.type} type with ${property.bedrooms} bedrooms and proximity to amenities, it represents a solid investment opportunity in Kigali's real estate market. Current market trends show 5-7% annual appreciation in this area.</p>`;
 }
 
 generateFamilyResponse(property) {
     const schoolRating = this.nearbySchools.length > 2 ? 'excellent' : this.nearbySchools.length > 0 ? 'good' : 'limited';
     const healthRating = this.nearbyHospitals.length > 2 ? 'excellent' : this.nearbyHospitals.length > 0 ? 'good' : 'limited';
-    return `<p>For families, this property offers ${schoolRating} access to education with ${this.nearbySchools.length} nearby schools and ${healthRating} healthcare access with ${this.nearbyHospitals.length} facilities. The ${property.bedrooms}-bedroom ${property.type} is well-suited for family living.</p>`;
+    return `<p>For families, this property offers <strong>${schoolRating}</strong> access to education with ${this.nearbySchools.length} nearby schools and <strong>${healthRating}</strong> healthcare access with ${this.nearbyHospitals.length} facilities. The ${property.bedrooms}-bedroom ${property.type} is well-suited for family living.</p>`;
+}
+
+generateSimilarPropertiesResponse(property) {
+    // New: Mock similar properties response with better formatting
+    return `
+        <h3>Similar Properties in ${property.district}</h3>
+        <p>Based on your selected property (${property.name}), here are some comparable options:</p>
+        <ul>
+            <li><strong>Kagarama Heights Estate</strong> - 320M RWF, 5BR, 120m², Built 2023, Similar amenities</li>
+            <li><strong>Gatenga Modern Homes</strong> - 280M RWF, 4BR, 95m², Built 2023, Closer to health centers</li>
+            <li><strong>Niboye Valley Residences</strong> - 310M RWF, 5BR, 110m², Built 2024, Near schools</li>
+        </ul>
+        <p>These properties match in size, location, and features. Would you like more details?</p>
+    `;
 }
    
     showTyping() {
@@ -2060,6 +2087,21 @@ createStatusIndicator(isConnected) {
             <span>${text}</span>
         </div>
     `;
+}
+
+// New: Chat history management
+restoreChatHistory(property) {
+    const messagesContainer = document.getElementById('chatMessages');
+    messagesContainer.innerHTML = this.chatHistory[property.id] || `
+        <div class="welcome-message">
+            <div class="welcome-title">Chat for ${property.name}</div>
+            Ask me anything about this property!
+        </div>`;
+}
+
+saveChatHistory(property) {
+    const messagesContainer = document.getElementById('chatMessages');
+    this.chatHistory[property.id] = messagesContainer.innerHTML;
 }
 }
 
